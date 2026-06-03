@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { useParams, usePathname } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { MobilePreview } from '@/components/mobile-preview'
 import { useAppStore, sampleThemes } from '@/lib/store'
