@@ -13,16 +13,20 @@ import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 export default function LandingPage() {
-  const { invitations, setInvitations, isAuthenticated, notices, fetchData } = useAppStore()
+  const { invitations, setInvitations, isAuthenticated, notices, fetchData, loadUserInvitations } = useAppStore()
   const [activeTab, setActiveTab] = useState<'features' | 'notices'>('features')
 
   useEffect(() => {
     fetchData()
-    // Load sample data on mount
-    if (invitations.length === 0) {
-      setInvitations(sampleInvitations)
+  }, [fetchData])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUserInvitations()
+    } else {
+      setInvitations([])
     }
-  }, [invitations.length, setInvitations, fetchData])
+  }, [isAuthenticated, loadUserInvitations, setInvitations])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -33,7 +37,7 @@ export default function LandingPage() {
         <HeroSection />
 
         {/* My Invitations Section (if authenticated) */}
-        {isAuthenticated && invitations.length > 0 && (
+        {isAuthenticated && (
           <section className="py-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="mb-8 flex items-center justify-between">
@@ -43,18 +47,36 @@ export default function LandingPage() {
                     작성 중인 청첩장을 확인하고 관리하세요.
                   </p>
                 </div>
-                <Button asChild>
-                  <Link href="/editor/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    새 청첩장 만들기
-                  </Link>
-                </Button>
+                {invitations.length > 0 && (
+                  <Button asChild>
+                    <Link href="/editor/new">
+                      <Plus className="mr-2 h-4 w-4" />
+                      새 청첩장 만들기
+                    </Link>
+                  </Button>
+                )}
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {invitations.map((invitation) => (
-                  <InvitationCard key={invitation.id} invitation={invitation} />
-                ))}
-              </div>
+              
+              {invitations.length === 0 ? (
+                <div className="border border-dashed border-border rounded-xl bg-card text-card-foreground p-12 text-center max-w-xl mx-auto shadow-sm">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-1">아직 생성된 청첩장이 없습니다</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    원하는 테마를 고르고 첫 청첩장을 만들어보세요.
+                  </p>
+                  <Button asChild>
+                    <Link href="/templates">테마 고르기</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {invitations.map((invitation) => (
+                    <InvitationCard key={invitation.id} invitation={invitation} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         )}

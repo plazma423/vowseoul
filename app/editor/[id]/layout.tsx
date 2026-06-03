@@ -26,7 +26,7 @@ export default function EditorLayout({
   const router = useRouter()
   const params = useParams()
   const pathname = usePathname()
-  const { currentInvitation, setCurrentInvitation, loadInvitation, saveInvitation, editorStep, setEditorStep } = useAppStore()
+  const { currentInvitation, setCurrentInvitation, loadInvitation, saveInvitation, editorStep, setEditorStep, fetchData } = useAppStore()
 
   const invitationId = params.id as string
   const basePath = `/editor/${invitationId}`
@@ -34,10 +34,16 @@ export default function EditorLayout({
   // Initialize or load invitation on mount
   useEffect(() => {
     const initInvitation = async () => {
+      // Load global database data (including themes) first
+      await fetchData()
+
+      const current = useAppStore.getState().currentInvitation
+
       if (invitationId === 'new') {
-        if (!currentInvitation || currentInvitation.id !== 'new') {
-          const { data } = await supabase.from('themes').select('*').limit(1)
-          const defaultTheme = (data && data.length > 0) ? data[0] : sampleThemes[0]
+        // If there is no current invitation, or its id is not 'new' (excluding updated unsaved UUIDs)
+        if (!current || (current.id !== 'new' && !current.id.includes('__'))) {
+          const { themes } = useAppStore.getState()
+          const defaultTheme = (themes && themes.length > 0) ? themes[0] : sampleThemes[0]
           
           setCurrentInvitation({
             id: 'new',
@@ -53,13 +59,13 @@ export default function EditorLayout({
           })
         }
       } else {
-        if (!currentInvitation || currentInvitation.id !== invitationId) {
+        if (!current || current.id !== invitationId) {
           await loadInvitation(invitationId)
         }
       }
     }
     initInvitation()
-  }, [invitationId, currentInvitation, setCurrentInvitation, loadInvitation])
+  }, [invitationId, setCurrentInvitation, loadInvitation, fetchData])
 
   const handleSave = async () => {
     const savedId = await saveInvitation()

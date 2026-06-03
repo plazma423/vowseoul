@@ -180,14 +180,12 @@ export const useAppStore = create<AppState>((set) => ({
         { data: faqs },
         { data: themes },
         { data: bgms },
-        { data: orders },
-        { data: invitations }
+        { data: orders }
       ] = await Promise.all([
         supabase.from('faqs').select('*'),
         supabase.from('themes').select('*'),
         supabase.from('bgms').select('*'),
-        supabase.from('orders').select('*'),
-        supabase.from('invitations').select('*')
+        supabase.from('orders').select('*')
       ])
 
       let noticesList = []
@@ -218,7 +216,6 @@ export const useAppStore = create<AppState>((set) => ({
         themes: themes || [],
         bgmList: bgms || [],
         orders: orders || [],
-        invitations: invitations || [],
         notices: noticesList
       })
     } catch (e) {

@@ -74,8 +74,9 @@ export default function FeaturesPage() {
   }
 
   const handleNext = async () => {
-    await saveInvitation()
-    router.push(`/editor/${invitationId}/payment`)
+    const savedId = await saveInvitation()
+    const targetId = savedId || invitationId
+    router.push(`/editor/${targetId}/payment`)
   }
 
   const handleBack = () => {

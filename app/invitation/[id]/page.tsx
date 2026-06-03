@@ -34,7 +34,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { sampleThemes } from "@/lib/store"
-import { cn } from "@/lib/utils"
+import { cn, getLegibleColor } from "@/lib/utils"
 
 export default function InvitationViewPage() {
   const params = useParams()
@@ -296,13 +296,17 @@ export default function InvitationViewPage() {
 
   // Determine theme colors and fonts dynamically
   const theme = themes.find(t => t.id === invitation?.themeId) || sampleThemes.find(t => t.id === invitation?.themeId) || sampleThemes[0]
-  const colorSet = theme.colorSets.find(c => c.id === invitation?.colorSet) || theme.colorSets[0]
-  const fontSet = theme.fontSets.find(f => f.id === invitation?.fontSet) || theme.fontSets[0]
+  const colorSet = theme?.colorSets?.find(c => c.id === invitation?.colorSet) || theme?.colorSets?.[0]
+  const fontSet = theme?.fontSets?.find(f => f.id === invitation?.fontSet) || theme?.fontSets?.[0]
   
-  const bgColor = colorSet?.colors[0] || '#faf9f7'
-  const accentColor = colorSet?.colors[1] || '#c4a574'
-  const textColor = colorSet?.colors[2] || '#3d3d3d'
-  const secondaryTextColor = theme?.styles?.secondaryTextColor || '#8a8a8a'
+  const bgColor = colorSet?.colors?.[0] || '#faf9f7'
+  const rawAccentColor = colorSet?.colors?.[1] || '#c4a574'
+  const rawTextColor = colorSet?.colors?.[2] || '#3d3d3d'
+  const rawSecondaryTextColor = theme?.styles?.secondaryTextColor || '#8a8a8a'
+
+  const accentColor = getLegibleColor(bgColor, rawAccentColor, false)
+  const textColor = getLegibleColor(bgColor, rawTextColor, true)
+  const secondaryTextColor = getLegibleColor(bgColor, rawSecondaryTextColor, false)
   const fontClass = fontSet?.id === 'serif' ? 'font-serif' : 'font-sans'
 
   // Dynamic style values
@@ -314,14 +318,28 @@ export default function InvitationViewPage() {
   const dividerType = themeStyles.dividerType || 'heart'
   const heroStyle = themeStyles.heroStyle || 'center'
 
-  const fontKr = themeStyles.fontKr || 'font-serif'
-  const fontEn = themeStyles.fontEn || 'font-serif'
+  const fontKr = fontSet?.fonts?.[0] || themeStyles.fontKr || 'font-serif'
+  const fontEn = fontSet?.fonts?.[1] || themeStyles.fontEn || 'font-serif'
 
   const getFontFamily = (krFont: string, enFont: string) => {
-    const cleanKr = krFont.startsWith('font-') ? (krFont === 'font-serif' ? 'Noto Serif KR, Georgia, serif' : 'Pretendard, Arial, sans-serif') : `'${krFont}'`;
-    const cleanEn = enFont.startsWith('font-') ? (enFont === 'font-serif' ? 'Playfair Display, Lora, serif' : 'Inter, Montserrat, sans-serif') : `'${enFont}'`;
-    return `${cleanEn}, ${cleanKr}, sans-serif`;
+    let enFamily = '';
+    if (enFont.startsWith('font-')) {
+      enFamily = enFont === 'font-serif' ? "'Playfair Display', Lora, Georgia" : "Inter, Montserrat, Arial";
+    } else {
+      enFamily = `'${enFont}'`;
+    }
+
+    let krFamily = '';
+    if (krFont.startsWith('font-')) {
+      krFamily = krFont === 'font-serif' ? "'Noto Serif KR', 'Nanum Myeongjo'" : "'Pretendard', 'Noto Sans KR'";
+    } else {
+      krFamily = `'${krFont}'`;
+    }
+
+    const genericFallback = (enFont === 'font-serif' || krFont === 'font-serif') ? 'serif' : 'sans-serif';
+    return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
+
   
   const defaultOrder = ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
   const sectionOrder = themeStyles.sectionOrder || defaultOrder
@@ -342,20 +360,28 @@ export default function InvitationViewPage() {
       <div className="max-w-md mx-auto relative shadow-md min-h-screen pb-12" style={{ backgroundColor: bgColor, color: textColor }}>
         {/* Dynamic Style injection for custom fonts */}
         <style dangerouslySetInnerHTML={{
-          __html: customFonts.map(font => {
-            if (font.type === 'embed') {
-              return font.embedCode || '';
-            } else if (font.type === 'file' && font.fileUrl) {
-              return `
+          __html: (() => {
+            const defaultGoogleFonts = `@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&family=Cinzel:wght@400..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@200..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&display=swap');`;
+            const imports = customFonts
+              .filter(f => f.type === 'embed')
+              .map(f => (f.embedCode || '').replace(/<\/?style>/gi, ''))
+              .join('\n');
+            const directImports = customFonts
+              .filter(f => f.url)
+              .map(f => `@import url('${f.url}');`)
+              .join('\n');
+            const fontFaces = customFonts
+              .filter(f => f.type === 'file' && f.fileUrl)
+              .map(f => `
                 @font-face {
-                  font-family: '${font.family}';
-                  src: url('${font.fileUrl}') format('truetype');
+                  font-family: '${f.family}';
+                  src: url('/api/fonts?url=${encodeURIComponent(f.fileUrl)}') format('truetype');
                   font-display: swap;
                 }
-              `;
-            }
-            return '';
-          }).join('\n')
+              `)
+              .join('\n');
+            return `${defaultGoogleFonts}\n${imports}\n${directImports}\n${fontFaces}`;
+          })()
         }} />
 
         {sectionOrder.map((sectionId, idx) => {
@@ -495,17 +521,28 @@ export default function InvitationViewPage() {
 
             case 'gallery':
               if (!invitation.galleryImages || invitation.galleryImages.length === 0) return null
+              const isSlide = invitation?.galleryViewType === 'slide'
               return (
                 <section key="gallery" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                   {showDivider && renderDivider()}
                   <h2 className="text-center text-xs font-semibold tracking-wider mb-8">GALLERY</h2>
-                  <div className={cn("grid gap-2", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
-                    {invitation.galleryImages.map((img: string, idx: number) => (
-                      <div key={idx} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                        <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                      </div>
-                    ))}
-                  </div>
+                  {isSlide ? (
+                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
+                      {invitation.galleryImages.map((img: string, idx: number) => (
+                        <div key={idx} className={cn("w-4/5 aspect-[4/3] flex-shrink-0 snap-center overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={cn("grid gap-2", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
+                      {invitation.galleryImages.map((img: string, idx: number) => (
+                        <div key={idx} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               )
 

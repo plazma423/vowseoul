@@ -44,6 +44,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
+import { FontLoader } from '@/components/font-loader'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,6 +54,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${geist.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased min-h-screen" suppressHydrationWarning>
+        <FontLoader />
         {children}
         <Toaster position="top-center" richColors />
         {process.env.NODE_ENV === 'production' && <Analytics />}

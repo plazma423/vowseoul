@@ -154,8 +154,9 @@ export default function ContentPage() {
   }
 
   const handleNext = async () => {
-    await saveInvitation()
-    router.push(`/editor/${invitationId}/features`)
+    const savedId = await saveInvitation()
+    const targetId = savedId || invitationId
+    router.push(`/editor/${targetId}/features`)
   }
 
   const handleBack = () => {

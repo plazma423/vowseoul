@@ -42,8 +42,9 @@ export default function DesignPage() {
   }
 
   const handleNext = async () => {
-    await saveInvitation()
-    router.push(`/editor/${invitationId}/content`)
+    const savedId = await saveInvitation()
+    const targetId = savedId || invitationId
+    router.push(`/editor/${targetId}/content`)
   }
 
   const handleBack = () => {

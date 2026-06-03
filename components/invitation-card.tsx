@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Eye, Pencil, Share2 } from 'lucide-react'
 import type { WeddingInvitation } from '@/lib/store'
+import { toast } from 'sonner'
 
 interface InvitationCardProps {
   invitation: WeddingInvitation
@@ -22,13 +23,12 @@ export function InvitationCard({ invitation }: InvitationCardProps) {
   const status = statusConfig[invitation.status]
 
   const handleShare = async () => {
-    if (invitation.publishedUrl) {
-      try {
-        await navigator.clipboard.writeText(invitation.publishedUrl)
-        alert('URL이 복사되었습니다.')
-      } catch {
-        alert('URL 복사에 실패했습니다.')
-      }
+    const link = `${window.location.origin}/invitation/${invitation.id}`
+    try {
+      await navigator.clipboard.writeText(link)
+      toast.success('청첩장 링크가 클립보드에 복사되었습니다.')
+    } catch {
+      toast.error('링크 복사에 실패했습니다.')
     }
   }
 
@@ -75,16 +75,15 @@ export function InvitationCard({ invitation }: InvitationCardProps) {
             </Link>
           </Button>
           <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link href={`/preview/${invitation.id}`}>
+            <a href={`/invitation/${invitation.id}`} target="_blank" rel="noopener noreferrer">
               <Eye className="mr-1.5 h-3.5 w-3.5" />
               미리보기
-            </Link>
+            </a>
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleShare}
-            disabled={invitation.status !== 'published'}
           >
             <Share2 className="h-3.5 w-3.5" />
           </Button>

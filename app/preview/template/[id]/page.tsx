@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { sampleThemes } from '@/lib/store'
-import { cn } from '@/lib/utils'
+import { cn, getLegibleColor } from '@/lib/utils'
 
 export default function TemplatePreviewPage() {
   const params = useParams()
@@ -246,8 +246,8 @@ export default function TemplatePreviewPage() {
   const fontSet = theme.fontSets?.[0]
   
   const bgColor = colorSet?.colors?.[0] || theme.styles?.backgroundColor || '#faf9f7'
-  const accentColor = colorSet?.colors?.[1] || theme.styles?.primaryColor || '#c4a574'
-  const textColor = colorSet?.colors?.[2] || theme.styles?.textColor || '#3d3d3d'
+  const rawAccentColor = colorSet?.colors?.[1] || theme.styles?.primaryColor || '#c4a574'
+  const rawTextColor = colorSet?.colors?.[2] || theme.styles?.textColor || '#3d3d3d'
   const fontClass = fontSet?.id === 'serif' ? 'font-serif' : 'font-sans'
 
   // Dynamic style values
@@ -258,16 +258,34 @@ export default function TemplatePreviewPage() {
   const cardShadow = themeStyles.cardShadow || 'shadow-sm'
   const dividerType = themeStyles.dividerType || 'heart'
   const heroStyle = themeStyles.heroStyle || 'center'
-  const secondaryTextColor = themeStyles.secondaryTextColor || '#8a8a8a'
+  const rawSecondaryTextColor = themeStyles.secondaryTextColor || '#8a8a8a'
 
-  const fontKr = themeStyles.fontKr || 'font-serif'
-  const fontEn = themeStyles.fontEn || 'font-serif'
+  const accentColor = getLegibleColor(bgColor, rawAccentColor, false)
+  const textColor = getLegibleColor(bgColor, rawTextColor, true)
+  const secondaryTextColor = getLegibleColor(bgColor, rawSecondaryTextColor, false)
+
+  const fontKr = fontSet?.fonts?.[0] || themeStyles.fontKr || 'font-serif'
+  const fontEn = fontSet?.fonts?.[1] || themeStyles.fontEn || 'font-serif'
 
   const getFontFamily = (krFont: string, enFont: string) => {
-    const cleanKr = krFont.startsWith('font-') ? (krFont === 'font-serif' ? 'Noto Serif KR, Georgia, serif' : 'Pretendard, Arial, sans-serif') : `'${krFont}'`;
-    const cleanEn = enFont.startsWith('font-') ? (enFont === 'font-serif' ? 'Playfair Display, Lora, serif' : 'Inter, Montserrat, sans-serif') : `'${enFont}'`;
-    return `${cleanEn}, ${cleanKr}, sans-serif`;
+    let enFamily = '';
+    if (enFont.startsWith('font-')) {
+      enFamily = enFont === 'font-serif' ? "'Playfair Display', Lora, Georgia" : "Inter, Montserrat, Arial";
+    } else {
+      enFamily = `'${enFont}'`;
+    }
+
+    let krFamily = '';
+    if (krFont.startsWith('font-')) {
+      krFamily = krFont === 'font-serif' ? "'Noto Serif KR', 'Nanum Myeongjo'" : "'Pretendard', 'Noto Sans KR'";
+    } else {
+      krFamily = `'${krFont}'`;
+    }
+
+    const genericFallback = (enFont === 'font-serif' || krFont === 'font-serif') ? 'serif' : 'sans-serif';
+    return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
+
   
   const defaultOrder = ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
   const sectionOrder = themeStyles.sectionOrder || defaultOrder
@@ -305,20 +323,28 @@ export default function TemplatePreviewPage() {
       <div className="max-w-md mx-auto relative shadow-md min-h-screen pb-12" style={{ backgroundColor: bgColor, color: textColor }}>
         {/* Dynamic Style injection for custom fonts */}
         <style dangerouslySetInnerHTML={{
-          __html: customFonts.map(font => {
-            if (font.type === 'embed') {
-              return font.embedCode || '';
-            } else if (font.type === 'file' && font.fileUrl) {
-              return `
+          __html: (() => {
+            const defaultGoogleFonts = `@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&family=Cinzel:wght@400..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@200..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&display=swap');`;
+            const imports = customFonts
+              .filter(f => f.type === 'embed')
+              .map(f => (f.embedCode || '').replace(/<\/?style>/gi, ''))
+              .join('\n');
+            const directImports = customFonts
+              .filter(f => f.url)
+              .map(f => `@import url('${f.url}');`)
+              .join('\n');
+            const fontFaces = customFonts
+              .filter(f => f.type === 'file' && f.fileUrl)
+              .map(f => `
                 @font-face {
-                  font-family: '${font.family}';
-                  src: url('${font.fileUrl}') format('truetype');
+                  font-family: '${f.family}';
+                  src: url('/api/fonts?url=${encodeURIComponent(f.fileUrl)}') format('truetype');
                   font-display: swap;
                 }
-              `;
-            }
-            return '';
-          }).join('\n')
+              `)
+              .join('\n');
+            return `${defaultGoogleFonts}\n${imports}\n${directImports}\n${fontFaces}`;
+          })()
         }} />
 
         {sectionOrder.map((sectionId, idx) => {
@@ -438,22 +464,34 @@ export default function TemplatePreviewPage() {
               )
 
             case 'gallery':
+              const isSlide = theme?.galleryViewType === 'slide' || theme?.styles?.galleryViewType === 'slide'
+              const mockImages = [
+                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+                'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
+                'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
+              ]
               return (
                 <section key="gallery" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                   {showDivider && renderDivider()}
                   <h2 className="text-center text-xs font-semibold tracking-wider mb-8">GALLERY</h2>
-                  <div className={cn("grid gap-2", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
-                    {[
-                      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
-                      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
-                      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
-                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
-                    ].map((img: string, index: number) => (
-                      <div key={index} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                        <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                      </div>
-                    ))}
-                  </div>
+                  {isSlide ? (
+                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
+                      {mockImages.map((img: string, index: number) => (
+                        <div key={index} className={cn("w-4/5 aspect-[4/3] flex-shrink-0 snap-center overflow-hidden bg-black/10 hover:scale-105 transition-transform duration-300", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={cn("grid gap-2", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
+                      {mockImages.map((img: string, index: number) => (
+                        <div key={index} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               )
 

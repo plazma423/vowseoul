@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage'
 import { sampleThemes } from '@/lib/store'
-import { cn } from '@/lib/utils'
+import { cn, getLegibleColor } from '@/lib/utils'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function ThemeEditorPage() {
@@ -70,6 +70,10 @@ export default function ThemeEditorPage() {
   const [customFonts, setCustomFonts] = useState<any[]>([])
   const [activeEditSection, setActiveEditSection] = useState<string | null>(null)
   const [isSectionStyleDialogOpen, setIsSectionStyleDialogOpen] = useState(false)
+  const [colorSets, setColorSets] = useState<any[]>([])
+  const [fontSets, setFontSets] = useState<any[]>([])
+  const [newColorSetName, setNewColorSetName] = useState('')
+  const [newFontSetName, setNewFontSetName] = useState('')
 
   useEffect(() => {
     fetchBgms()
@@ -96,10 +100,24 @@ export default function ThemeEditorPage() {
   }
 
   const getFontFamily = (krFont: string, enFont: string) => {
-    const cleanKr = krFont.startsWith('font-') ? (krFont === 'font-serif' ? 'Noto Serif KR, Georgia, serif' : 'Pretendard, Arial, sans-serif') : `'${krFont}'`;
-    const cleanEn = enFont.startsWith('font-') ? (enFont === 'font-serif' ? 'Playfair Display, Lora, serif' : 'Inter, Montserrat, sans-serif') : `'${enFont}'`;
-    return `${cleanEn}, ${cleanKr}, sans-serif`;
+    let enFamily = '';
+    if (enFont.startsWith('font-')) {
+      enFamily = enFont === 'font-serif' ? "'Playfair Display', Lora, Georgia" : "Inter, Montserrat, Arial";
+    } else {
+      enFamily = `'${enFont}'`;
+    }
+
+    let krFamily = '';
+    if (krFont.startsWith('font-')) {
+      krFamily = krFont === 'font-serif' ? "'Noto Serif KR', 'Nanum Myeongjo'" : "'Pretendard', 'Noto Sans KR'";
+    } else {
+      krFamily = `'${krFont}'`;
+    }
+
+    const genericFallback = (enFont === 'font-serif' || krFont === 'font-serif') ? 'serif' : 'sans-serif';
+    return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
+
 
   const fetchTheme = async () => {
     setIsLoading(true)
@@ -129,6 +147,16 @@ export default function ThemeEditorPage() {
         sectionOrder: data.styles?.sectionOrder || ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
         recommendedBgms: data.recommendedBgms || []
       })
+      setColorSets(data.colorSets || [{
+        id: 'default',
+        name: '기본 색상',
+        colors: [data.styles?.backgroundColor || '#FFF8F0', data.styles?.primaryColor || '#E8A87C', data.styles?.textColor || '#3A3A3A']
+      }])
+      setFontSets(data.fontSets || [{
+        id: 'default',
+        name: '기본 폰트',
+        fonts: [data.styles?.fontKr || 'font-serif', data.styles?.fontEn || 'font-serif']
+      }])
     } else {
       const sample = sampleThemes.find(t => t.id === themeId)
       if (sample) {
@@ -141,9 +169,9 @@ export default function ThemeEditorPage() {
           fontEn: 'font-serif',
           fontSize: '16',
           letterSpacing: '-0.02',
-          primaryColor: sample.colorSets[0]?.colors[1] || '#E8A87C',
-          backgroundColor: sample.colorSets[0]?.colors[0] || '#FFF8F0',
-          textColor: sample.colorSets[0]?.colors[2] || '#3A3A3A',
+          primaryColor: sample.colorSets?.[0]?.colors?.[1] || '#E8A87C',
+          backgroundColor: sample.colorSets?.[0]?.colors?.[0] || '#FFF8F0',
+          textColor: sample.colorSets?.[0]?.colors?.[2] || '#3A3A3A',
           secondaryColor: '#D3D3D3',
           secondaryTextColor: '#8A8A8A',
           // Custom style values defaults
@@ -154,8 +182,10 @@ export default function ThemeEditorPage() {
           dividerType: 'heart',
           heroStyle: 'center',
           sectionOrder: ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
-          recommendedBgms: []
+          recommendedBgms: sample.recommendedBgms || []
         })
+        setColorSets(sample.colorSets || [])
+        setFontSets(sample.fontSets || [])
       }
     }
     setIsLoading(false)
@@ -165,6 +195,45 @@ export default function ThemeEditorPage() {
     if (!theme.name) return toast.error('테마명을 입력해주세요.')
 
     setIsSaving(true)
+
+    // Sync default color set with the current editor inputs
+    const updatedColorSets = colorSets.map(set => {
+      if (set.id === 'default') {
+        return {
+          ...set,
+          colors: [theme.backgroundColor, theme.primaryColor, theme.textColor]
+        }
+      }
+      return set
+    })
+
+    if (!updatedColorSets.some(set => set.id === 'default')) {
+      updatedColorSets.unshift({
+        id: 'default',
+        name: '기본 색상',
+        colors: [theme.backgroundColor, theme.primaryColor, theme.textColor]
+      })
+    }
+
+    // Sync default font set with the current editor inputs
+    const updatedFontSets = fontSets.map(set => {
+      if (set.id === 'default') {
+        return {
+          ...set,
+          fonts: [theme.fontKr, theme.fontEn]
+        }
+      }
+      return set
+    })
+
+    if (!updatedFontSets.some(set => set.id === 'default')) {
+      updatedFontSets.unshift({
+        id: 'default',
+        name: '기본 폰트',
+        fonts: [theme.fontKr, theme.fontEn]
+      })
+    }
+
     const payload = {
       id: isNew ? `theme_${Date.now()}` : themeId,
       name: theme.name,
@@ -191,16 +260,8 @@ export default function ThemeEditorPage() {
         heroStyle: theme.heroStyle,
         sectionOrder: theme.sectionOrder,
       },
-      colorSets: [{
-        id: 'default',
-        name: '기본 색상',
-        colors: [theme.backgroundColor, theme.primaryColor, theme.textColor]
-      }],
-      fontSets: [{
-        id: 'default',
-        name: '기본 폰트',
-        fonts: [theme.fontKr, theme.fontEn]
-      }]
+      colorSets: updatedColorSets,
+      fontSets: updatedFontSets,
     }
 
     const { error } = await supabase.from('themes').upsert(payload)
@@ -267,6 +328,10 @@ export default function ThemeEditorPage() {
   ]
 
   const fontClass = theme.fontKr === 'font-serif' ? 'font-serif' : 'font-sans'
+
+  const legibleTextColor = getLegibleColor(theme.backgroundColor, theme.textColor, true)
+  const legiblePrimaryColor = getLegibleColor(theme.backgroundColor, theme.primaryColor, false)
+  const legibleSecondaryTextColor = getLegibleColor(theme.backgroundColor, theme.secondaryTextColor, false)
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-6 -mt-2">
@@ -376,6 +441,67 @@ export default function ThemeEditorPage() {
                 </div>
               </div>
             </div>
+
+            {/* Font Set Manager */}
+            <div className="mt-4 p-4 border rounded-lg bg-muted/20 space-y-4">
+              <h4 className="text-sm font-medium">등록된 폰트 조합 (Font Sets)</h4>
+              <div className="space-y-2">
+                {fontSets.map(set => (
+                  <div key={set.id} className="flex items-center justify-between p-2.5 bg-background border rounded-md text-sm">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{set.name}</span>
+                        {set.id === 'default' && <Badge variant="outline" className="text-[10px] py-0 px-1">기본</Badge>}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        한글: {set.fonts[0] === 'font-sans' ? 'Pretendard' : set.fonts[0] === 'font-serif' ? 'Noto Serif KR' : set.fonts[0] === 'font-mono' ? '나눔바른고딕' : set.fonts[0]} / 
+                        영문: {set.fonts[1] === 'font-sans' ? 'Inter' : set.fonts[1] === 'font-serif' ? 'Playfair Display' : set.fonts[1] === 'font-mono' ? 'Roboto Mono' : set.fonts[1]}
+                      </span>
+                    </div>
+                    {set.id !== 'default' && (
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setFontSets(prev => prev.filter(s => s.id !== set.id))
+                          toast.success('폰트 조합이 삭제되었습니다. 저장 버튼을 눌러야 반영됩니다.')
+                        }}
+                      >
+                        삭제
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="새 폰트 조합 이름 (예: 모던 고딕)" 
+                  value={newFontSetName} 
+                  onChange={e => setNewFontSetName(e.target.value)} 
+                />
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  className="whitespace-nowrap"
+                  onClick={() => {
+                    if (!newFontSetName.trim()) return toast.error('이름을 입력해주세요.')
+                    const newId = `font_${Date.now()}`
+                    const newSet = {
+                      id: newId,
+                      name: newFontSetName.trim(),
+                      fonts: [theme.fontKr, theme.fontEn]
+                    }
+                    setFontSets(prev => [...prev, newSet])
+                    setNewFontSetName('')
+                    toast.success('현재 선택된 폰트 조합이 추가되었습니다. 저장 버튼을 눌러야 최종 반영됩니다.')
+                  }}
+                >
+                  현재 폰트 등록
+                </Button>
+              </div>
+            </div>
           </section>
 
           <Separator />
@@ -428,6 +554,72 @@ export default function ThemeEditorPage() {
                   </div>
                   <Input className="flex-1 uppercase font-mono" value={theme.secondaryTextColor} onChange={e => setTheme({...theme, secondaryTextColor: e.target.value})} />
                 </div>
+              </div>
+            </div>
+
+            {/* Color Set Manager */}
+            <div className="mt-4 p-4 border rounded-lg bg-muted/20 space-y-4">
+              <h4 className="text-sm font-medium">등록된 컬러 조합 (Color Sets)</h4>
+              <div className="space-y-2">
+                {colorSets.map(set => (
+                  <div key={set.id} className="flex items-center justify-between p-2.5 bg-background border rounded-md text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-1.5">
+                        {set.colors.map((c, i) => (
+                          <div 
+                            key={i} 
+                            className="w-5 h-5 rounded-full border border-background shadow-sm" 
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{set.name}</span>
+                        {set.id === 'default' && <Badge variant="outline" className="text-[10px] py-0 px-1">기본</Badge>}
+                      </div>
+                    </div>
+                    {set.id !== 'default' && (
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setColorSets(prev => prev.filter(s => s.id !== set.id))
+                          toast.success('컬러 조합이 삭제되었습니다. 저장 버튼을 눌러야 반영됩니다.')
+                        }}
+                      >
+                        삭제
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="새 컬러 조합 이름 (예: 러블리 핑크)" 
+                  value={newColorSetName} 
+                  onChange={e => setNewColorSetName(e.target.value)} 
+                />
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  className="whitespace-nowrap"
+                  onClick={() => {
+                    if (!newColorSetName.trim()) return toast.error('이름을 입력해주세요.')
+                    const newId = `color_${Date.now()}`
+                    const newSet = {
+                      id: newId,
+                      name: newColorSetName.trim(),
+                      colors: [theme.backgroundColor, theme.primaryColor, theme.textColor]
+                    }
+                    setColorSets(prev => [...prev, newSet])
+                    setNewColorSetName('')
+                    toast.success('현재 선택된 색상이 컬러 조합으로 추가되었습니다. 저장 버튼을 눌러야 최종 반영됩니다.')
+                  }}
+                >
+                  현재 컬러 등록
+                </Button>
               </div>
             </div>
           </section>
@@ -650,24 +842,32 @@ export default function ThemeEditorPage() {
 
           {/* Dynamic Style injection for custom fonts */}
           <style dangerouslySetInnerHTML={{
-            __html: customFonts.map(font => {
-              if (font.type === 'embed') {
-                return font.embedCode || '';
-              } else if (font.type === 'file' && font.fileUrl) {
-                return `
+            __html: (() => {
+              const defaultGoogleFonts = `@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&family=Cinzel:wght@400..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@200..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&display=swap');`;
+              const imports = customFonts
+                .filter(f => f.type === 'embed')
+                .map(f => (f.embedCode || '').replace(/<\/?style>/gi, ''))
+                .join('\n');
+              const directImports = customFonts
+                .filter(f => f.url)
+                .map(f => `@import url('${f.url}');`)
+                .join('\n');
+              const fontFaces = customFonts
+                .filter(f => f.type === 'file' && f.fileUrl)
+                .map(f => `
                   @font-face {
-                    font-family: '${font.family}';
-                    src: url('${font.fileUrl}') format('truetype');
+                    font-family: '${f.family}';
+                    src: url('/api/fonts?url=${encodeURIComponent(f.fileUrl)}') format('truetype');
                     font-display: swap;
                   }
-                `;
-              }
-              return '';
-            }).join('\n')
+                `)
+                .join('\n');
+              return `${defaultGoogleFonts}\n${imports}\n${directImports}\n${fontFaces}`;
+            })()
           }} />
 
           {/* Preview Content */}
-          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: theme.textColor }}>
+          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: legibleTextColor, fontFamily: getFontFamily(theme.fontKr, theme.fontEn) }}>
             {theme.sectionOrder.map((sectionId, idx) => {
               // Layout-specific styling rules
               const isMinimal = theme.layout === 'minimal'
@@ -695,7 +895,7 @@ export default function ThemeEditorPage() {
                   return <div className="mx-auto my-6 h-px w-24 bg-current opacity-20" />
                 }
                 if (theme.dividerType === 'heart') {
-                  return <div className="text-center opacity-40 my-6 text-[10px]" style={{ color: theme.primaryColor }}>♥</div>
+                  return <div className="text-center opacity-40 my-6 text-[10px]" style={{ color: legiblePrimaryColor }}>♥</div>
                 }
                 if (theme.dividerType === 'space') {
                   return <div className="my-6 h-4" />
@@ -735,7 +935,7 @@ export default function ThemeEditorPage() {
                                 <p className="text-[8px] opacity-75">신랑 혼주 정보</p>
                                 <h1 className="text-xl font-light">홍길동</h1>
                               </div>
-                              <div className="text-md" style={{ color: theme.primaryColor }}>&amp;</div>
+                              <div className="text-md" style={{ color: legiblePrimaryColor }}>&amp;</div>
                               <div className="space-y-0.5">
                                 <p className="text-[8px] opacity-75">신부 혼주 정보</p>
                                 <h1 className="text-xl font-light">김영희</h1>
@@ -749,7 +949,7 @@ export default function ThemeEditorPage() {
                     return (
                       <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                         {renderDivider()}
-                        <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: theme.primaryColor }} />
+                        <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: legiblePrimaryColor }} />
                         <p className="leading-relaxed text-[10px] opacity-80">
                           서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
                         </p>
@@ -775,7 +975,7 @@ export default function ThemeEditorPage() {
                         <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
                           <CardContent className="p-3">
                             <div className="text-center mb-2">
-                              <p className="text-sm font-medium" style={{ color: theme.primaryColor }}>{calMonth}</p>
+                              <p className="text-sm font-medium" style={{ color: legiblePrimaryColor }}>{calMonth}</p>
                               <p className="text-[9px] opacity-40">{calYear}</p>
                             </div>
                             <div className="grid grid-cols-7 gap-0.5 text-center text-[8px]">
@@ -788,7 +988,7 @@ export default function ThemeEditorPage() {
                                   <div
                                     key={i}
                                     className="py-0.5 text-[8px] flex items-center justify-center w-5 h-5 mx-auto rounded-full"
-                                    style={day === calDay ? { backgroundColor: theme.primaryColor, color: '#fff', fontWeight: 'bold' } : { color: theme.secondaryTextColor }}
+                                    style={day === calDay ? { backgroundColor: legiblePrimaryColor, color: '#fff', fontWeight: 'bold' } : { color: legibleSecondaryTextColor }}
                                   >
                                     {day}
                                   </div>
@@ -808,7 +1008,7 @@ export default function ThemeEditorPage() {
                           <CardContent className="p-3 text-left space-y-2">
                             <div>
                               <h3 className="font-semibold text-[10px]">예식장명</h3>
-                              <p className="text-[8px]" style={{ color: theme.secondaryTextColor }}>서울특별시 용산구 소월로 322</p>
+                              <p className="text-[8px]" style={{ color: legibleSecondaryTextColor }}>서울특별시 용산구 소월로 322</p>
                             </div>
                             <div className="flex gap-1">
                               <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
@@ -830,7 +1030,7 @@ export default function ThemeEditorPage() {
                         <div className="grid grid-cols-2 gap-2">
                           <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
                             <CardContent className="p-2 text-center">
-                              <p className="text-[9px] mb-0.5" style={{ color: theme.secondaryTextColor }}>신랑</p>
+                              <p className="text-[9px] mb-0.5" style={{ color: legibleSecondaryTextColor }}>신랑</p>
                               <p className="font-semibold text-[10px] mb-1.5 truncate">홍길동</p>
                               <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
                                 전화
@@ -839,7 +1039,7 @@ export default function ThemeEditorPage() {
                           </Card>
                           <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
                             <CardContent className="p-2 text-center">
-                              <p className="text-[9px] mb-0.5" style={{ color: theme.secondaryTextColor }}>신부</p>
+                              <p className="text-[9px] mb-0.5" style={{ color: legibleSecondaryTextColor }}>신부</p>
                               <p className="font-semibold text-[10px] mb-1.5 truncate">김영희</p>
                               <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
                                 전화
@@ -859,7 +1059,7 @@ export default function ThemeEditorPage() {
                           <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
                             <CardContent className="p-2.5 flex items-center justify-between text-left">
                               <div>
-                                <p className="text-[9px]" style={{ color: theme.secondaryTextColor }}>신랑측</p>
+                                <p className="text-[9px]" style={{ color: legibleSecondaryTextColor }}>신랑측</p>
                                 <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
                               </div>
                               <Button variant="outline" size="sm" className="h-6 w-6 p-0" style={borderStyle}>
@@ -876,7 +1076,7 @@ export default function ThemeEditorPage() {
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">RSVP</h2>
                         <p className="text-center text-[9px] opacity-40 mb-4">참석 여부를 알려주세요</p>
-                        <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: theme.primaryColor, ...borderStyle }}>
+                        <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: legiblePrimaryColor, ...borderStyle }}>
                           참석 의사 전달하기
                         </Button>
                       </section>
