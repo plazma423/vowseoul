@@ -54,12 +54,14 @@ export function Header() {
           >
             FAQ
           </Link>
-          <Link 
-            href="/store" 
+          <a 
+            href="https://mkt.shopping.naver.com/link/6a20207aa4d80c5688e963db" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             스토어
-          </Link>
+          </a>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -107,7 +109,13 @@ export function Header() {
                 <Link href="/faq">FAQ</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/store">스토어</Link>
+                <a 
+                  href="https://mkt.shopping.naver.com/link/6a20207aa4d80c5688e963db" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  스토어
+                </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

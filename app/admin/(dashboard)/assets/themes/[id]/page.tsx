@@ -10,12 +10,13 @@ import { Separator } from '@/components/ui/separator'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { ChevronLeft, Save, Upload, Loader2, Link as LinkIcon, Music, Heart, Copy, Phone, Calendar as CalendarIcon, Share2 } from 'lucide-react'
+import { ChevronLeft, Save, Upload, Loader2, Link as LinkIcon, Music, Heart, Copy, Phone, Calendar as CalendarIcon, Share2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage'
 import { sampleThemes } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function ThemeEditorPage() {
   const params = useParams()
@@ -42,6 +43,7 @@ export default function ThemeEditorPage() {
     backgroundColor: '#FFF8F0',
     textColor: '#3A3A3A',
     secondaryColor: '#D3D3D3',
+    secondaryTextColor: '#8A8A8A',
     // Custom controls
     borderRadius: '8', // px
     sectionSpacing: 'py-12',
@@ -66,6 +68,8 @@ export default function ThemeEditorPage() {
   }
 
   const [customFonts, setCustomFonts] = useState<any[]>([])
+  const [activeEditSection, setActiveEditSection] = useState<string | null>(null)
+  const [isSectionStyleDialogOpen, setIsSectionStyleDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchBgms()
@@ -114,6 +118,7 @@ export default function ThemeEditorPage() {
         backgroundColor: data.styles?.backgroundColor || '#FFF8F0',
         textColor: data.styles?.textColor || '#3A3A3A',
         secondaryColor: data.styles?.secondaryColor || '#D3D3D3',
+        secondaryTextColor: data.styles?.secondaryTextColor || '#8A8A8A',
         // Custom style values
         borderRadius: data.styles?.borderRadius?.replace('px', '') || '8',
         sectionSpacing: data.styles?.sectionSpacing || 'py-12',
@@ -140,6 +145,7 @@ export default function ThemeEditorPage() {
           backgroundColor: sample.colorSets[0]?.colors[0] || '#FFF8F0',
           textColor: sample.colorSets[0]?.colors[2] || '#3A3A3A',
           secondaryColor: '#D3D3D3',
+          secondaryTextColor: '#8A8A8A',
           // Custom style values defaults
           borderRadius: '8',
           sectionSpacing: 'py-12',
@@ -175,6 +181,7 @@ export default function ThemeEditorPage() {
         backgroundColor: theme.backgroundColor,
         textColor: theme.textColor,
         secondaryColor: theme.secondaryColor,
+        secondaryTextColor: theme.secondaryTextColor,
         // Save customized values
         borderRadius: `${theme.borderRadius}px`,
         sectionSpacing: theme.sectionSpacing,
@@ -411,6 +418,15 @@ export default function ThemeEditorPage() {
                     <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.secondaryColor} onChange={e => setTheme({...theme, secondaryColor: e.target.value})} />
                   </div>
                   <Input className="flex-1 uppercase font-mono" value={theme.secondaryColor} onChange={e => setTheme({...theme, secondaryColor: e.target.value})} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>보조 텍스트 색상 (Secondary Text)</Label>
+                <div className="flex gap-2">
+                  <div className="h-10 w-10 rounded border" style={{ backgroundColor: theme.secondaryTextColor }}>
+                    <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.secondaryTextColor} onChange={e => setTheme({...theme, secondaryTextColor: e.target.value})} />
+                  </div>
+                  <Input className="flex-1 uppercase font-mono" value={theme.secondaryTextColor} onChange={e => setTheme({...theme, secondaryTextColor: e.target.value})} />
                 </div>
               </div>
             </div>
@@ -687,206 +703,454 @@ export default function ThemeEditorPage() {
                 return null
               }
 
-              switch (sectionId) {
-                case 'hero':
-                  return (
-                    <div key="hero" className="relative h-[320px] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
-                      {theme.thumbnail && (
-                        <div className="absolute inset-0 z-0">
-                          <img src={theme.thumbnail} alt="Main Visual" className="w-full h-full object-cover opacity-20" />
-                          <div className="absolute inset-0 bg-gradient-to-t" style={{ backgroundImage: `linear-gradient(to top, ${theme.backgroundColor}, transparent, ${theme.backgroundColor}80)` }} />
-                        </div>
-                      )}
-                      <div className="space-y-4 z-10 w-full max-w-[200px] mx-auto">
-                        <p className="text-[10px] tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
-                        
-                        {theme.heroStyle === 'left' ? (
-                          <div className="space-y-2 text-left w-full">
-                            <div>
-                              {theme.name && <p className="text-[8px] opacity-75 font-serif">{theme.name}</p>}
-                              <h1 className="text-xl font-serif font-light">홍길동</h1>
-                            </div>
-                            <div className="text-xs font-serif opacity-50">&amp;</div>
-                            <div>
-                              {theme.name && <p className="text-[8px] opacity-75 font-serif">{theme.name}</p>}
-                              <h1 className="text-xl font-serif font-light">김영희</h1>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="space-y-0.5">
-                              <p className="text-[8px] opacity-75 font-serif">신랑 혼주 정보</p>
-                              <h1 className="text-xl font-serif font-light">홍길동</h1>
-                            </div>
-                            <div className="text-md font-serif" style={{ color: theme.primaryColor }}>&amp;</div>
-                            <div className="space-y-0.5">
-                              <p className="text-[8px] opacity-75 font-serif">신부 혼주 정보</p>
-                              <h1 className="text-xl font-serif font-light">김영희</h1>
-                            </div>
+              const sectionContent = (() => {
+                switch (sectionId) {
+                  case 'hero':
+                    return (
+                      <div key="hero" className="relative h-[320px] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+                        {theme.thumbnail && (
+                          <div className="absolute inset-0 z-0">
+                            <img src={theme.thumbnail} alt="Main Visual" className="w-full h-full object-cover opacity-20" />
+                            <div className="absolute inset-0 bg-gradient-to-t" style={{ backgroundImage: `linear-gradient(to top, ${theme.backgroundColor}, transparent, ${theme.backgroundColor}80)` }} />
                           </div>
                         )}
-                      </div>
-                    </div>
-                  )
-                case 'greeting':
-                  return (
-                    <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: theme.primaryColor }} />
-                      <p className="leading-relaxed text-[10px] opacity-80">
-                        서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
-                      </p>
-                    </section>
-                  )
-                case 'gallery':
-                  return (
-                    <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GALLERY</h2>
-                      <div className={cn("grid gap-1.5", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
-                        <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
-                        <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
-                        {isTwoColumn && <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />}
-                      </div>
-                    </section>
-                  )
-                case 'calendar':
-                  return (
-                    <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CALENDAR</h2>
-                      <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
-                        <CardContent className="p-3">
-                          <div className="text-center mb-2">
-                            <p className="text-sm font-serif font-medium" style={{ color: theme.primaryColor }}>{calMonth}</p>
-                            <p className="text-[9px] opacity-40">{calYear}</p>
-                          </div>
-                          <div className="grid grid-cols-7 gap-0.5 text-center text-[8px]">
-                            {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-                              <div key={day} className="py-0.5 opacity-55 font-semibold">{day}</div>
-                            ))}
-                            {calDays.map((day, i) => {
-                              if (day === null) return <div key={`empty-${i}`} />
-                              return (
-                                <div
-                                  key={i}
-                                  className="py-0.5 text-[8px] flex items-center justify-center w-5 h-5 mx-auto rounded-full"
-                                  style={day === calDay ? { backgroundColor: theme.primaryColor, color: '#fff', fontWeight: 'bold' } : undefined}
-                                >
-                                  {day}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </section>
-                  )
-                case 'location':
-                  return (
-                    <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">LOCATION</h2>
-                      <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                        <CardContent className="p-3 text-left space-y-2">
-                          <div>
-                            <h3 className="font-semibold text-[10px]">예식장명</h3>
-                            <p className="text-[8px] opacity-60">서울특별시 용산구 소월로 322</p>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
-                              네이버지도
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
-                              카카오맵
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </section>
-                  )
-                case 'contact':
-                  return (
-                    <section key="contact" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CONTACT</h2>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                          <CardContent className="p-2 text-center">
-                            <p className="text-[9px] opacity-60 mb-0.5">신랑</p>
-                            <p className="font-semibold text-[10px] mb-1.5 truncate">홍길동</p>
-                            <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
-                              전화
-                            </Button>
-                          </CardContent>
-                        </Card>
-                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                          <CardContent className="p-2 text-center">
-                            <p className="text-[9px] opacity-60 mb-0.5">신부</p>
-                            <p className="font-semibold text-[10px] mb-1.5 truncate">김영희</p>
-                            <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
-                              전화
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </section>
-                  )
-                case 'account':
-                  return (
-                    <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">ACCOUNT</h2>
-                      <p className="text-center text-[9px] opacity-40 mb-4">마음 전하실 곳</p>
-                      <div className={cn("space-y-2", isTwoColumn && "grid grid-cols-2 gap-2 space-y-0")}>
-                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                          <CardContent className="p-2.5 flex items-center justify-between text-left">
-                            <div>
-                              <p className="text-[9px] opacity-50">신랑측</p>
-                              <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
+                        <div className="space-y-4 z-10 w-full max-w-[200px] mx-auto">
+                          <p className="text-[10px] tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
+                          
+                          {theme.heroStyle === 'left' ? (
+                            <div className="space-y-2 text-left w-full">
+                              <div>
+                                {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
+                                <h1 className="text-xl font-light">홍길동</h1>
+                              </div>
+                              <div className="text-xs opacity-50">&amp;</div>
+                              <div>
+                                {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
+                                <h1 className="text-xl font-light">김영희</h1>
+                              </div>
                             </div>
-                            <Button variant="outline" size="sm" className="h-6 w-6 p-0" style={borderStyle}>
-                              <Copy className="w-3 h-3" />
-                            </Button>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="space-y-0.5">
+                                <p className="text-[8px] opacity-75">신랑 혼주 정보</p>
+                                <h1 className="text-xl font-light">홍길동</h1>
+                              </div>
+                              <div className="text-md" style={{ color: theme.primaryColor }}>&amp;</div>
+                              <div className="space-y-0.5">
+                                <p className="text-[8px] opacity-75">신부 혼주 정보</p>
+                                <h1 className="text-xl font-light">김영희</h1>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  case 'greeting':
+                    return (
+                      <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: theme.primaryColor }} />
+                        <p className="leading-relaxed text-[10px] opacity-80">
+                          서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
+                        </p>
+                      </section>
+                    )
+                  case 'gallery':
+                    return (
+                      <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GALLERY</h2>
+                        <div className={cn("grid gap-1.5", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
+                          <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
+                          <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
+                          {isTwoColumn && <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />}
+                        </div>
+                      </section>
+                    )
+                  case 'calendar':
+                    return (
+                      <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CALENDAR</h2>
+                        <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
+                          <CardContent className="p-3">
+                            <div className="text-center mb-2">
+                              <p className="text-sm font-medium" style={{ color: theme.primaryColor }}>{calMonth}</p>
+                              <p className="text-[9px] opacity-40">{calYear}</p>
+                            </div>
+                            <div className="grid grid-cols-7 gap-0.5 text-center text-[8px]">
+                              {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                                <div key={day} className="py-0.5 opacity-55 font-semibold">{day}</div>
+                              ))}
+                              {calDays.map((day, i) => {
+                                if (day === null) return <div key={`empty-${i}`} />
+                                return (
+                                  <div
+                                    key={i}
+                                    className="py-0.5 text-[8px] flex items-center justify-center w-5 h-5 mx-auto rounded-full"
+                                    style={day === calDay ? { backgroundColor: theme.primaryColor, color: '#fff', fontWeight: 'bold' } : { color: theme.secondaryTextColor }}
+                                  >
+                                    {day}
+                                  </div>
+                                )
+                              })}
+                            </div>
                           </CardContent>
                         </Card>
-                      </div>
-                    </section>
-                  )
-                case 'rsvp':
-                  return (
-                    <section key="rsvp" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">RSVP</h2>
-                      <p className="text-center text-[9px] opacity-40 mb-4">참석 여부를 알려주세요</p>
-                      <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: theme.primaryColor, ...borderStyle }}>
-                        참석 의사 전달하기
-                      </Button>
-                    </section>
-                  )
-                case 'guestbook':
-                  return (
-                    <section key="guestbook" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
-                      {renderDivider()}
-                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GUESTBOOK</h2>
-                      <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                        <CardContent className="p-2.5 text-left">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-[9px]">하객 성함</span>
-                            <span className="text-[8px] opacity-40">2026.06.03</span>
-                          </div>
-                          <p className="text-[9px] opacity-70">결혼을 진심으로 축하드립니다!</p>
-                        </CardContent>
-                      </Card>
-                    </section>
-                  )
-                default:
-                  return null
-              }
+                      </section>
+                    )
+                  case 'location':
+                    return (
+                      <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">LOCATION</h2>
+                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <CardContent className="p-3 text-left space-y-2">
+                            <div>
+                              <h3 className="font-semibold text-[10px]">예식장명</h3>
+                              <p className="text-[8px]" style={{ color: theme.secondaryTextColor }}>서울특별시 용산구 소월로 322</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                                네이버지도
+                              </Button>
+                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                                카카오맵
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </section>
+                    )
+                  case 'contact':
+                    return (
+                      <section key="contact" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CONTACT</h2>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                            <CardContent className="p-2 text-center">
+                              <p className="text-[9px] mb-0.5" style={{ color: theme.secondaryTextColor }}>신랑</p>
+                              <p className="font-semibold text-[10px] mb-1.5 truncate">홍길동</p>
+                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                                전화
+                              </Button>
+                            </CardContent>
+                          </Card>
+                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                            <CardContent className="p-2 text-center">
+                              <p className="text-[9px] mb-0.5" style={{ color: theme.secondaryTextColor }}>신부</p>
+                              <p className="font-semibold text-[10px] mb-1.5 truncate">김영희</p>
+                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                                전화
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </section>
+                    )
+                  case 'account':
+                    return (
+                      <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">ACCOUNT</h2>
+                        <p className="text-center text-[9px] opacity-40 mb-4">마음 전하실 곳</p>
+                        <div className={cn("space-y-2", isTwoColumn && "grid grid-cols-2 gap-2 space-y-0")}>
+                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                            <CardContent className="p-2.5 flex items-center justify-between text-left">
+                              <div>
+                                <p className="text-[9px]" style={{ color: theme.secondaryTextColor }}>신랑측</p>
+                                <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
+                              </div>
+                              <Button variant="outline" size="sm" className="h-6 w-6 p-0" style={borderStyle}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </section>
+                    )
+                  case 'rsvp':
+                    return (
+                      <section key="rsvp" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">RSVP</h2>
+                        <p className="text-center text-[9px] opacity-40 mb-4">참석 여부를 알려주세요</p>
+                        <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: theme.primaryColor, ...borderStyle }}>
+                          참석 의사 전달하기
+                        </Button>
+                      </section>
+                    )
+                  case 'guestbook':
+                    return (
+                      <section key="guestbook" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GUESTBOOK</h2>
+                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <CardContent className="p-2.5 text-left">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-[9px]">하객 성함</span>
+                              <span className="text-[8px] opacity-40">2026.06.03</span>
+                            </div>
+                            <p className="text-[9px] opacity-70">결혼을 진심으로 축하드립니다!</p>
+                          </CardContent>
+                        </Card>
+                      </section>
+                    )
+                  default:
+                    return null
+                }
+              })()
+
+              if (!sectionContent) return null
+
+              return (
+                <div
+                  key={sectionId}
+                  onClick={() => {
+                    setActiveEditSection(sectionId)
+                    setIsSectionStyleDialogOpen(true)
+                  }}
+                  className={cn(
+                    "relative group cursor-pointer border-2 border-transparent hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 rounded-lg my-1",
+                    activeEditSection === sectionId && "border-primary bg-primary/5"
+                  )}
+                >
+                  <div className="absolute top-1.5 right-1.5 bg-primary text-[8px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none">
+                    {sectionLabels[sectionId] || sectionId} 스타일 수정
+                  </div>
+                  {sectionContent}
+                </div>
+              )
             })}
           </div>
         </div>
       </div>
+
+      {/* Visual Section Style Customizer Dialog */}
+      <Dialog open={isSectionStyleDialogOpen} onOpenChange={setIsSectionStyleDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {activeEditSection ? sectionLabels[activeEditSection] : '섹션'} 스타일 커스텀
+            </DialogTitle>
+            <DialogDescription>
+              이 섹션에 적용할 색상, 크기, 여백, 자간 등을 직접 수정하세요.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Color section */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">색상 설정</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>배경 색상</Label>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded border flex-shrink-0" style={{ backgroundColor: theme.backgroundColor }}>
+                      <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.backgroundColor} onChange={e => setTheme({...theme, backgroundColor: e.target.value})} />
+                    </div>
+                    <Input className="h-8 text-xs uppercase font-mono" value={theme.backgroundColor} onChange={e => setTheme({...theme, backgroundColor: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>포인트 색상</Label>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded border flex-shrink-0" style={{ backgroundColor: theme.primaryColor }}>
+                      <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.primaryColor} onChange={e => setTheme({...theme, primaryColor: e.target.value})} />
+                    </div>
+                    <Input className="h-8 text-xs uppercase font-mono" value={theme.primaryColor} onChange={e => setTheme({...theme, primaryColor: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>텍스트 색상</Label>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded border flex-shrink-0" style={{ backgroundColor: theme.textColor }}>
+                      <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.textColor} onChange={e => setTheme({...theme, textColor: e.target.value})} />
+                    </div>
+                    <Input className="h-8 text-xs uppercase font-mono" value={theme.textColor} onChange={e => setTheme({...theme, textColor: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>보조 색상 (테두리)</Label>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded border flex-shrink-0" style={{ backgroundColor: theme.secondaryColor }}>
+                      <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.secondaryColor} onChange={e => setTheme({...theme, secondaryColor: e.target.value})} />
+                    </div>
+                    <Input className="h-8 text-xs uppercase font-mono" value={theme.secondaryColor} onChange={e => setTheme({...theme, secondaryColor: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>보조 텍스트 색상</Label>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded border flex-shrink-0" style={{ backgroundColor: theme.secondaryTextColor }}>
+                      <input type="color" className="opacity-0 w-full h-full cursor-pointer" value={theme.secondaryTextColor} onChange={e => setTheme({...theme, secondaryTextColor: e.target.value})} />
+                    </div>
+                    <Input className="h-8 text-xs uppercase font-mono" value={theme.secondaryTextColor} onChange={e => setTheme({...theme, secondaryTextColor: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 col-span-2">
+                  <Label>카드 배경 스타일</Label>
+                  <Select value={theme.cardBg} onValueChange={v => setTheme({...theme, cardBg: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bg-white">단색 흰색 (bg-white)</SelectItem>
+                      <SelectItem value="bg-white/40">반투명 흰색 (bg-white/40)</SelectItem>
+                      <SelectItem value="bg-black/5">밝은 그레이 (bg-black/5)</SelectItem>
+                      <SelectItem value="bg-transparent">투명 배경 (bg-transparent)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Typography & Sizes */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">글꼴 및 크기 설정</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>기본 글꼴 크기</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input type="number" className="h-8 text-xs" value={theme.fontSize} onChange={e => setTheme({...theme, fontSize: e.target.value})} />
+                    <span className="text-xs text-muted-foreground">px</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>기본 자간</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input type="number" step="0.01" className="h-8 text-xs" value={theme.letterSpacing} onChange={e => setTheme({...theme, letterSpacing: e.target.value})} />
+                    <span className="text-xs text-muted-foreground">em</span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>한글 폰트</Label>
+                  <Select value={theme.fontKr} onValueChange={v => setTheme({...theme, fontKr: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="font-sans">Pretendard / Noto Sans KR</SelectItem>
+                      <SelectItem value="font-serif">Noto Serif KR / 나눔명조</SelectItem>
+                      <SelectItem value="font-mono">나눔바른고딕</SelectItem>
+                      {customFonts.map(font => (
+                        <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>영문/숫자 폰트</Label>
+                  <Select value={theme.fontEn} onValueChange={v => setTheme({...theme, fontEn: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="font-sans">Inter</SelectItem>
+                      <SelectItem value="font-serif">Playfair Display / Lora</SelectItem>
+                      <SelectItem value="font-mono">Roboto Mono</SelectItem>
+                      {customFonts.map(font => (
+                        <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Layout details */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">세부 디자인 스타일</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>테두리 둥글기</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input type="number" min="0" max="30" className="h-8 text-xs" value={theme.borderRadius} onChange={e => setTheme({...theme, borderRadius: e.target.value})} />
+                    <span className="text-xs text-muted-foreground">px</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>섹션 위아래 여백</Label>
+                  <Select value={theme.sectionSpacing} onValueChange={v => setTheme({...theme, sectionSpacing: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="py-8">좁게 (py-8)</SelectItem>
+                      <SelectItem value="py-12">보통 (py-12)</SelectItem>
+                      <SelectItem value="py-16">넓게 (py-16)</SelectItem>
+                      <SelectItem value="py-20">매우 넓게 (py-20)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>카드 그림자</Label>
+                  <Select value={theme.cardShadow} onValueChange={v => setTheme({...theme, cardShadow: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="shadow-none">그림자 없음 (shadow-none)</SelectItem>
+                      <SelectItem value="shadow-sm">약한 그림자 (shadow-sm)</SelectItem>
+                      <SelectItem value="shadow-md">보통 그림자 (shadow-md)</SelectItem>
+                      <SelectItem value="shadow-lg">강한 그림자 (shadow-lg)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>섹션 구분선 기호</Label>
+                  <Select value={theme.dividerType} onValueChange={v => setTheme({...theme, dividerType: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">없음 (공백으로 구분)</SelectItem>
+                      <SelectItem value="line">얇은 직선</SelectItem>
+                      <SelectItem value="heart">하트 기호 (♥)</SelectItem>
+                      <SelectItem value="space">약간의 간격</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Conditional section-specific settings */}
+              {activeEditSection === 'hero' && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>대문(Hero) 레이아웃 스타일</Label>
+                    <Select value={theme.heroStyle} onValueChange={v => setTheme({...theme, heroStyle: v})}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="center">중앙 정렬 (Center)</SelectItem>
+                        <SelectItem value="left">왼쪽 정렬 (Left)</SelectItem>
+                        <SelectItem value="classic">클래식 스타일</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5 col-span-2">
+                  <Label>전체 레이아웃</Label>
+                  <Select value={theme.layout} onValueChange={v => setTheme({...theme, layout: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single-column">1단 레이아웃 (세로형)</SelectItem>
+                      <SelectItem value="two-column">2단 레이아웃 (혼합형)</SelectItem>
+                      <SelectItem value="grid">그리드 레이아웃 (포토 위주)</SelectItem>
+                      <SelectItem value="minimal">미니멀 (여백 위주)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <Button className="w-full" onClick={() => setIsSectionStyleDialogOpen(false)}>
+            설정 적용 완료
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

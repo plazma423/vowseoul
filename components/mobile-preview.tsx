@@ -46,6 +46,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const bgColor = colorSet?.colors[0] || '#faf9f7'
   const accentColor = colorSet?.colors[1] || '#c4a574'
   const textColor = colorSet?.colors[2] || '#3d3d3d'
+  const secondaryTextColor = theme?.styles?.secondaryTextColor || '#8a8a8a'
   const fontClass = fontSet?.id === 'serif' ? 'font-serif' : 'font-sans'
 
   // Styles with fallbacks
@@ -184,25 +185,25 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div className="space-y-4 text-left px-4 w-full">
                             <div className="space-y-1">
                               {currentInvitation?.groomParentRelation && (
-                                <p className="text-[10px] opacity-75 font-serif">{currentInvitation.groomParentRelation}</p>
+                                <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-serif font-light tracking-wide">
+                              <h1 className="text-2xl font-light tracking-wide">
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
-                            <div className="text-lg font-serif opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
+                            <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
-                                <p className="text-[10px] opacity-75 font-serif">{currentInvitation.brideParentRelation}</p>
+                                <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-serif font-light tracking-wide">
+                              <h1 className="text-2xl font-light tracking-wide">
                                 {currentInvitation?.brideName || '신부'}
                               </h1>
                             </div>
                           </div>
                         ) : heroStyle === 'classic' ? (
                           <div className="space-y-4 text-center w-full">
-                            <h1 className="text-3xl font-serif font-light tracking-widest uppercase">
+                            <h1 className="text-3xl font-light tracking-widest uppercase">
                               {currentInvitation?.groomNameEn || 'GROOM'}
                               <span className="block text-sm opacity-55 my-1" style={{ color: accentColor }}>&amp;</span>
                               {currentInvitation?.brideNameEn || 'BRIDE'}
@@ -217,18 +218,18 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div className="space-y-4">
                             <div className="space-y-1">
                               {currentInvitation?.groomParentRelation && (
-                                <p className="text-[10px] opacity-75 font-serif">{currentInvitation.groomParentRelation}</p>
+                                <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-serif font-light tracking-wide">
+                              <h1 className="text-2xl font-light tracking-wide">
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
-                            <div className="text-lg font-serif opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
+                            <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
-                                <p className="text-[10px] opacity-75 font-serif">{currentInvitation.brideParentRelation}</p>
+                                <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-serif font-light tracking-wide">
+                              <h1 className="text-2xl font-light tracking-wide">
                                 {currentInvitation?.brideName || '신부'}
                               </h1>
                             </div>
@@ -286,8 +287,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">CALENDAR</h2>
                       <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
                         <CardContent className="p-4">
-                          <div className="text-center mb-3">
-                            <p className="text-xl font-serif font-medium" style={{ color: accentColor }}>{calMonth}</p>
+                          <div className="text-center mb-2">
+                            <p className="text-sm font-medium" style={{ color: accentColor }}>{calMonth}</p>
                             <p className="text-[10px] opacity-40">{calYear}</p>
                           </div>
                           <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
@@ -303,7 +304,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                     "py-1 text-[10px] flex items-center justify-center w-6 h-6 mx-auto rounded-full",
                                     day === calDay && "text-white font-bold"
                                   )}
-                                  style={day === calDay ? { backgroundColor: accentColor } : undefined}
+                                  style={day === calDay ? { backgroundColor: accentColor } : { color: secondaryTextColor }}
                                 >
                                   {day}
                                 </div>
@@ -330,8 +331,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <CardContent className="p-4 text-left space-y-3">
                           <div>
                             <h3 className="font-semibold text-xs">{currentInvitation?.venueName || '예식장명'}</h3>
-                            {currentInvitation?.venueHall && <p className="text-[10px] font-serif" style={{ color: accentColor }}>{currentInvitation.venueHall}</p>}
-                            <p className="text-[10px] opacity-60 mt-0.5">{currentInvitation?.venueAddress || '주소를 입력해주세요.'}</p>
+                            {currentInvitation?.venueHall && <p className="text-[10px]" style={{ color: accentColor }}>{currentInvitation.venueHall}</p>}
+                            <p className="text-[10px] mt-0.5" style={{ color: secondaryTextColor }}>{currentInvitation?.venueAddress || '주소를 입력해주세요.'}</p>
                           </div>
 
                           {/* Traffic Info & Parking Info */}
@@ -340,13 +341,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               {currentInvitation.trafficInfo && (
                                 <div>
                                   <p className="font-semibold">교통 안내</p>
-                                  <p className="opacity-60 whitespace-pre-line mt-0.5 leading-relaxed">{currentInvitation.trafficInfo}</p>
+                                  <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.trafficInfo}</p>
                                 </div>
                               )}
                               {currentInvitation.parkingInfo && (
                                 <div>
                                   <p className="font-semibold">주차 안내</p>
-                                  <p className="opacity-60 whitespace-pre-line mt-0.5 leading-relaxed">{currentInvitation.parkingInfo}</p>
+                                  <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.parkingInfo}</p>
                                 </div>
                               )}
                             </div>
@@ -377,7 +378,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         {currentInvitation.contacts.map((contact: any) => (
                           <Card key={contact.id} className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
                             <CardContent className="p-3 text-center">
-                              <p className="text-[10px] opacity-60 mb-0.5">
+                              <p className="text-[10px] mb-0.5" style={{ color: secondaryTextColor }}>
                                 {contact.relation === 'groom' ? '신랑' :
                                  contact.relation === 'bride' ? '신부' :
                                  contact.relation === 'groomParent' ? '신랑 혼주' :
@@ -409,14 +410,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             <CardContent className="p-3 text-left">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-[10px] opacity-50">
+                                  <p className="text-[10px]" style={{ color: secondaryTextColor }}>
                                     {account.relation === 'groom' && '신랑'}
                                     {account.relation === 'bride' && '신부'}
                                     {account.relation === 'groomParent' && '신랑 혼주'}
                                     {account.relation === 'brideParent' && '신부 혼주'}
                                   </p>
                                   <p className="font-semibold text-xs mt-0.5">{account.bank} {account.accountNumber}</p>
-                                  <p className="text-[10px] opacity-60 mt-0.5">예금주: {account.accountHolder}</p>
+                                  <p className="text-[10px] mt-0.5" style={{ color: secondaryTextColor }}>예금주: {account.accountHolder}</p>
                                 </div>
                                 <Button variant="outline" size="sm" className="h-7 w-7 p-0" style={borderStyle}>
                                   <Copy className="w-3 h-3" />

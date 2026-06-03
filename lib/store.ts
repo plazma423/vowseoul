@@ -67,6 +67,7 @@ export interface Theme {
     backgroundColor?: string
     textColor?: string
     secondaryColor?: string
+    secondaryTextColor?: string
     borderRadius?: string
     sectionSpacing?: string
     cardBg?: string
@@ -108,6 +109,14 @@ export interface FAQ {
   createdAt: string
 }
 
+export interface Notice {
+  id: string
+  title: string
+  content: string
+  category: string
+  createdAt: string
+}
+
 interface AppState {
   // Data fetching
   fetchData: () => Promise<void>
@@ -143,6 +152,13 @@ interface AppState {
   addFaq: (faq: FAQ) => Promise<void>
   updateFaq: (id: string, faq: Partial<FAQ>) => Promise<void>
   deleteFaq: (id: string) => Promise<void>
+
+  // Notice state
+  notices: Notice[]
+  setNotices: (notices: Notice[]) => void
+  addNotice: (notice: Notice) => Promise<void>
+  updateNotice: (id: string, notice: Partial<Notice>) => Promise<void>
+  deleteNotice: (id: string) => Promise<void>
   
   // UI state
   editorStep: number
@@ -173,13 +189,37 @@ export const useAppStore = create<AppState>((set) => ({
         supabase.from('orders').select('*'),
         supabase.from('invitations').select('*')
       ])
-      
+
+      let noticesList = []
+      try {
+        const { data: noticesData } = await supabase.from('notices').select('*')
+        if (noticesData && noticesData.length > 0) {
+          noticesList = noticesData
+        } else {
+          const localNotices = typeof window !== 'undefined' ? localStorage.getItem('vow_seoul_local_notices') : null
+          if (localNotices) {
+            noticesList = JSON.parse(localNotices)
+          } else {
+            noticesList = sampleNotices
+          }
+        }
+      } catch (err) {
+        console.warn('Querying notices table failed, checking localStorage:', err)
+        const localNotices = typeof window !== 'undefined' ? localStorage.getItem('vow_seoul_local_notices') : null
+        if (localNotices) {
+          noticesList = JSON.parse(localNotices)
+        } else {
+          noticesList = sampleNotices
+        }
+      }
+
       set({
         faqs: faqs || [],
         themes: themes || [],
         bgmList: bgms || [],
         orders: orders || [],
-        invitations: invitations || []
+        invitations: invitations || [],
+        notices: noticesList
       })
     } catch (e) {
       console.error('Error fetching data from Supabase:', e)
@@ -288,6 +328,8 @@ export const useAppStore = create<AppState>((set) => ({
   
   faqs: [],
   setFaqs: (faqs) => set({ faqs }),
+  notices: [],
+  setNotices: (notices) => set({ notices }),
   addFaq: async (faq) => {
     await supabase.from('faqs').insert(faq)
     set((state) => ({ faqs: [...state.faqs, faq] }))
@@ -303,6 +345,48 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       faqs: state.faqs.filter(f => f.id !== id)
     }))
+  },
+  addNotice: async (notice) => {
+    try {
+      await supabase.from('notices').insert(notice)
+    } catch (err) {
+      console.error('Error inserting notice to Supabase:', err)
+    }
+    set((state) => {
+      const updated = [...state.notices, notice]
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vow_seoul_local_notices', JSON.stringify(updated))
+      }
+      return { notices: updated }
+    })
+  },
+  updateNotice: async (id, notice) => {
+    try {
+      await supabase.from('notices').update(notice).eq('id', id)
+    } catch (err) {
+      console.error('Error updating notice in Supabase:', err)
+    }
+    set((state) => {
+      const updated = state.notices.map(n => n.id === id ? { ...n, ...notice } : n)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vow_seoul_local_notices', JSON.stringify(updated))
+      }
+      return { notices: updated }
+    })
+  },
+  deleteNotice: async (id) => {
+    try {
+      await supabase.from('notices').delete().eq('id', id)
+    } catch (err) {
+      console.error('Error deleting notice from Supabase:', err)
+    }
+    set((state) => {
+      const updated = state.notices.filter(n => n.id !== id)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vow_seoul_local_notices', JSON.stringify(updated))
+      }
+      return { notices: updated }
+    })
   },
   
   editorStep: 1,
@@ -331,12 +415,17 @@ export const useAppStore = create<AppState>((set) => ({
 }))
 
 if (typeof window !== 'undefined') {
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     const store = useAppStore.getState()
     if (session?.user) {
       store.setUser(session.user)
       store.setAuth(true, session.user.email === 'admin@vowseoul.com')
-      await store.loadUserInvitations()
+      
+      // Only load user invitations if we are on a page that needs them (mypage, editor, etc.) to prevent Web Locks error on other pages
+      const path = window.location.pathname
+      if (path.startsWith('/mypage') || path.startsWith('/my-invitations') || path.startsWith('/editor')) {
+        store.loadUserInvitations()
+      }
     } else {
       store.setUser(null)
       store.setAuth(false, false)
@@ -493,4 +582,28 @@ export const sampleInvitations: WeddingInvitation[] = [
     createdAt: '2025-01-10',
     publishedUrl: 'https://vow.seoul/inv/abc123',
   },
+]
+
+export const sampleNotices: Notice[] = [
+  {
+    id: 'notice1',
+    title: 'VOW SEOUL 모바일 청첩장 서비스 정식 오픈 안내',
+    content: '안녕하세요. VOW SEOUL입니다.\n가장 소중한 날을 아름답게 장식할 수 있도록 우아하고 프리미엄한 모바일 청첩장 서비스를 시작합니다.\n\n다양한 테마와 실시간 미리보기, 배경음악(BGM) 설정 및 송금 계좌 연동 등 완벽한 기능들을 지금 바로 만나보세요.\n\n앞으로도 더 나은 서비스로 보답하겠습니다.\n감사합니다.',
+    category: '안내',
+    createdAt: '2026-06-01'
+  },
+  {
+    id: 'notice2',
+    title: '축의금 송금 계좌 및 연락처 편집 기능 업데이트 완료',
+    content: '안녕하세요. VOW SEOUL입니다.\n고객님들의 피드백을 반영하여 청첩장 만들기 페이지에서 등록하신 축의금 송금 계좌번호 및 연락처의 "수정" 기능이 추가되었습니다.\n이제 오타 수정 및 세부 사항 변경을 위해 삭제 후 재등록할 필요 없이 즉시 수정하여 편리하게 청첩장을 제작할 수 있습니다.\n\n더 나은 사용성을 위해 계속 노력하겠습니다.',
+    category: '업데이트',
+    createdAt: '2026-06-03'
+  },
+  {
+    id: 'notice3',
+    title: '6월 서비스 안정화 및 정기 점검 안내 (6월 10일)',
+    content: '안녕하세요. VOW SEOUL 개발팀입니다.\n안정적인 서비스 제공을 위해 정기 서버 점검 및 최적화 작업이 진행될 예정입니다.\n\n- 일시: 2026년 6월 10일(수) 오전 02:00 ~ 05:00 (약 3시간)\n- 대상: VOW SEOUL 전체 서비스\n- 내용: 데이터베이스 안정화 작업 및 보안 패치 적용\n\n점검 시간 동안에는 청첩장 작성 및 수정이 일시적으로 제한될 수 있으니 양해 부탁드립니다.',
+    category: '점검',
+    createdAt: '2026-06-02'
+  }
 ]

@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppStore } from '@/lib/store'
-import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { uploadFile } from '@/lib/storage'
 
@@ -37,6 +37,7 @@ export default function ContentPage() {
   
   // Bank Account Dialog State
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null)
   const [newAccount, setNewAccount] = useState({
     bank: '',
     accountNumber: '',
@@ -46,6 +47,7 @@ export default function ContentPage() {
 
   // Contact Dialog State
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false)
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [newContact, setNewContact] = useState({
     name: '',
     phone: '',
@@ -58,13 +60,21 @@ export default function ContentPage() {
       return
     }
     const currentAccounts = currentInvitation?.bankAccounts || []
-    const updatedAccounts = [
-      ...currentAccounts,
-      {
-        id: 'acc-' + Math.random().toString(36).substring(2, 9),
-        ...newAccount
-      }
-    ]
+    let updatedAccounts
+    if (editingAccountId) {
+      updatedAccounts = currentAccounts.map(acc => 
+        acc.id === editingAccountId ? { ...acc, ...newAccount } : acc
+      )
+      setEditingAccountId(null)
+    } else {
+      updatedAccounts = [
+        ...currentAccounts,
+        {
+          id: 'acc-' + Math.random().toString(36).substring(2, 9),
+          ...newAccount
+        }
+      ]
+    }
     updateCurrentInvitation({ bankAccounts: updatedAccounts })
     setIsAccountDialogOpen(false)
     setNewAccount({
@@ -81,13 +91,21 @@ export default function ContentPage() {
       return
     }
     const currentContacts = currentInvitation?.contacts || []
-    const updatedContacts = [
-      ...currentContacts,
-      {
-        id: 'con-' + Math.random().toString(36).substring(2, 9),
-        ...newContact
-      }
-    ]
+    let updatedContacts
+    if (editingContactId) {
+      updatedContacts = currentContacts.map(con => 
+        con.id === editingContactId ? { ...con, ...newContact } : con
+      )
+      setEditingContactId(null)
+    } else {
+      updatedContacts = [
+        ...currentContacts,
+        {
+          id: 'con-' + Math.random().toString(36).substring(2, 9),
+          ...newContact
+        }
+      ]
+    }
     updateCurrentInvitation({ contacts: updatedContacts })
     setIsContactDialogOpen(false)
     setNewContact({
@@ -453,6 +471,22 @@ export default function ContentPage() {
                       variant="ghost" 
                       size="icon"
                       onClick={() => {
+                        setEditingAccountId(account.id)
+                        setNewAccount({
+                          bank: account.bank,
+                          accountNumber: account.accountNumber,
+                          accountHolder: account.accountHolder,
+                          relation: account.relation
+                        })
+                        setIsAccountDialogOpen(true)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => {
                         const newAccounts = [...(currentInvitation?.bankAccounts || [])]
                         newAccounts.splice(index, 1)
                         updateCurrentInvitation({ bankAccounts: newAccounts })
@@ -463,16 +497,25 @@ export default function ContentPage() {
                   </div>
                 ))}
                 
-                <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+                <Dialog open={isAccountDialogOpen} onOpenChange={(open) => {
+                  setIsAccountDialogOpen(open)
+                  if (!open) {
+                    setEditingAccountId(null)
+                    setNewAccount({ bank: '', accountNumber: '', accountHolder: '', relation: 'groom' })
+                  }
+                }}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setEditingAccountId(null)
+                      setNewAccount({ bank: '', accountNumber: '', accountHolder: '', relation: 'groom' })
+                    }}>
                       <Plus className="mr-2 h-4 w-4" />
                       계좌 추가
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>계좌 추가</DialogTitle>
+                      <DialogTitle>{editingAccountId ? '계좌 수정' : '계좌 추가'}</DialogTitle>
                       <DialogDescription>축의금을 받을 계좌번호를 입력해주세요.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -522,7 +565,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <Button className="w-full" onClick={handleAddAccount}>
-                      추가 완료
+                      {editingAccountId ? '수정 완료' : '추가 완료'}
                     </Button>
                   </DialogContent>
                 </Dialog>
@@ -548,6 +591,21 @@ export default function ContentPage() {
                       variant="ghost" 
                       size="icon"
                       onClick={() => {
+                        setEditingContactId(contact.id)
+                        setNewContact({
+                          name: contact.name,
+                          phone: contact.phone,
+                          relation: contact.relation
+                        })
+                        setIsContactDialogOpen(true)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => {
                         const newContacts = [...(currentInvitation?.contacts || [])]
                         newContacts.splice(index, 1)
                         updateCurrentInvitation({ contacts: newContacts })
@@ -558,16 +616,25 @@ export default function ContentPage() {
                   </div>
                 ))}
 
-                <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+                <Dialog open={isContactDialogOpen} onOpenChange={(open) => {
+                  setIsContactDialogOpen(open)
+                  if (!open) {
+                    setEditingContactId(null)
+                    setNewContact({ name: '', phone: '', relation: 'groom' })
+                  }
+                }}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setEditingContactId(null)
+                      setNewContact({ name: '', phone: '', relation: 'groom' })
+                    }}>
                       <Plus className="mr-2 h-4 w-4" />
                       연락처 추가
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>연락처 추가</DialogTitle>
+                      <DialogTitle>{editingContactId ? '연락처 수정' : '연락처 추가'}</DialogTitle>
                       <DialogDescription>하객들이 연락할 수 있는 전화번호를 입력해주세요.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -608,7 +675,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <Button className="w-full" onClick={handleAddContact}>
-                      추가 완료
+                      {editingContactId ? '수정 완료' : '추가 완료'}
                     </Button>
                   </DialogContent>
                 </Dialog>
