@@ -61,10 +61,19 @@ export interface Theme {
   layout?: string
   styles?: {
     fontSizeBase?: string
+    fontSize?: string
     letterSpacing?: string
     primaryColor?: string
     backgroundColor?: string
     textColor?: string
+    secondaryColor?: string
+    borderRadius?: string
+    sectionSpacing?: string
+    cardBg?: string
+    cardShadow?: string
+    dividerType?: string
+    heroStyle?: string
+    sectionOrder?: string[]
   }
 }
 
@@ -143,6 +152,9 @@ interface AppState {
   isAuthenticated: boolean
   isAdmin: boolean
   setAuth: (isAuthenticated: boolean, isAdmin: boolean) => void
+  user: any | null
+  setUser: (user: any | null) => void
+  loadUserInvitations: () => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -208,9 +220,12 @@ export const useAppStore = create<AppState>((set) => ({
       const isNew = !id || id === 'new'
 
       if (isNew) {
-        id = typeof window !== 'undefined' && window.crypto?.randomUUID 
+        const userId = state.user?.id
+        const randId = typeof window !== 'undefined' && window.crypto?.randomUUID 
           ? window.crypto.randomUUID() 
           : 'inv-' + Math.random().toString(36).substring(2, 15)
+        
+        id = userId ? `${userId}__${randId}` : randId
       }
 
       const invitationData = {
@@ -296,7 +311,38 @@ export const useAppStore = create<AppState>((set) => ({
   isAuthenticated: false,
   isAdmin: false,
   setAuth: (isAuthenticated, isAdmin) => set({ isAuthenticated, isAdmin }),
+  user: null as any | null,
+  setUser: (user) => set({ user }),
+  loadUserInvitations: async () => {
+    const state = useAppStore.getState()
+    const userId = state.user?.id
+    if (!userId) return
+
+    try {
+      const { data, error } = await supabase.from('invitations').select('*')
+      if (data) {
+        const userInvites = data.filter((inv: any) => inv.id.startsWith(userId + '__'))
+        set({ invitations: userInvites })
+      }
+    } catch (err) {
+      console.error('Error loading user invitations:', err)
+    }
+  },
 }))
+
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    const store = useAppStore.getState()
+    if (session?.user) {
+      store.setUser(session.user)
+      store.setAuth(true, session.user.email === 'admin@vowseoul.com')
+      await store.loadUserInvitations()
+    } else {
+      store.setUser(null)
+      store.setAuth(false, false)
+    }
+  })
+}
 
 // Sample data
 export const sampleThemes: Theme[] = [

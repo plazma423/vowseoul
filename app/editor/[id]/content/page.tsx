@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppStore } from '@/lib/store'
 import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,68 @@ export default function ContentPage() {
   
   const [isUploadingMain, setIsUploadingMain] = useState(false)
   const [isUploadingGallery, setIsUploadingGallery] = useState(false)
+  
+  // Bank Account Dialog State
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
+  const [newAccount, setNewAccount] = useState({
+    bank: '',
+    accountNumber: '',
+    accountHolder: '',
+    relation: 'groom' as 'groom' | 'bride' | 'groomParent' | 'brideParent'
+  })
+
+  // Contact Dialog State
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false)
+  const [newContact, setNewContact] = useState({
+    name: '',
+    phone: '',
+    relation: 'groom'
+  })
+
+  const handleAddAccount = () => {
+    if (!newAccount.bank || !newAccount.accountNumber || !newAccount.accountHolder) {
+      alert('모든 계좌 정보를 입력해주세요.')
+      return
+    }
+    const currentAccounts = currentInvitation?.bankAccounts || []
+    const updatedAccounts = [
+      ...currentAccounts,
+      {
+        id: 'acc-' + Math.random().toString(36).substring(2, 9),
+        ...newAccount
+      }
+    ]
+    updateCurrentInvitation({ bankAccounts: updatedAccounts })
+    setIsAccountDialogOpen(false)
+    setNewAccount({
+      bank: '',
+      accountNumber: '',
+      accountHolder: '',
+      relation: 'groom'
+    })
+  }
+
+  const handleAddContact = () => {
+    if (!newContact.name || !newContact.phone || !newContact.relation) {
+      alert('모든 연락처 정보를 입력해주세요.')
+      return
+    }
+    const currentContacts = currentInvitation?.contacts || []
+    const updatedContacts = [
+      ...currentContacts,
+      {
+        id: 'con-' + Math.random().toString(36).substring(2, 9),
+        ...newContact
+      }
+    ]
+    updateCurrentInvitation({ contacts: updatedContacts })
+    setIsContactDialogOpen(false)
+    setNewContact({
+      name: '',
+      phone: '',
+      relation: 'groom'
+    })
+  }
   
   const mainImageInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
@@ -377,7 +440,13 @@ export default function ContentPage() {
                 {(currentInvitation?.bankAccounts || []).map((account, index) => (
                   <div key={account.id} className="mb-2 flex items-center gap-2 rounded-lg border border-border p-3">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{account.bank} {account.accountNumber}</p>
+                      <p className="text-sm font-medium">
+                        {account.relation === 'groom' && '신랑 '}
+                        {account.relation === 'bride' && '신부 '}
+                        {account.relation === 'groomParent' && '신랑 혼주 '}
+                        {account.relation === 'brideParent' && '신부 혼주 '}
+                        · {account.bank} {account.accountNumber}
+                      </p>
                       <p className="text-xs text-muted-foreground">{account.accountHolder}</p>
                     </div>
                     <Button 
@@ -393,17 +462,86 @@ export default function ContentPage() {
                     </Button>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full">
-                  <Plus className="mr-2 h-4 w-4" />
-                  계좌 추가
-                </Button>
+                
+                <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Plus className="mr-2 h-4 w-4" />
+                      계좌 추가
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>계좌 추가</DialogTitle>
+                      <DialogDescription>축의금을 받을 계좌번호를 입력해주세요.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="acc-relation">관계</Label>
+                        <Select
+                          value={newAccount.relation}
+                          onValueChange={(val: any) => setNewAccount({ ...newAccount, relation: val })}
+                        >
+                          <SelectTrigger id="acc-relation">
+                            <SelectValue placeholder="관계를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="groom">신랑</SelectItem>
+                            <SelectItem value="bride">신부</SelectItem>
+                            <SelectItem value="groomParent">신랑 혼주</SelectItem>
+                            <SelectItem value="brideParent">신부 혼주</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="acc-bank">은행명</Label>
+                        <Input
+                          id="acc-bank"
+                          placeholder="예: 신한은행, 국민은행"
+                          value={newAccount.bank}
+                          onChange={(e) => setNewAccount({ ...newAccount, bank: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="acc-number">계좌번호</Label>
+                        <Input
+                          id="acc-number"
+                          placeholder="예: 110-123-456789"
+                          value={newAccount.accountNumber}
+                          onChange={(e) => setNewAccount({ ...newAccount, accountNumber: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="acc-holder">예금주</Label>
+                        <Input
+                          id="acc-holder"
+                          placeholder="예: 홍길동"
+                          value={newAccount.accountHolder}
+                          onChange={(e) => setNewAccount({ ...newAccount, accountHolder: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <Button className="w-full" onClick={handleAddAccount}>
+                      추가 완료
+                    </Button>
+                  </DialogContent>
+                </Dialog>
               </div>
+
               <div>
                 <h4 className="mb-2 font-medium">연락처</h4>
                 {(currentInvitation?.contacts || []).map((contact, index) => (
                   <div key={contact.id} className="mb-2 flex items-center gap-2 rounded-lg border border-border p-3">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{contact.name} ({contact.relation})</p>
+                      <p className="text-sm font-medium">
+                        {contact.name} ({
+                          contact.relation === 'groom' ? '신랑' :
+                          contact.relation === 'bride' ? '신부' :
+                          contact.relation === 'groomParent' ? '신랑 혼주' :
+                          contact.relation === 'brideParent' ? '신부 혼주' :
+                          contact.relation
+                        })
+                      </p>
                       <p className="text-xs text-muted-foreground">{contact.phone}</p>
                     </div>
                     <Button 
@@ -419,10 +557,61 @@ export default function ContentPage() {
                     </Button>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full">
-                  <Plus className="mr-2 h-4 w-4" />
-                  연락처 추가
-                </Button>
+
+                <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Plus className="mr-2 h-4 w-4" />
+                      연락처 추가
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>연락처 추가</DialogTitle>
+                      <DialogDescription>하객들이 연락할 수 있는 전화번호를 입력해주세요.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="con-name">이름</Label>
+                        <Input
+                          id="con-name"
+                          placeholder="예: 홍길동"
+                          value={newContact.name}
+                          onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="con-relation">관계</Label>
+                        <Select
+                          value={newContact.relation}
+                          onValueChange={(val: any) => setNewContact({ ...newContact, relation: val })}
+                        >
+                          <SelectTrigger id="con-relation">
+                            <SelectValue placeholder="관계를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="groom">신랑</SelectItem>
+                            <SelectItem value="bride">신부</SelectItem>
+                            <SelectItem value="groomParent">신랑 혼주</SelectItem>
+                            <SelectItem value="brideParent">신부 혼주</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="con-phone">전화번호</Label>
+                        <Input
+                          id="con-phone"
+                          placeholder="예: 010-1234-5678"
+                          value={newContact.phone}
+                          onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <Button className="w-full" onClick={handleAddContact}>
+                      추가 완료
+                    </Button>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </AccordionContent>

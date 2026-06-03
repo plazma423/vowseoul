@@ -14,7 +14,7 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { sampleThemes, sampleBGMs, Theme } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { Plus, Play, Pause, Trash2, Upload, Loader2, CheckCircle2 } from 'lucide-react'
-import { uploadFile } from '@/lib/storage'
+import { uploadFile, deleteFile } from '@/lib/storage'
 import Link from 'next/link'
 
 const samplePhrases = [
@@ -47,15 +47,131 @@ export default function AssetsPage() {
   const [isBgmDialogOpen, setIsBgmDialogOpen] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  const [fonts, setFonts] = useState<any[]>([])
+  const [isLoadingFonts, setIsLoadingFonts] = useState(true)
+  const [newFontName, setNewFontName] = useState('')
+  const [newFontFamily, setNewFontFamily] = useState('')
+  const [fontType, setFontType] = useState<'embed' | 'file'>('embed')
+  const [embedCode, setEmbedCode] = useState('')
+  const [fontFileUrl, setFontFileUrl] = useState<string | null>(null)
+  const [isUploadingFont, setIsUploadingFont] = useState(false)
+  const [isSavingFont, setIsSavingFont] = useState(false)
+  const [isFontDialogOpen, setIsFontDialogOpen] = useState(false)
+  const fontFileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetchThemes()
     fetchBgms()
+    fetchFonts()
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
       }
     }
   }, [])
+
+  const fetchFonts = async () => {
+    setIsLoadingFonts(true)
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'fonts')
+      
+      if (data && data.length > 0 && data[0].value) {
+        setFonts(data[0].value)
+      } else {
+        setFonts([])
+      }
+    } catch (err) {
+      console.error('Error fetching fonts:', err)
+      setFonts([])
+    } finally {
+      setIsLoadingFonts(false)
+    }
+  }
+
+  const handleFontFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setIsUploadingFont(true)
+    try {
+      const url = await uploadFile(e.target.files[0], 'fonts')
+      setFontFileUrl(url)
+    } catch (err) {
+      alert('폰트 파일 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingFont(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleSaveFont = async () => {
+    if (!newFontName || !newFontFamily) return alert('폰트명과 폰트 패밀리명을 입력해주세요.')
+    if (fontType === 'embed' && !embedCode) return alert('웹 폰트 임베드 코드를 입력해주세요.')
+    if (fontType === 'file' && !fontFileUrl) return alert('TTF 폰트 파일을 업로드해주세요.')
+
+    setIsSavingFont(true)
+    try {
+      const newFont = {
+        id: `font_${Date.now()}`,
+        name: newFontName,
+        family: newFontFamily,
+        type: fontType,
+        embedCode: fontType === 'embed' ? embedCode : undefined,
+        fileUrl: fontType === 'file' ? fontFileUrl : undefined
+      }
+
+      const updatedFonts = [...fonts, newFont]
+      
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'fonts', value: updatedFonts, updatedAt: new Date().toISOString() })
+
+      if (error) throw error
+
+      setIsFontDialogOpen(false)
+      resetFontForm()
+      await fetchFonts()
+    } catch (err) {
+      console.error('Save font error:', err)
+      alert('폰트 저장에 실패했습니다.')
+    } finally {
+      setIsSavingFont(false)
+    }
+  }
+
+  const handleDeleteFont = async (id: string) => {
+    if (!confirm('정말로 이 폰트를 삭제하시겠습니까?')) return
+    try {
+      const fontToDelete = fonts.find(f => f.id === id)
+      if (fontToDelete && fontToDelete.type === 'file' && fontToDelete.fileUrl) {
+        try {
+          await deleteFile(fontToDelete.fileUrl)
+        } catch (e) {
+          console.warn('Could not delete font file from storage:', e)
+        }
+      }
+
+      const updatedFonts = fonts.filter(f => f.id !== id)
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'fonts', value: updatedFonts, updatedAt: new Date().toISOString() })
+
+      if (error) throw error
+      await fetchFonts()
+    } catch (err) {
+      console.error('Delete font error:', err)
+      alert('폰트 삭제에 실패했습니다.')
+    }
+  }
+
+  const resetFontForm = () => {
+    setNewFontName('')
+    setNewFontFamily('')
+    setFontType('embed')
+    setEmbedCode('')
+    setFontFileUrl(null)
+  }
 
   const fetchBgms = async () => {
     setIsLoadingBgms(true)
@@ -198,6 +314,7 @@ export default function AssetsPage() {
           <TabsTrigger value="themes">테마 관리</TabsTrigger>
           <TabsTrigger value="phrases">문구 관리</TabsTrigger>
           <TabsTrigger value="bgm">BGM 관리</TabsTrigger>
+          <TabsTrigger value="fonts">폰트 관리</TabsTrigger>
         </TabsList>
 
         {/* Themes */}
@@ -469,6 +586,136 @@ export default function AssetsPage() {
                 ))}
               </div>
             )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Fonts Tab */}
+        <TabsContent value="fonts" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">폰트 관리</CardTitle>
+                <CardDescription>구글 웹 폰트 임베드 코드 등록 및 TTF 폰트 파일을 에셋으로 등록합니다.</CardDescription>
+              </div>
+              <Dialog open={isFontDialogOpen} onOpenChange={(open) => {
+                if (!open) resetFontForm()
+                setIsFontDialogOpen(open)
+              }}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetFontForm}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    새 폰트 추가
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>새 폰트 등록</DialogTitle>
+                    <DialogDescription>임베드 코드 입력 혹은 TTF 파일을 통해 폰트를 등록합니다.</DialogDescription>
+                  </DialogHeader>
+                  <FieldGroup className="mt-4">
+                    <Field>
+                      <FieldLabel>폰트명 (표기용)</FieldLabel>
+                      <Input placeholder="예: 나눔바른펜, 나눔손글씨 붓" value={newFontName} onChange={e => setNewFontName(e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>폰트 패밀리명 (CSS font-family 명칭)</FieldLabel>
+                      <Input placeholder="예: NanumBarunpen, NanumBrush" value={newFontFamily} onChange={e => setNewFontFamily(e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>등록 방식</FieldLabel>
+                      <Select value={fontType} onValueChange={(v: 'embed' | 'file') => setFontType(v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="embed">웹 폰트 임베드 코드 (CSS @import)</SelectItem>
+                          <SelectItem value="file">TTF 파일 직접 업로드</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    
+                    {fontType === 'embed' ? (
+                      <Field>
+                        <FieldLabel>CSS @import 코드 또는 URL</FieldLabel>
+                        <Textarea 
+                          placeholder="예: @import url('https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&display=swap');" 
+                          value={embedCode} 
+                          onChange={e => setEmbedCode(e.target.value)}
+                          rows={4} 
+                        />
+                      </Field>
+                    ) : (
+                      <Field>
+                        <FieldLabel>TTF 파일 (.ttf)</FieldLabel>
+                        <div className="flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 cursor-pointer" onClick={() => fontFileInputRef.current?.click()}>
+                          <div className="text-center">
+                            {fontFileUrl ? (
+                              <>
+                                <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
+                                <p className="mt-1 text-xs text-green-600">업로드 완료</p>
+                              </>
+                            ) : isUploadingFont ? (
+                              <>
+                                <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                <p className="mt-1 text-xs text-muted-foreground">업로드 중...</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+                                <p className="mt-1 text-xs text-muted-foreground">TTF 파일 업로드</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <input 
+                          type="file" 
+                          accept=".ttf" 
+                          className="hidden" 
+                          ref={fontFileInputRef}
+                          onChange={handleFontFileUpload}
+                          disabled={isUploadingFont}
+                        />
+                      </Field>
+                    )}
+                  </FieldGroup>
+                  <Button className="mt-4 w-full" onClick={handleSaveFont} disabled={isSavingFont || isUploadingFont}>
+                    {isSavingFont ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    등록하기
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingFonts ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : fonts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  등록된 사용자 정의 폰트가 없습니다.
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {fonts.map((font) => (
+                    <div 
+                      key={font.id} 
+                      className="flex items-center justify-between rounded-lg border border-border p-4"
+                    >
+                      <div>
+                        <p className="font-semibold text-sm">{font.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Family: {font.family}</p>
+                        <div className="mt-1.5">
+                          <Badge variant="outline" className="text-[10px]">
+                            {font.type === 'embed' ? 'CSS @import' : 'TTF 파일'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFont(font.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

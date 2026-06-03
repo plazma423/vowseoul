@@ -110,39 +110,49 @@ export default function FeaturesPage() {
 
       {/* Guestbook Type */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">방명록</CardTitle>
-          <CardDescription>하객들이 축하 메시지를 남길 수 있습니다.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-lg">방명록</CardTitle>
+            <CardDescription>하객들이 축하 메시지를 남길 수 있습니다.</CardDescription>
+          </div>
+          <Switch
+            checked={currentInvitation?.guestbookType !== 'none'}
+            onCheckedChange={(checked) => {
+              updateCurrentInvitation({ guestbookType: checked ? 'text' : 'none' })
+            }}
+          />
         </CardHeader>
-        <CardContent>
-          <FieldGroup>
-            <Field>
-              <FieldLabel>방명록 유형</FieldLabel>
-              <Select
-                value={currentInvitation?.guestbookType || 'text'}
-                onValueChange={(value: 'text' | 'audio') => updateCurrentInvitation({ guestbookType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">텍스트 방명록</SelectItem>
-                  <SelectItem value="audio">오디오 방명록</SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldDescription>
-                오디오 방명록은 하객이 음성 메시지를 녹음하여 남길 수 있습니다.
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-          {currentInvitation?.guestbookType === 'audio' && (
-            <div className="mt-4 rounded-lg bg-muted/50 p-4">
-              <p className="text-sm text-muted-foreground">
-                오디오 방명록 예시: 하객이 버튼을 누르고 축하 메시지를 녹음할 수 있습니다.
-              </p>
-            </div>
-          )}
-        </CardContent>
+        {currentInvitation?.guestbookType !== 'none' && (
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>방명록 유형</FieldLabel>
+                <Select
+                  value={currentInvitation?.guestbookType === 'audio' ? 'audio' : 'text'}
+                  onValueChange={(value: 'text' | 'audio') => updateCurrentInvitation({ guestbookType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">텍스트 방명록</SelectItem>
+                    <SelectItem value="audio">오디오 방명록</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  오디오 방명록은 하객이 음성 메시지를 녹음하여 남길 수 있습니다.
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+            {currentInvitation?.guestbookType === 'audio' && (
+              <div className="mt-4 rounded-lg bg-muted/50 p-4">
+                <p className="text-sm text-muted-foreground">
+                  오디오 방명록 예시: 하객이 버튼을 누르고 축하 메시지를 녹음할 수 있습니다.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* Digital Stationery */}

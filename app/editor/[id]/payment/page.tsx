@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAppStore, sampleThemes } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 import { ArrowLeft, CreditCard, Copy, Check, ExternalLink } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { MobilePreview } from '@/components/mobile-preview'
 
 export default function PaymentPage() {
   const router = useRouter()
   const params = useParams()
-  const { currentInvitation, updateCurrentInvitation, saveInvitation } = useAppStore()
+  const { currentInvitation, updateCurrentInvitation, saveInvitation, user } = useAppStore()
   const invitationId = params.id as string
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -22,7 +23,15 @@ export default function PaymentPage() {
   const theme = sampleThemes.find(t => t.id === currentInvitation?.themeId) || sampleThemes[0]
   const colorSet = theme.colorSets.find(c => c.id === currentInvitation?.colorSet) || theme.colorSets[0]
   
-  const publishedUrl = `https://vow.seoul/inv/${invitationId}`
+  const [origin, setOrigin] = useState('')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin)
+    }
+  }, [])
+
+  const publishedUrl = `${origin || 'http://localhost:3000'}/invitation/${invitationId}`
 
   const handleBack = () => {
     router.push(`/editor/${invitationId}/features`)
@@ -32,11 +41,46 @@ export default function PaymentPage() {
     setIsProcessing(true)
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsProcessing(false)
-    setIsPaid(true)
-    setIsPaymentOpen(false)
-    updateCurrentInvitation({ status: 'published', publishedUrl })
-    await saveInvitation()
+    
+    try {
+      // 1. Update invitation status & url
+      updateCurrentInvitation({ status: 'published', publishedUrl })
+      const savedId = await saveInvitation()
+      if (!savedId) throw new Error('청첩장 저장 실패')
+
+      // 2. Generate an order ID
+      const userId = user?.id || 'anonymous'
+      const randId = typeof window !== 'undefined' && window.crypto?.randomUUID 
+        ? window.crypto.randomUUID() 
+        : 'ord-' + Math.random().toString(36).substring(2, 15)
+      const orderId = `${userId}__${randId}`
+
+      // 3. Insert order into the database
+      const orderData = {
+        id: orderId,
+        invitationId: savedId,
+        customerName: user?.user_metadata?.name || currentInvitation?.groomName || '고객',
+        groomName: currentInvitation?.groomName || '',
+        brideName: currentInvitation?.brideName || '',
+        weddingDate: currentInvitation?.weddingDate || '',
+        theme: theme?.name || '',
+        amount: 50000,
+        status: 'deployed',
+        createdAt: new Date().toISOString().split('T')[0],
+        notes: ''
+      }
+
+      const { error } = await supabase.from('orders').insert(orderData)
+      if (error) throw error
+
+      setIsProcessing(false)
+      setIsPaid(true)
+      setIsPaymentOpen(false)
+    } catch (err) {
+      console.error('Payment processing failed:', err)
+      alert('결제 처리 중 오류가 발생했습니다.')
+      setIsProcessing(false)
+    }
   }
 
   const handleCopyUrl = async () => {
@@ -64,86 +108,8 @@ export default function PaymentPage() {
           <CardTitle className="text-lg">최종 시안 미리보기</CardTitle>
           <CardDescription>완성된 청첩장을 확인해주세요.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div 
-            className="mx-auto max-w-sm overflow-hidden rounded-2xl border border-border shadow-lg"
-            style={{ backgroundColor: colorSet.colors[0] }}
-          >
-            <ScrollArea className="h-[500px]">
-              <div className="p-6 text-center" style={{ color: colorSet.colors[2] }}>
-                {/* Header */}
-                <p className="mb-2 text-xs tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
-                <div className="mx-auto my-4 h-px w-12 bg-current opacity-30" />
-
-                {/* Names */}
-                <h1 className="mb-2 font-serif text-2xl font-light tracking-wide">
-                  {currentInvitation?.groomName || '신랑'}
-                </h1>
-                <p className="mb-4 text-xs tracking-[0.2em] opacity-60">
-                  {currentInvitation?.groomNameEn || 'GROOM'}
-                </p>
-                <span className="font-serif text-lg" style={{ color: colorSet.colors[1] !== colorSet.colors[0] ? colorSet.colors[1] : colorSet.colors[2] }}>
-                  &amp;
-                </span>
-                <h1 className="mb-2 mt-4 font-serif text-2xl font-light tracking-wide">
-                  {currentInvitation?.brideName || '신부'}
-                </h1>
-                <p className="text-xs tracking-[0.2em] opacity-60">
-                  {currentInvitation?.brideNameEn || 'BRIDE'}
-                </p>
-
-                {/* Main Image */}
-                <div 
-                  className="mx-auto my-8 aspect-[3/4] w-full max-w-[200px] rounded-sm"
-                  style={{ backgroundColor: colorSet.colors[1] }}
-                >
-                  {currentInvitation?.mainImage ? (
-                    <img 
-                      src={currentInvitation.mainImage} 
-                      alt="메인 사진" 
-                      className="h-full w-full rounded-sm object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-xs opacity-40">메인 사진</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Message */}
-                <p className="whitespace-pre-line font-serif text-sm leading-loose opacity-80">
-                  {currentInvitation?.invitationMessage || '초대의 말씀'}
-                </p>
-
-                {/* Date */}
-                <div className="my-8 rounded-sm p-4" style={{ backgroundColor: colorSet.colors[1] }}>
-                  <p className="text-xs tracking-[0.2em] opacity-60">DATE</p>
-                  <p className="mt-1 font-serif">
-                    {currentInvitation?.weddingDate 
-                      ? new Date(currentInvitation.weddingDate).toLocaleDateString('ko-KR', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric',
-                          weekday: 'long'
-                        })
-                      : '2025년 0월 0일'}
-                  </p>
-                  <p className="mt-1 text-sm opacity-60">
-                    {currentInvitation?.weddingTime || '오후 0시'}
-                  </p>
-                </div>
-
-                {/* Venue */}
-                <p className="text-xs tracking-[0.2em] opacity-60">LOCATION</p>
-                <p className="mt-1 font-serif">
-                  {currentInvitation?.venueName || '예식장명'}
-                </p>
-                <p className="mt-1 text-sm opacity-60">
-                  {currentInvitation?.venueHall || '홀'}
-                </p>
-              </div>
-            </ScrollArea>
-          </div>
+        <CardContent className="flex justify-center py-4">
+          <MobilePreview isSticky={false} />
         </CardContent>
       </Card>
 

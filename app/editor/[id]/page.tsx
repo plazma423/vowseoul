@@ -151,7 +151,7 @@ export default function BasicInfoPage() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {currentInvitation?.weddingDate ? (
-                        format(new Date(currentInvitation.weddingDate), 'PPP', { locale: ko })
+                        format(new Date(currentInvitation.weddingDate + 'T00:00:00'), 'PPP', { locale: ko })
                       ) : (
                         '날짜를 선택하세요'
                       )}
@@ -160,8 +160,8 @@ export default function BasicInfoPage() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={currentInvitation?.weddingDate ? new Date(currentInvitation.weddingDate) : undefined}
-                      onSelect={(date) => date && updateCurrentInvitation({ weddingDate: date.toISOString().split('T')[0] })}
+                      selected={currentInvitation?.weddingDate ? new Date(currentInvitation.weddingDate + 'T00:00:00') : undefined}
+                      onSelect={(date) => date && updateCurrentInvitation({ weddingDate: format(date, 'yyyy-MM-dd') })}
                       initialFocus
                     />
                   </PopoverContent>

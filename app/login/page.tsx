@@ -26,17 +26,24 @@ export default function LoginPage() {
     setError('')
     setIsLoading(true)
 
-    // Simulate login
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (email && password) {
-      setAuth(true, false)
-      router.push('/')
-    } else {
-      setError('이메일과 비밀번호를 입력해주세요.')
+      if (signInError) throw signInError
+
+      if (data?.user) {
+        setAuth(true, data.user.email === 'admin@vowseoul.com')
+        router.push('/')
+      }
+    } catch (err: any) {
+      console.error('Login error:', err)
+      setError(err.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.')
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   const handleOAuthLogin = async (provider: 'google' | 'kakao' | 'notion' | 'github' | 'naver' | any) => {

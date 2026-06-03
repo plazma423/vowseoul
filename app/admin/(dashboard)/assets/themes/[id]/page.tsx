@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, Save, Upload, Loader2, Link as LinkIcon, Music } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { ChevronLeft, Save, Upload, Loader2, Link as LinkIcon, Music, Heart, Copy, Phone, Calendar as CalendarIcon, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage'
 import { sampleThemes } from '@/lib/store'
+import { cn } from '@/lib/utils'
 
 export default function ThemeEditorPage() {
   const params = useParams()
@@ -40,11 +42,34 @@ export default function ThemeEditorPage() {
     backgroundColor: '#FFF8F0',
     textColor: '#3A3A3A',
     secondaryColor: '#D3D3D3',
+    // Custom controls
+    borderRadius: '8', // px
+    sectionSpacing: 'py-12',
+    cardBg: 'bg-white/40',
+    cardShadow: 'shadow-sm',
+    dividerType: 'heart',
+    heroStyle: 'center',
+    sectionOrder: ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'] as string[],
     recommendedBgms: [] as string[]
   })
 
+  const sectionLabels: Record<string, string> = {
+    hero: '대문 이미지 (Hero)',
+    greeting: '인사말 (Greeting)',
+    gallery: '갤러리 (Gallery)',
+    calendar: '달력 (Calendar)',
+    location: '예식장 위치/지도 (Location)',
+    contact: '연락처 (Contact)',
+    account: '축의금 송금 계좌 (Account)',
+    rsvp: '참석 여부 (RSVP)',
+    guestbook: '방명록 (Guestbook)'
+  }
+
+  const [customFonts, setCustomFonts] = useState<any[]>([])
+
   useEffect(() => {
     fetchBgms()
+    fetchFonts()
     if (!isNew) {
       fetchTheme()
     }
@@ -53,6 +78,23 @@ export default function ThemeEditorPage() {
   const fetchBgms = async () => {
     const { data } = await supabase.from('bgms').select('*')
     if (data) setBgms(data)
+  }
+
+  const fetchFonts = async () => {
+    try {
+      const { data } = await supabase.from('settings').select('*').eq('key', 'fonts')
+      if (data && data.length > 0 && data[0].value) {
+        setCustomFonts(data[0].value)
+      }
+    } catch (e) {
+      console.error('Error fetching fonts in theme editor:', e)
+    }
+  }
+
+  const getFontFamily = (krFont: string, enFont: string) => {
+    const cleanKr = krFont.startsWith('font-') ? (krFont === 'font-serif' ? 'Noto Serif KR, Georgia, serif' : 'Pretendard, Arial, sans-serif') : `'${krFont}'`;
+    const cleanEn = enFont.startsWith('font-') ? (enFont === 'font-serif' ? 'Playfair Display, Lora, serif' : 'Inter, Montserrat, sans-serif') : `'${enFont}'`;
+    return `${cleanEn}, ${cleanKr}, sans-serif`;
   }
 
   const fetchTheme = async () => {
@@ -72,10 +114,17 @@ export default function ThemeEditorPage() {
         backgroundColor: data.styles?.backgroundColor || '#FFF8F0',
         textColor: data.styles?.textColor || '#3A3A3A',
         secondaryColor: data.styles?.secondaryColor || '#D3D3D3',
+        // Custom style values
+        borderRadius: data.styles?.borderRadius?.replace('px', '') || '8',
+        sectionSpacing: data.styles?.sectionSpacing || 'py-12',
+        cardBg: data.styles?.cardBg || 'bg-white/40',
+        cardShadow: data.styles?.cardShadow || 'shadow-sm',
+        dividerType: data.styles?.dividerType || 'heart',
+        heroStyle: data.styles?.heroStyle || 'center',
+        sectionOrder: data.styles?.sectionOrder || ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
         recommendedBgms: data.recommendedBgms || []
       })
     } else {
-      // Fallback to sample themes if not found in DB
       const sample = sampleThemes.find(t => t.id === themeId)
       if (sample) {
         setTheme({
@@ -91,6 +140,14 @@ export default function ThemeEditorPage() {
           backgroundColor: sample.colorSets[0]?.colors[0] || '#FFF8F0',
           textColor: sample.colorSets[0]?.colors[2] || '#3A3A3A',
           secondaryColor: '#D3D3D3',
+          // Custom style values defaults
+          borderRadius: '8',
+          sectionSpacing: 'py-12',
+          cardBg: 'bg-white/40',
+          cardShadow: 'shadow-sm',
+          dividerType: 'heart',
+          heroStyle: 'center',
+          sectionOrder: ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
           recommendedBgms: []
         })
       }
@@ -118,6 +175,14 @@ export default function ThemeEditorPage() {
         backgroundColor: theme.backgroundColor,
         textColor: theme.textColor,
         secondaryColor: theme.secondaryColor,
+        // Save customized values
+        borderRadius: `${theme.borderRadius}px`,
+        sectionSpacing: theme.sectionSpacing,
+        cardBg: theme.cardBg,
+        cardShadow: theme.cardShadow,
+        dividerType: theme.dividerType,
+        heroStyle: theme.heroStyle,
+        sectionOrder: theme.sectionOrder,
       },
       colorSets: [{
         id: 'default',
@@ -159,9 +224,42 @@ export default function ThemeEditorPage() {
     }
   }
 
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return
+    const newOrder = [...theme.sectionOrder]
+    const temp = newOrder[index]
+    newOrder[index] = newOrder[index - 1]
+    newOrder[index - 1] = temp
+    setTheme({ ...theme, sectionOrder: newOrder })
+  }
+
+  const handleMoveDown = (index: number) => {
+    if (index === theme.sectionOrder.length - 1) return
+    const newOrder = [...theme.sectionOrder]
+    const temp = newOrder[index]
+    newOrder[index] = newOrder[index + 1]
+    newOrder[index + 1] = temp
+    setTheme({ ...theme, sectionOrder: newOrder })
+  }
+
   if (isLoading) {
     return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>
   }
+
+  // Preview calendar config
+  const calMonth = 5
+  const calYear = 2026
+  const calDay = 24
+  const calDays = [
+    null, null, null, null, null, null, 1,
+    2, 3, 4, 5, 6, 7, 8,
+    9, 10, 11, 12, 13, 14, 15,
+    16, 17, 18, 19, 20, 21, 22,
+    23, 24, 25, 26, 27, 28, 29,
+    30, 31
+  ]
+
+  const fontClass = theme.fontKr === 'font-serif' ? 'font-serif' : 'font-sans'
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-6 -mt-2">
@@ -197,7 +295,6 @@ export default function ThemeEditorPage() {
                 >
                   {theme.thumbnail ? (
                     <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={theme.thumbnail} alt="썸네일" className="w-full h-full object-cover transition-opacity group-hover:opacity-50" />
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <Upload className="w-6 h-6 text-white" />
@@ -237,7 +334,9 @@ export default function ThemeEditorPage() {
                     <SelectItem value="font-sans">Pretendard / Noto Sans KR</SelectItem>
                     <SelectItem value="font-serif">Noto Serif KR / 나눔명조</SelectItem>
                     <SelectItem value="font-mono">나눔바른고딕</SelectItem>
-                    <SelectItem value="font-maru">마루부리</SelectItem>
+                    {customFonts.map(font => (
+                      <SelectItem key={font.id} value={font.family}>{font.name} (사용자 정의)</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -249,8 +348,9 @@ export default function ThemeEditorPage() {
                     <SelectItem value="font-sans">Inter</SelectItem>
                     <SelectItem value="font-serif">Playfair Display / Lora</SelectItem>
                     <SelectItem value="font-mono">Roboto Mono</SelectItem>
-                    <SelectItem value="font-cormorant">Cormorant Garamond</SelectItem>
-                    <SelectItem value="font-outfit">Outfit</SelectItem>
+                    {customFonts.map(font => (
+                      <SelectItem key={font.id} value={font.family}>{font.name} (사용자 정의)</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -339,7 +439,141 @@ export default function ThemeEditorPage() {
 
           <Separator />
 
-          {/* Section 5: Recommended BGMs */}
+          {/* Section 5: 디테일 스타일 설정 (둥글기, 그림자, 구분선 등) */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">세부 디자인 스타일</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>테두리 둥글기 (Border Radius)</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="number" min="0" max="30" value={theme.borderRadius} onChange={e => setTheme({...theme, borderRadius: e.target.value})} />
+                  <span className="text-sm text-muted-foreground">px</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>섹션 위아래 여백 (Spacing)</Label>
+                <Select value={theme.sectionSpacing} onValueChange={v => setTheme({...theme, sectionSpacing: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="py-8">좁게 (py-8)</SelectItem>
+                    <SelectItem value="py-12">보통 (py-12)</SelectItem>
+                    <SelectItem value="py-16">넓게 (py-16)</SelectItem>
+                    <SelectItem value="py-20">매우 넓게 (py-20)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>카드 배경 스타일 (Card Background)</Label>
+                <Select value={theme.cardBg} onValueChange={v => setTheme({...theme, cardBg: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bg-white">단색 흰색 (bg-white)</SelectItem>
+                    <SelectItem value="bg-white/40">반투명 흰색 (bg-white/40)</SelectItem>
+                    <SelectItem value="bg-black/5">밝은 그레이 (bg-black/5)</SelectItem>
+                    <SelectItem value="bg-transparent">투명 배경 (bg-transparent)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>카드 그림자 (Card Shadow)</Label>
+                <Select value={theme.cardShadow} onValueChange={v => setTheme({...theme, cardShadow: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="shadow-none">그림자 없음 (shadow-none)</SelectItem>
+                    <SelectItem value="shadow-sm">약한 그림자 (shadow-sm)</SelectItem>
+                    <SelectItem value="shadow-md">보통 그림자 (shadow-md)</SelectItem>
+                    <SelectItem value="shadow-lg">강한 그림자 (shadow-lg)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>섹션 구분선 기호 (Divider Type)</Label>
+                <Select value={theme.dividerType} onValueChange={v => setTheme({...theme, dividerType: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">없음 (공백으로 구분)</SelectItem>
+                    <SelectItem value="line">얇은 직선</SelectItem>
+                    <SelectItem value="heart">하트 기호 (♥)</SelectItem>
+                    <SelectItem value="space">약간의 간격</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>대문(Hero) 레이아웃 스타일</Label>
+                <Select value={theme.heroStyle} onValueChange={v => setTheme({...theme, heroStyle: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="center">중앙 정렬 (Center)</SelectItem>
+                    <SelectItem value="left">왼쪽 정렬 (Left)</SelectItem>
+                    <SelectItem value="classic">클래식 스타일</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          {/* Section 6: 청첩장 섹션 순서 및 관리 */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">청첩장 섹션 순서 및 관리</h3>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">활성 영역은 순서를 조정(▲/▼)할 수 있으며, 비활성 시 화면에 노출되지 않습니다.</p>
+              <div className="border rounded-lg divide-y bg-card text-card-foreground">
+                {theme.sectionOrder.map((sectionId, index) => {
+                  const label = sectionLabels[sectionId] || sectionId
+                  return (
+                    <div key={sectionId} className="flex items-center justify-between p-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-muted-foreground mr-2">{index + 1}</span>
+                        <span className="font-medium">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-[10px]" onClick={() => handleMoveUp(index)} disabled={index === 0}>
+                            ▲
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-[10px]" onClick={() => handleMoveDown(index)} disabled={index === theme.sectionOrder.length - 1}>
+                            ▼
+                          </Button>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          className="h-7 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            setTheme({ ...theme, sectionOrder: theme.sectionOrder.filter(id => id !== sectionId) })
+                          }}
+                        >
+                          비활성화
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+                {/* Display inactive sections */}
+                {Object.keys(sectionLabels).filter(id => !theme.sectionOrder.includes(id)).map((sectionId) => {
+                  return (
+                    <div key={sectionId} className="flex items-center justify-between p-3 text-sm bg-muted/30 opacity-70">
+                      <span className="font-medium text-muted-foreground">{sectionLabels[sectionId]} (비활성)</span>
+                      <Button 
+                        variant="outline" 
+                        className="h-7 px-2 text-[10px]"
+                        onClick={() => {
+                          setTheme({ ...theme, sectionOrder: [...theme.sectionOrder, sectionId] })
+                        }}
+                      >
+                        활성화
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          {/* Section 7: Recommended BGMs */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">추천 BGM 설정</h3>
             <div className="space-y-2">
@@ -387,63 +621,269 @@ export default function ThemeEditorPage() {
       <div className="w-full md:w-[400px] flex-shrink-0 bg-muted/20 border rounded-lg p-6 flex flex-col items-center justify-center shadow-inner overflow-hidden">
         <h3 className="mb-4 text-sm font-medium text-muted-foreground">실시간 모바일 미리보기</h3>
         <div 
-          className="w-[320px] h-[650px] bg-white border-8 border-gray-900 rounded-[2.5rem] shadow-xl overflow-y-auto relative transition-colors duration-300 scrollbar-hide"
+          className="w-[320px] h-[650px] border-8 border-gray-900 rounded-[2.5rem] shadow-xl overflow-y-auto relative transition-colors duration-300 scrollbar-hide"
           style={{ 
             backgroundColor: theme.backgroundColor, 
-            color: theme.textColor,
             fontSize: `${theme.fontSize}px`,
-            letterSpacing: `${theme.letterSpacing}em`
+            letterSpacing: `${theme.letterSpacing}em`,
+            fontFamily: getFontFamily(theme.fontKr, theme.fontEn)
           }}
         >
           {/* Top Notch */}
           <div className="absolute top-0 inset-x-0 h-6 bg-gray-900 rounded-b-xl mx-24 z-20"></div>
 
+          {/* Dynamic Style injection for custom fonts */}
+          <style dangerouslySetInnerHTML={{
+            __html: customFonts.map(font => {
+              if (font.type === 'embed') {
+                return font.embedCode || '';
+              } else if (font.type === 'file' && font.fileUrl) {
+                return `
+                  @font-face {
+                    font-family: '${font.family}';
+                    src: url('${font.fileUrl}') format('truetype');
+                    font-display: swap;
+                  }
+                `;
+              }
+              return '';
+            }).join('\n')
+          }} />
+
           {/* Preview Content */}
-          <div className="p-6 pt-12 space-y-12">
-            <div className={`text-center space-y-4 ${theme.fontEn}`}>
-              <p className="tracking-widest uppercase text-[0.8em]" style={{ color: theme.primaryColor }}>Wedding Invitation</p>
-              <h1 className={`text-3xl ${theme.fontKr}`}>{theme.name || '테마 이름'}</h1>
-              <p className="text-[0.9em] opacity-80 mt-2">2026. 05. 24. SAT 12:00 PM</p>
-            </div>
-            
-            <div className="aspect-[3/4] bg-muted w-full rounded-md overflow-hidden relative border" style={{ borderColor: theme.secondaryColor }}>
-              {theme.thumbnail ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={theme.thumbnail} alt="미리보기 썸네일" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                  Image Preview
-                </div>
-              )}
-            </div>
+          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: theme.textColor }}>
+            {theme.sectionOrder.map((sectionId, idx) => {
+              // Layout-specific styling rules
+              const isMinimal = theme.layout === 'minimal'
+              const isGrid = theme.layout === 'grid'
+              const isTwoColumn = theme.layout === 'two-column'
 
-            <div className={`text-center space-y-4 leading-loose ${theme.fontKr}`}>
-              <p>서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.</p>
-              <p>귀한 걸음 하시어 축복해 주시면<br/>큰 기쁨으로 간직하겠습니다.</p>
-            </div>
+              const borderStyle = { borderRadius: isGrid ? '0px' : `${theme.borderRadius}px` }
+              const shadowClass = isMinimal ? 'shadow-none' : theme.cardShadow
+              
+              let spacingClass = theme.sectionSpacing // py-8, py-12, py-16, py-20
+              if (isMinimal) {
+                if (theme.sectionSpacing === 'py-8') spacingClass = 'py-16'
+                else if (theme.sectionSpacing === 'py-12') spacingClass = 'py-24'
+                else if (theme.sectionSpacing === 'py-16') spacingClass = 'py-32'
+                else if (theme.sectionSpacing === 'py-20') spacingClass = 'py-40'
+              }
 
-            <div className="flex flex-col gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full rounded-full transition-colors"
-                style={{ 
-                  borderColor: theme.primaryColor, 
-                  color: theme.primaryColor,
-                  backgroundColor: 'transparent'
-                }}
-              >
-                갤러리 보기
-              </Button>
-              <Button 
-                className="w-full rounded-full transition-colors"
-                style={{ 
-                  backgroundColor: theme.primaryColor,
-                  color: theme.backgroundColor
-                }}
-              >
-                마음 전하실 곳
-              </Button>
-            </div>
+              const isEven = idx % 2 === 0
+              const sectionBg = isMinimal ? 'bg-transparent' : (isEven ? 'bg-white/40 backdrop-blur-sm' : 'bg-black/5')
+              const sectionBorderClass = isGrid ? 'border border-current/15 mx-2 my-2' : ''
+              const effectiveCardBg = isMinimal ? 'bg-transparent' : theme.cardBg
+
+              const renderDivider = () => {
+                if (theme.dividerType === 'line') {
+                  return <div className="mx-auto my-6 h-px w-24 bg-current opacity-20" />
+                }
+                if (theme.dividerType === 'heart') {
+                  return <div className="text-center opacity-40 my-6 text-[10px]" style={{ color: theme.primaryColor }}>♥</div>
+                }
+                if (theme.dividerType === 'space') {
+                  return <div className="my-6 h-4" />
+                }
+                return null
+              }
+
+              switch (sectionId) {
+                case 'hero':
+                  return (
+                    <div key="hero" className="relative h-[320px] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+                      {theme.thumbnail && (
+                        <div className="absolute inset-0 z-0">
+                          <img src={theme.thumbnail} alt="Main Visual" className="w-full h-full object-cover opacity-20" />
+                          <div className="absolute inset-0 bg-gradient-to-t" style={{ backgroundImage: `linear-gradient(to top, ${theme.backgroundColor}, transparent, ${theme.backgroundColor}80)` }} />
+                        </div>
+                      )}
+                      <div className="space-y-4 z-10 w-full max-w-[200px] mx-auto">
+                        <p className="text-[10px] tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
+                        
+                        {theme.heroStyle === 'left' ? (
+                          <div className="space-y-2 text-left w-full">
+                            <div>
+                              {theme.name && <p className="text-[8px] opacity-75 font-serif">{theme.name}</p>}
+                              <h1 className="text-xl font-serif font-light">홍길동</h1>
+                            </div>
+                            <div className="text-xs font-serif opacity-50">&amp;</div>
+                            <div>
+                              {theme.name && <p className="text-[8px] opacity-75 font-serif">{theme.name}</p>}
+                              <h1 className="text-xl font-serif font-light">김영희</h1>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="space-y-0.5">
+                              <p className="text-[8px] opacity-75 font-serif">신랑 혼주 정보</p>
+                              <h1 className="text-xl font-serif font-light">홍길동</h1>
+                            </div>
+                            <div className="text-md font-serif" style={{ color: theme.primaryColor }}>&amp;</div>
+                            <div className="space-y-0.5">
+                              <p className="text-[8px] opacity-75 font-serif">신부 혼주 정보</p>
+                              <h1 className="text-xl font-serif font-light">김영희</h1>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                case 'greeting':
+                  return (
+                    <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: theme.primaryColor }} />
+                      <p className="leading-relaxed text-[10px] opacity-80">
+                        서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
+                      </p>
+                    </section>
+                  )
+                case 'gallery':
+                  return (
+                    <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GALLERY</h2>
+                      <div className={cn("grid gap-1.5", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
+                        <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
+                        <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />
+                        {isTwoColumn && <div className="aspect-square bg-black/10 rounded-md" style={borderStyle} />}
+                      </div>
+                    </section>
+                  )
+                case 'calendar':
+                  return (
+                    <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CALENDAR</h2>
+                      <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
+                        <CardContent className="p-3">
+                          <div className="text-center mb-2">
+                            <p className="text-sm font-serif font-medium" style={{ color: theme.primaryColor }}>{calMonth}</p>
+                            <p className="text-[9px] opacity-40">{calYear}</p>
+                          </div>
+                          <div className="grid grid-cols-7 gap-0.5 text-center text-[8px]">
+                            {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                              <div key={day} className="py-0.5 opacity-55 font-semibold">{day}</div>
+                            ))}
+                            {calDays.map((day, i) => {
+                              if (day === null) return <div key={`empty-${i}`} />
+                              return (
+                                <div
+                                  key={i}
+                                  className="py-0.5 text-[8px] flex items-center justify-center w-5 h-5 mx-auto rounded-full"
+                                  style={day === calDay ? { backgroundColor: theme.primaryColor, color: '#fff', fontWeight: 'bold' } : undefined}
+                                >
+                                  {day}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </section>
+                  )
+                case 'location':
+                  return (
+                    <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">LOCATION</h2>
+                      <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                        <CardContent className="p-3 text-left space-y-2">
+                          <div>
+                            <h3 className="font-semibold text-[10px]">예식장명</h3>
+                            <p className="text-[8px] opacity-60">서울특별시 용산구 소월로 322</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                              네이버지도
+                            </Button>
+                            <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                              카카오맵
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </section>
+                  )
+                case 'contact':
+                  return (
+                    <section key="contact" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CONTACT</h2>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <CardContent className="p-2 text-center">
+                            <p className="text-[9px] opacity-60 mb-0.5">신랑</p>
+                            <p className="font-semibold text-[10px] mb-1.5 truncate">홍길동</p>
+                            <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                              전화
+                            </Button>
+                          </CardContent>
+                        </Card>
+                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <CardContent className="p-2 text-center">
+                            <p className="text-[9px] opacity-60 mb-0.5">신부</p>
+                            <p className="font-semibold text-[10px] mb-1.5 truncate">김영희</p>
+                            <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                              전화
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </section>
+                  )
+                case 'account':
+                  return (
+                    <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">ACCOUNT</h2>
+                      <p className="text-center text-[9px] opacity-40 mb-4">마음 전하실 곳</p>
+                      <div className={cn("space-y-2", isTwoColumn && "grid grid-cols-2 gap-2 space-y-0")}>
+                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <CardContent className="p-2.5 flex items-center justify-between text-left">
+                            <div>
+                              <p className="text-[9px] opacity-50">신랑측</p>
+                              <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
+                            </div>
+                            <Button variant="outline" size="sm" className="h-6 w-6 p-0" style={borderStyle}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </section>
+                  )
+                case 'rsvp':
+                  return (
+                    <section key="rsvp" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">RSVP</h2>
+                      <p className="text-center text-[9px] opacity-40 mb-4">참석 여부를 알려주세요</p>
+                      <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: theme.primaryColor, ...borderStyle }}>
+                        참석 의사 전달하기
+                      </Button>
+                    </section>
+                  )
+                case 'guestbook':
+                  return (
+                    <section key="guestbook" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {renderDivider()}
+                      <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GUESTBOOK</h2>
+                      <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                        <CardContent className="p-2.5 text-left">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-[9px]">하객 성함</span>
+                            <span className="text-[8px] opacity-40">2026.06.03</span>
+                          </div>
+                          <p className="text-[9px] opacity-70">결혼을 진심으로 축하드립니다!</p>
+                        </CardContent>
+                      </Card>
+                    </section>
+                  )
+                default:
+                  return null
+              }
+            })}
           </div>
         </div>
       </div>
