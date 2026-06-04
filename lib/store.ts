@@ -163,6 +163,8 @@ interface AppState {
   // UI state
   editorStep: number
   setEditorStep: (step: number) => void
+  activeSection: string | null
+  setActiveSection: (section: string | null) => void
   
   // Auth state
   isAuthenticated: boolean
@@ -388,6 +390,8 @@ export const useAppStore = create<AppState>((set) => ({
   
   editorStep: 1,
   setEditorStep: (editorStep) => set({ editorStep }),
+  activeSection: null,
+  setActiveSection: (activeSection) => set({ activeSection }),
   
   isAuthenticated: false,
   isAdmin: false,

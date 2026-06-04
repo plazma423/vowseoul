@@ -13,6 +13,34 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 
+const getFontFamily = (krFont: string, enFont: string) => {
+  let enFamily = '';
+  if (enFont.startsWith('font-')) {
+    enFamily = enFont === 'font-serif' ? "'Playfair Display', Lora, Georgia" : "Inter, Montserrat, Arial";
+  } else {
+    enFamily = `'${enFont}'`;
+  }
+
+  let krFamily = '';
+  if (krFont.startsWith('font-')) {
+    krFamily = krFont === 'font-serif' ? "'Noto Serif KR', 'Nanum Myeongjo'" : "'Pretendard', 'Noto Sans KR'";
+  } else {
+    krFamily = `'${krFont}'`;
+  }
+
+  const isSerif = enFont.toLowerCase().includes('serif') || 
+                  krFont.toLowerCase().includes('serif') || 
+                  krFont.toLowerCase().includes('myeongjo') || 
+                  enFont.toLowerCase().includes('playfair') || 
+                  enFont.toLowerCase().includes('lora') ||
+                  enFont.toLowerCase().includes('cormorant') ||
+                  enFont.toLowerCase().includes('baskerville') ||
+                  krFont === 'font-serif' || 
+                  enFont === 'font-serif';
+  const genericFallback = isSerif ? 'serif' : 'sans-serif';
+  return `${enFamily}, ${krFamily}, ${genericFallback}`;
+}
+
 export default function DesignPage() {
   const router = useRouter()
   const params = useParams()
@@ -188,28 +216,38 @@ export default function DesignPage() {
             onValueChange={(value) => updateCurrentInvitation({ fontSet: value })}
             className="grid gap-4 sm:grid-cols-2"
           >
-            {selectedTheme?.fontSets?.map((fontSet) => (
-              <div key={fontSet.id}>
-                <RadioGroupItem
-                  value={fontSet.id}
-                  id={`font-${fontSet.id}`}
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor={`font-${fontSet.id}`}
-                  className={cn(
-                    'flex cursor-pointer flex-col gap-2 rounded-lg border-2 p-4 transition-all',
-                    'peer-data-[state=checked]:border-foreground peer-data-[state=unchecked]:border-border',
-                    'hover:border-foreground/50'
-                  )}
-                >
-                  <span className="font-medium">{fontSet.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {fontSet.fonts.join(' + ')}
-                  </span>
-                </Label>
-              </div>
-            ))}
+            {selectedTheme?.fontSets?.map((fontSet) => {
+              const krFont = fontSet.fonts[0] || 'font-sans'
+              const enFont = fontSet.fonts[1] || 'font-sans'
+              const fontFamilyVal = getFontFamily(krFont, enFont)
+
+              return (
+                <div key={fontSet.id}>
+                  <RadioGroupItem
+                    value={fontSet.id}
+                    id={`font-${fontSet.id}`}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor={`font-${fontSet.id}`}
+                    className={cn(
+                      'flex cursor-pointer flex-col gap-2 rounded-lg border-2 p-4 transition-all',
+                      'peer-data-[state=checked]:border-foreground peer-data-[state=unchecked]:border-border',
+                      'hover:border-foreground/50'
+                    )}
+                    style={{ fontFamily: fontFamilyVal }}
+                  >
+                    <span className="font-semibold text-base">{fontSet.name}</span>
+                    <span className="text-sm opacity-85 py-1">
+                      신랑 신부 결혼합니다. Groom & Bride
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-mono mt-1 pt-1 border-t border-muted/20">
+                      {fontSet.fonts.join(' + ')}
+                    </span>
+                  </Label>
+                </div>
+              )
+            })}
           </RadioGroup>
         </CardContent>
       </Card>

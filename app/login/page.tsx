@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -12,14 +12,18 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { useAppStore } from '@/lib/store'
 import { Spinner } from '@/components/ui/spinner'
 import { supabase } from '@/lib/supabase'
+import { Loader2 } from 'lucide-react'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { setAuth } = useAppStore()
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  
+  const redirectPath = searchParams.get('redirect') || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +40,31 @@ export default function LoginPage() {
 
       if (data?.user) {
         setAuth(true, data.user.email === 'admin@vowseoul.com')
-        router.push('/')
+        
+        // Check for draft invitation to associate
+        if (typeof window !== 'undefined') {
+          const draft = localStorage.getItem('vow_seoul_draft_invitation')
+          if (draft) {
+            try {
+              const parsedDraft = JSON.parse(draft)
+              const store = useAppStore.getState()
+              store.setUser(data.user)
+              store.setAuth(true, data.user.email === 'admin@vowseoul.com')
+              store.setCurrentInvitation(parsedDraft)
+              
+              const savedId = await store.saveInvitation()
+              localStorage.removeItem('vow_seoul_draft_invitation')
+              if (savedId) {
+                router.push(`/editor/${savedId}`)
+                return
+              }
+            } catch (err) {
+              console.error('Error saving draft after login:', err)
+            }
+          }
+        }
+
+        router.push(redirectPath)
       }
     } catch (err: any) {
       console.error('Login error:', err)
@@ -177,3 +205,16 @@ export default function LoginPage() {
     </div>
   )
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  )
+}
+

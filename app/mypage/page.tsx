@@ -293,6 +293,12 @@ export default function MyPage() {
                                           미리보기
                                         </Link>
                                       </DropdownMenuItem>
+                                      <DropdownMenuItem asChild>
+                                        <Link href={`/mypage/rsvps/${invite.id}`}>
+                                          <Mail className="w-3.5 h-3.5 mr-2" />
+                                          참석/방명록 관리
+                                        </Link>
+                                      </DropdownMenuItem>
                                       {invite.status === 'published' && (
                                         <>
                                           <DropdownMenuItem onClick={() => copyInviteLink(invite.id)}>
@@ -317,15 +323,21 @@ export default function MyPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 mt-4">
+                              <div className="flex flex-wrap items-center gap-2 mt-4">
                                 <Button size="sm" variant="outline" className="text-xs h-8" asChild>
                                   <Link href={`/editor/${invite.id}`}>
                                     <Edit className="w-3.5 h-3.5 mr-1" />
                                     수정하기
                                   </Link>
                                 </Button>
+                                <Button size="sm" variant="outline" className="text-xs h-8 gap-1" asChild>
+                                  <Link href={`/mypage/rsvps/${invite.id}`}>
+                                    <Mail className="w-3.5 h-3.5" />
+                                    참석/방명록
+                                  </Link>
+                                </Button>
                                 {invite.status === 'published' ? (
-                                  <Button size="sm" className="text-xs h-8 gap-1" onClick={() => copyInviteLink(invite.id)}>
+                                  <Button size="sm" className="text-xs h-8 gap-1 animate-pulse hover:animate-none" onClick={() => copyInviteLink(invite.id)}>
                                     <Share2 className="w-3.5 h-3.5" />
                                     공유하기
                                   </Button>

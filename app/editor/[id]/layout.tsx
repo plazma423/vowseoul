@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { useAppStore, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const editorSteps = [
   { id: 1, name: '기본정보', path: '' },
@@ -26,10 +27,24 @@ export default function EditorLayout({
   const router = useRouter()
   const params = useParams()
   const pathname = usePathname()
-  const { currentInvitation, setCurrentInvitation, loadInvitation, saveInvitation, editorStep, setEditorStep, fetchData } = useAppStore()
+  const { currentInvitation, setCurrentInvitation, loadInvitation, saveInvitation, editorStep, setEditorStep, fetchData, isAuthenticated } = useAppStore()
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
 
   const invitationId = params.id as string
   const basePath = `/editor/${invitationId}`
+
+  // Show auth prompt for guests on new draft
+  useEffect(() => {
+    if (invitationId === 'new') {
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setIsAuthDialogOpen(true)
+        }
+      }
+      checkSession()
+    }
+  }, [invitationId])
 
   // Initialize or load invitation on mount
   useEffect(() => {
@@ -68,6 +83,11 @@ export default function EditorLayout({
   }, [invitationId, setCurrentInvitation, loadInvitation, fetchData])
 
   const handleSave = async () => {
+    if (!isAuthenticated) {
+      setIsAuthDialogOpen(true)
+      return
+    }
+
     const savedId = await saveInvitation()
     if (savedId) {
       alert('청첩장이 성공적으로 저장되었습니다!')
@@ -183,6 +203,50 @@ export default function EditorLayout({
           </div>
         )}
       </div>
+
+      {/* Auth Modal */}
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl">로그인 및 회원가입 안내</DialogTitle>
+            <DialogDescription className="pt-2 text-sm text-muted-foreground leading-relaxed">
+              VOW SEOUL 청첩장을 저장하고 최종 발행하려면 로그인이 필요합니다.
+              <br />
+              현재 작성 중인 정보는 안전하게 임시 저장되며, 로그인 및 회원가입 진행 후 작성하시던 단계에서 자동으로 연동되어 이어서 편집하실 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setIsAuthDialogOpen(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              비회원으로 계속 작성
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (typeof window !== 'undefined' && currentInvitation) {
+                  localStorage.setItem('vow_seoul_draft_invitation', JSON.stringify(currentInvitation))
+                }
+                router.push(`/login?redirect=${encodeURIComponent(pathname)}`)
+              }}
+            >
+              로그인
+            </Button>
+            <Button
+              onClick={() => {
+                if (typeof window !== 'undefined' && currentInvitation) {
+                  localStorage.setItem('vow_seoul_draft_invitation', JSON.stringify(currentInvitation))
+                }
+                router.push(`/signup?redirect=${encodeURIComponent(pathname)}`)
+              }}
+            >
+              회원가입
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

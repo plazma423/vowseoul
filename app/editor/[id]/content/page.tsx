@@ -28,7 +28,7 @@ const sampleMessages = [
 export default function ContentPage() {
   const router = useRouter()
   const params = useParams()
-  const { currentInvitation, updateCurrentInvitation, saveInvitation } = useAppStore()
+  const { currentInvitation, updateCurrentInvitation, saveInvitation, setActiveSection } = useAppStore()
   const invitationId = params.id as string
   const [showMessageModal, setShowMessageModal] = useState(false)
   
@@ -224,7 +224,7 @@ export default function ContentPage() {
                   onChange={handleMainImageUpload}
                   disabled={isUploadingMain}
                 />
-                <Button variant="outline" className="flex-1" onClick={() => mainImageInputRef.current?.click()} disabled={isUploadingMain}>
+                <Button variant="outline" className="flex-1" onClick={() => { setActiveSection('hero'); mainImageInputRef.current?.click() }} disabled={isUploadingMain}>
                   {isUploadingMain ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                   이미지 업로드
                 </Button>
@@ -249,6 +249,7 @@ export default function ContentPage() {
                   rows={5}
                   value={currentInvitation?.invitationMessage || ''}
                   onChange={(e) => updateCurrentInvitation({ invitationMessage: e.target.value })}
+                  onFocus={() => setActiveSection('greeting')}
                 />
                 <FieldDescription>
                   청첩장에 표시될 인사말을 작성해주세요.
@@ -349,7 +350,7 @@ export default function ContentPage() {
                   />
                   <button 
                     className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
-                    onClick={() => galleryInputRef.current?.click()}
+                    onClick={() => { setActiveSection('gallery'); galleryInputRef.current?.click() }}
                     disabled={isUploadingGallery}
                   >
                     {isUploadingGallery ? (
@@ -382,9 +383,46 @@ export default function ContentPage() {
                     placeholder="주소를 검색해주세요"
                     value={currentInvitation?.venueAddress || ''}
                     onChange={(e) => updateCurrentInvitation({ venueAddress: e.target.value })}
+                    onFocus={() => setActiveSection('location')}
                     className="flex-1"
                   />
-                  <Button variant="outline">주소 검색</Button>
+                  <Button 
+                    variant="outline"
+                    type="button"
+                    onClick={() => {
+                      const executePostcode = () => {
+                        new (window as any).daum.Postcode({
+                          oncomplete: (data: any) => {
+                            let fullAddress = data.address;
+                            let extraAddress = '';
+
+                            if (data.addressType === 'R') {
+                              if (data.bname !== '') {
+                                extraAddress += data.bname;
+                              }
+                              if (data.buildingName !== '') {
+                                extraAddress += extraAddress !== '' ? `, ${data.buildingName}` : data.buildingName;
+                              }
+                              fullAddress += extraAddress !== '' ? ` (${extraAddress})` : '';
+                            }
+
+                            updateCurrentInvitation({ venueAddress: fullAddress });
+                          },
+                        }).open();
+                      };
+
+                      if (!(window as any).daum) {
+                        const script = document.createElement('script');
+                        script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+                        script.onload = executePostcode;
+                        document.body.appendChild(script);
+                      } else {
+                        executePostcode();
+                      }
+                    }}
+                  >
+                    주소 검색
+                  </Button>
                 </div>
               </Field>
               <div className="flex gap-2">
@@ -403,6 +441,7 @@ export default function ContentPage() {
                   rows={3}
                   value={currentInvitation?.trafficInfo || ''}
                   onChange={(e) => updateCurrentInvitation({ trafficInfo: e.target.value })}
+                  onFocus={() => setActiveSection('location')}
                 />
               </Field>
               <Field>
@@ -413,6 +452,7 @@ export default function ContentPage() {
                   rows={3}
                   value={currentInvitation?.parkingInfo || ''}
                   onChange={(e) => updateCurrentInvitation({ parkingInfo: e.target.value })}
+                  onFocus={() => setActiveSection('location')}
                 />
               </Field>
             </FieldGroup>
@@ -434,7 +474,10 @@ export default function ContentPage() {
               </div>
               <Switch
                 checked={currentInvitation?.rsvpEnabled || false}
-                onCheckedChange={(checked) => updateCurrentInvitation({ rsvpEnabled: checked })}
+                onCheckedChange={(checked) => {
+                  updateCurrentInvitation({ rsvpEnabled: checked })
+                  setActiveSection('rsvp')
+                }}
               />
             </div>
             {currentInvitation?.rsvpEnabled && (
@@ -507,6 +550,7 @@ export default function ContentPage() {
                 }}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="w-full" onClick={() => {
+                      setActiveSection('account')
                       setEditingAccountId(null)
                       setNewAccount({ bank: '', accountNumber: '', accountHolder: '', relation: 'groom' })
                     }}>
@@ -626,6 +670,7 @@ export default function ContentPage() {
                 }}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="w-full" onClick={() => {
+                      setActiveSection('contact')
                       setEditingContactId(null)
                       setNewContact({ name: '', phone: '', relation: 'groom' })
                     }}>

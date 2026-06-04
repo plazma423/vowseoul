@@ -19,7 +19,7 @@ import { uploadFile } from '@/lib/storage'
 export default function FeaturesPage() {
   const router = useRouter()
   const params = useParams()
-  const { currentInvitation, updateCurrentInvitation, saveInvitation } = useAppStore()
+  const { currentInvitation, updateCurrentInvitation, saveInvitation, setActiveSection } = useAppStore()
   const invitationId = params.id as string
   const [playingBgm, setPlayingBgm] = useState<string | null>(null)
   const [paperTexture, setPaperTexture] = useState(false)
@@ -120,6 +120,7 @@ export default function FeaturesPage() {
             checked={currentInvitation?.guestbookType !== 'none'}
             onCheckedChange={(checked) => {
               updateCurrentInvitation({ guestbookType: checked ? 'text' : 'none' })
+              setActiveSection('guestbook')
             }}
           />
         </CardHeader>
@@ -130,7 +131,10 @@ export default function FeaturesPage() {
                 <FieldLabel>방명록 유형</FieldLabel>
                 <Select
                   value={currentInvitation?.guestbookType === 'audio' ? 'audio' : 'text'}
-                  onValueChange={(value: 'text' | 'audio') => updateCurrentInvitation({ guestbookType: value })}
+                  onValueChange={(value: 'text' | 'audio') => {
+                    updateCurrentInvitation({ guestbookType: value })
+                    setActiveSection('guestbook')
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -192,7 +196,10 @@ export default function FeaturesPage() {
           ) : (
             <RadioGroup
               value={currentInvitation?.bgmId || ''}
-              onValueChange={(value) => updateCurrentInvitation({ bgmId: value })}
+              onValueChange={(value) => {
+                updateCurrentInvitation({ bgmId: value })
+                setActiveSection('hero')
+              }}
               className="space-y-2"
             >
               {bgms.map((bgm) => (

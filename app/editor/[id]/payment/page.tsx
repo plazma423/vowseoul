@@ -4,11 +4,70 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAppStore, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, CreditCard, Copy, Check, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CreditCard, Copy, Check, ExternalLink, Calendar, Heart, Award, ArrowUpRight } from 'lucide-react'
 import { MobilePreview } from '@/components/mobile-preview'
+
+function Confetti() {
+  const [particles, setParticles] = useState<any[]>([])
+
+  useEffect(() => {
+    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#eab308', '#a855f7', '#ff7849', '#ffc82c']
+    const newParticles = Array.from({ length: 80 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100 + '%',
+      delay: Math.random() * 3 + 's',
+      duration: Math.random() * 2 + 2 + 's',
+      size: Math.random() * 8 + 6 + 'px',
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: Math.random() > 0.5 ? 'circle' : 'square',
+      rotate: Math.random() * 360 + 'deg',
+    }))
+    setParticles(newParticles)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-20px) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        .confetti-p {
+          position: absolute;
+          top: -20px;
+          animation-name: confetti-fall;
+          animation-iteration-count: infinite;
+          animation-timing-function: linear;
+        }
+      `}} />
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="confetti-p"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.shape === 'circle' ? '50%' : '0%',
+            transform: `rotate(${p.rotate})`,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function PaymentPage() {
   const router = useRouter()
@@ -18,6 +77,7 @@ export default function PaymentPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const theme = sampleThemes.find(t => t.id === currentInvitation?.themeId) || sampleThemes[0]
@@ -76,6 +136,7 @@ export default function PaymentPage() {
       setIsProcessing(false)
       setIsPaid(true)
       setIsPaymentOpen(false)
+      setIsSuccessDialogOpen(true)
     } catch (err) {
       console.error('Payment processing failed:', err)
       alert('결제 처리 중 오류가 발생했습니다.')
@@ -245,6 +306,78 @@ export default function PaymentPage() {
               결제 처리 중...
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+        {isSuccessDialogOpen && <Confetti />}
+        <DialogContent className="sm:max-w-md border border-green-200">
+          <DialogHeader className="text-center flex flex-col items-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600 animate-bounce">
+              <Award className="h-8 w-8" />
+            </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-foreground text-center">
+              청첩장 발행 완료! 🎉
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground text-center mt-2 leading-relaxed">
+              축하합니다! 소중한 첫걸음을 떼셨습니다.
+              <br />
+              발행 완료된 모바일 청첩장을 하객분들께 공유해 보세요.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Quick Actions Card */}
+          <div className="mt-4 p-4 bg-muted/40 rounded-xl space-y-4 border">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">청첩장 발행 주소</p>
+              <div className="flex items-center gap-2 bg-background border rounded-lg p-2">
+                <span className="text-xs font-mono select-all flex-1 truncate pr-2">
+                  {publishedUrl}
+                </span>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-8 px-2 text-xs shrink-0" 
+                  onClick={handleCopyUrl}
+                >
+                  {copied ? (
+                    <span className="text-green-600 flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5" /> 복사됨
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Copy className="h-3.5 w-3.5" /> 복사
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                className="h-10 text-xs gap-1 border-slate-300"
+                onClick={() => window.open(publishedUrl, '_blank')}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                직접 보기
+              </Button>
+              <Button 
+                className="h-10 text-xs gap-1"
+                onClick={() => router.push('/mypage')}
+              >
+                <Award className="h-3.5 w-3.5" />
+                마이페이지 이동
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 sm:justify-center">
+            <Button className="w-full sm:w-auto" variant="ghost" onClick={() => setIsSuccessDialogOpen(false)}>
+              닫기
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

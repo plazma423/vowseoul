@@ -25,7 +25,7 @@ const timeOptions = [
 export default function BasicInfoPage() {
   const router = useRouter()
   const params = useParams()
-  const { currentInvitation, updateCurrentInvitation, saveInvitation } = useAppStore()
+  const { currentInvitation, updateCurrentInvitation, saveInvitation, setActiveSection } = useAppStore()
   const invitationId = params.id as string
 
   const handleNext = async () => {
@@ -59,6 +59,7 @@ export default function BasicInfoPage() {
                   placeholder="홍길동"
                   value={currentInvitation?.groomName || ''}
                   onChange={(e) => updateCurrentInvitation({ groomName: e.target.value })}
+                  onFocus={() => setActiveSection('hero')}
                 />
               </Field>
               <Field>
@@ -68,6 +69,7 @@ export default function BasicInfoPage() {
                   placeholder="Hong Gildong"
                   value={currentInvitation?.groomNameEn || ''}
                   onChange={(e) => updateCurrentInvitation({ groomNameEn: e.target.value })}
+                  onFocus={() => setActiveSection('hero')}
                 />
               </Field>
             </div>
@@ -79,6 +81,7 @@ export default function BasicInfoPage() {
                 rows={2}
                 value={currentInvitation?.groomParentRelation || ''}
                 onChange={(e) => updateCurrentInvitation({ groomParentRelation: e.target.value })}
+                onFocus={() => setActiveSection('hero')}
               />
               <FieldDescription>청첩장에 표시될 혼주 관계를 입력해주세요.</FieldDescription>
             </Field>
@@ -102,6 +105,7 @@ export default function BasicInfoPage() {
                   placeholder="김영희"
                   value={currentInvitation?.brideName || ''}
                   onChange={(e) => updateCurrentInvitation({ brideName: e.target.value })}
+                  onFocus={() => setActiveSection('hero')}
                 />
               </Field>
               <Field>
@@ -111,6 +115,7 @@ export default function BasicInfoPage() {
                   placeholder="Kim Younghee"
                   value={currentInvitation?.brideNameEn || ''}
                   onChange={(e) => updateCurrentInvitation({ brideNameEn: e.target.value })}
+                  onFocus={() => setActiveSection('hero')}
                 />
               </Field>
             </div>
@@ -122,6 +127,7 @@ export default function BasicInfoPage() {
                 rows={2}
                 value={currentInvitation?.brideParentRelation || ''}
                 onChange={(e) => updateCurrentInvitation({ brideParentRelation: e.target.value })}
+                onFocus={() => setActiveSection('hero')}
               />
               <FieldDescription>청첩장에 표시될 혼주 관계를 입력해주세요.</FieldDescription>
             </Field>
@@ -148,6 +154,7 @@ export default function BasicInfoPage() {
                         'w-full justify-start text-left font-normal',
                         !currentInvitation?.weddingDate && 'text-muted-foreground'
                       )}
+                      onFocus={() => setActiveSection('calendar')}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {currentInvitation?.weddingDate ? (
@@ -173,7 +180,7 @@ export default function BasicInfoPage() {
                   value={currentInvitation?.weddingTime || ''}
                   onValueChange={(value) => updateCurrentInvitation({ weddingTime: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger onFocus={() => setActiveSection('calendar')}>
                     <SelectValue placeholder="시간을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
@@ -206,6 +213,7 @@ export default function BasicInfoPage() {
                   placeholder="그랜드 하얏트 서울"
                   value={currentInvitation?.venueName || ''}
                   onChange={(e) => updateCurrentInvitation({ venueName: e.target.value })}
+                  onFocus={() => setActiveSection('location')}
                 />
               </Field>
               <Field>
@@ -215,6 +223,7 @@ export default function BasicInfoPage() {
                   placeholder="그랜드볼룸"
                   value={currentInvitation?.venueHall || ''}
                   onChange={(e) => updateCurrentInvitation({ venueHall: e.target.value })}
+                  onFocus={() => setActiveSection('location')}
                 />
               </Field>
             </div>
@@ -226,9 +235,44 @@ export default function BasicInfoPage() {
                   placeholder="서울특별시 용산구 소월로 322"
                   value={currentInvitation?.venueAddress || ''}
                   onChange={(e) => updateCurrentInvitation({ venueAddress: e.target.value })}
+                  onFocus={() => setActiveSection('location')}
                   className="flex-1"
                 />
-                <Button variant="outline" type="button">
+                <Button 
+                  variant="outline" 
+                  type="button"
+                  onClick={() => {
+                    const executePostcode = () => {
+                      new (window as any).daum.Postcode({
+                        oncomplete: (data: any) => {
+                          let fullAddress = data.address;
+                          let extraAddress = '';
+
+                          if (data.addressType === 'R') {
+                            if (data.bname !== '') {
+                              extraAddress += data.bname;
+                            }
+                            if (data.buildingName !== '') {
+                              extraAddress += extraAddress !== '' ? `, ${data.buildingName}` : data.buildingName;
+                            }
+                            fullAddress += extraAddress !== '' ? ` (${extraAddress})` : '';
+                          }
+
+                          updateCurrentInvitation({ venueAddress: fullAddress });
+                        },
+                      }).open();
+                    };
+
+                    if (!(window as any).daum) {
+                      const script = document.createElement('script');
+                      script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+                      script.onload = executePostcode;
+                      document.body.appendChild(script);
+                    } else {
+                      executePostcode();
+                    }
+                  }}
+                >
                   주소 검색
                 </Button>
               </div>

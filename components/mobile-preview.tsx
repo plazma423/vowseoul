@@ -21,8 +21,17 @@ import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 
 export function MobilePreview({ className, isSticky = true }: { className?: string; isSticky?: boolean }) {
-  const { currentInvitation, themes } = useAppStore()
+  const { currentInvitation, themes, activeSection } = useAppStore()
   const [customFonts, setCustomFonts] = useState<any[]>([])
+
+  useEffect(() => {
+    if (activeSection) {
+      const element = document.getElementById(`preview-section-${activeSection}`)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [activeSection])
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -202,7 +211,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
               switch (sectionId) {
                 case 'hero':
                   return (
-                    <div key="hero" className="relative h-[560px] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+                    <div key="hero" id="preview-section-hero" className="relative h-[560px] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
                       {currentInvitation?.mainImage && (
                         <div className="absolute inset-0 z-0">
                           <img
@@ -289,7 +298,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 
                 case 'greeting':
                   return (
-                    <section key="greeting" className={cn(spacingClass, "px-6 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="greeting" id="preview-section-greeting" className={cn(spacingClass, "px-6 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <Heart className="w-5 h-5 mx-auto mb-4 opacity-60" style={{ color: accentColor }} />
                       <p className="leading-relaxed whitespace-pre-line text-xs opacity-80 mb-6">
@@ -302,7 +311,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   if (!currentInvitation?.galleryImages || currentInvitation.galleryImages.length === 0) return null
                   const isSlide = currentInvitation?.galleryViewType === 'slide'
                   return (
-                    <section key="gallery" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="gallery" id="preview-section-gallery" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">GALLERY</h2>
                       {isSlide ? (
@@ -328,7 +337,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'calendar':
                   if (!currentInvitation?.weddingDate) return null
                   return (
-                    <section key="calendar" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="calendar" id="preview-section-calendar" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">CALENDAR</h2>
                       <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
@@ -370,7 +379,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
                 case 'location':
                   return (
-                    <section key="location" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="location" id="preview-section-location" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">LOCATION</h2>
                       <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
@@ -417,7 +426,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'contact':
                   if (!currentInvitation?.contacts || currentInvitation.contacts.length === 0) return null
                   return (
-                    <section key="contact" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="contact" id="preview-section-contact" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">CONTACT</h2>
                       <div className="grid grid-cols-2 gap-2">
@@ -446,7 +455,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'account':
                   if (!currentInvitation?.bankAccounts || currentInvitation.bankAccounts.length === 0) return null
                   return (
-                    <section key="account" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="account" id="preview-section-account" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-2">ACCOUNT</h2>
                       <p className="text-center text-[10px] opacity-40 mb-6">마음 전하실 곳</p>
@@ -479,7 +488,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'rsvp':
                   if (!currentInvitation?.rsvpEnabled) return null
                   return (
-                    <section key="rsvp" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="rsvp" id="preview-section-rsvp" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-2">RSVP</h2>
                       <p className="text-center text-[10px] opacity-40 mb-6">참석 여부를 알려주세요</p>
@@ -493,7 +502,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'guestbook':
                   if (currentInvitation?.guestbookType === 'none' || currentInvitation?.guestbookType === undefined) return null
                   return (
-                    <section key="guestbook" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                    <section key="guestbook" id="preview-section-guestbook" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-6">GUESTBOOK</h2>
                       <div className="space-y-2 text-left">
