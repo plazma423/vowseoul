@@ -6,43 +6,72 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export function HeroSection() {
-  const [bgImageUrl, setBgImageUrl] = useState<string>('')
-  const [heroContent, setHeroContent] = useState({
-    title: "소중한 서약을\n담아드립니다",
-    description: "손 쉽게 완성하는 당신만의 특별한 웨딩 초대장.\n우아하고 세련된 모바일 청첩장을 직접 만들어보세요.",
-    fontFamily: "font-serif",
-    titleFontSize: "text-5xl",
-    descFontSize: "text-base",
-    layout: "text-center"
+  const [bgImageUrl, setBgImageUrl] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vow_seoul_hero_bg') || 'https://buswlceztsbxoivymvhw.supabase.co/storage/v1/object/public/vow-seoul-storage/main-images/main1.png'
+    }
+    return 'https://buswlceztsbxoivymvhw.supabase.co/storage/v1/object/public/vow-seoul-storage/main-images/main1.png'
+  })
+  
+  const [heroContent, setHeroContent] = useState(() => {
+    const defaultVal = {
+      title: "Where your VOW begins",
+      description: "소중한 서약의 순간을 담아드립니다. \n손 쉽게 완성하는 당신만의 특별한 웨딩 초대장.",
+      fontFamily: "font-sans",
+      titleFontSize: "text-5xl",
+      descFontSize: "text-base",
+      layout: "text-center"
+    }
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('vow_seoul_hero_content')
+      if (cached) {
+        try {
+          return JSON.parse(cached)
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+    return defaultVal
   })
 
   useEffect(() => {
     const fetchMainImage = async () => {
-      // 1. 설정 테이블에서 현재 저장된 메인 이미지 경로 가져오기
-      const { data: settingData } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'main_image')
-        .single()
+      try {
+        // 1. 설정 테이블에서 현재 저장된 메인 이미지 경로 가져오기
+        const { data: settingData } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'main_image')
+          .single()
 
-      const imagePath = settingData?.value?.path || 'main-images/image1'
-      
-      // 2. Supabase Storage에서 Public URL 가져오기
-      const { data } = supabase.storage.from('vow-seoul-storage').getPublicUrl(imagePath)
-      
-      if (data?.publicUrl) {
-        setBgImageUrl(data.publicUrl)
-      }
-
-      // 3. 메인 텍스트 설정 가져오기
-      const { data: textData } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'hero_content')
-        .single()
+        const imagePath = settingData?.value?.path || 'main-images/main1.png'
         
-      if (textData?.value) {
-        setHeroContent(textData.value)
+        // 2. Supabase Storage에서 Public URL 가져오기
+        const { data } = supabase.storage.from('vow-seoul-storage').getPublicUrl(imagePath)
+        
+        if (data?.publicUrl) {
+          setBgImageUrl(data.publicUrl)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('vow_seoul_hero_bg', data.publicUrl)
+          }
+        }
+
+        // 3. 메인 텍스트 설정 가져오기
+        const { data: textData } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'hero_content')
+          .single()
+          
+        if (textData?.value) {
+          setHeroContent(textData.value)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('vow_seoul_hero_content', JSON.stringify(textData.value))
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching hero section data:', err)
       }
     }
     fetchMainImage()
