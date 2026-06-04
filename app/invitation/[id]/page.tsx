@@ -50,6 +50,7 @@ export default function InvitationViewPage() {
   const [mealType, setMealType] = useState("korean")
   const [rsvpName, setRsvpName] = useState("")
   const [rsvpMessage, setRsvpMessage] = useState("")
+  const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false)
 
   // Guestbook states
   const [guestbookMessages, setGuestbookMessages] = useState<any[]>([])
@@ -183,15 +184,44 @@ export default function InvitationViewPage() {
     toast.success("클립보드에 주소/계좌번호가 복사되었습니다.")
   }
 
-  const handleRsvpSubmit = () => {
+  const handleRsvpSubmit = async () => {
     if (!rsvpName) {
       toast.error("성함을 입력해주세요.")
       return
     }
-    toast.success("참석 의사가 정상적으로 전달되었습니다.")
-    setShowRsvp(false)
-    setRsvpName("")
-    setRsvpMessage("")
+    setIsSubmittingRsvp(true)
+    const newRsvp = {
+      id: 'rsvp-' + Math.random().toString(36).substring(2, 9),
+      invitationId: id,
+      name: rsvpName,
+      attendance: attendance,
+      guestCount: attendance === 'yes' ? (parseInt(guestCount) || 1) : 0,
+      mealType: attendance === 'yes' ? mealType : 'none',
+      message: rsvpMessage,
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const { error } = await supabase.from('rsvps').insert(newRsvp)
+      if (error) throw error
+
+      toast.success("참석 의사가 정상적으로 전달되었습니다.")
+      setShowRsvp(false)
+      setRsvpName("")
+      setRsvpMessage("")
+    } catch (err: any) {
+      console.error("RSVP insert error:", err)
+      const localRsvpsKey = `rsvps_${id}`
+      const existingLocal = JSON.parse(localStorage.getItem(localRsvpsKey) || '[]')
+      localStorage.setItem(localRsvpsKey, JSON.stringify([newRsvp, ...existingLocal]))
+      
+      toast.success("참석 의사가 전달되었습니다. (로컬 저장)")
+      setShowRsvp(false)
+      setRsvpName("")
+      setRsvpMessage("")
+    } finally {
+      setIsSubmittingRsvp(false)
+    }
   }
 
   const handleAddComment = async () => {
@@ -336,7 +366,16 @@ export default function InvitationViewPage() {
       krFamily = `'${krFont}'`;
     }
 
-    const genericFallback = (enFont === 'font-serif' || krFont === 'font-serif') ? 'serif' : 'sans-serif';
+    const isSerif = enFont.toLowerCase().includes('serif') || 
+                    krFont.toLowerCase().includes('serif') || 
+                    krFont.toLowerCase().includes('myeongjo') || 
+                    enFont.toLowerCase().includes('playfair') || 
+                    enFont.toLowerCase().includes('lora') ||
+                    enFont.toLowerCase().includes('cormorant') ||
+                    enFont.toLowerCase().includes('baskerville') ||
+                    krFont === 'font-serif' || 
+                    enFont === 'font-serif';
+    const genericFallback = isSerif ? 'serif' : 'sans-serif';
     return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
 
@@ -792,8 +831,8 @@ export default function InvitationViewPage() {
                           <Textarea id="rsvp-msg" placeholder="축하 메시지를 남겨주세요" rows={3} value={rsvpMessage} onChange={(e) => setRsvpMessage(e.target.value)} />
                         </div>
                       </div>
-                      <Button className="w-full text-white" style={{ backgroundColor: accentColor, ...borderStyle }} onClick={handleRsvpSubmit}>
-                        전송하기
+                      <Button className="w-full text-white" style={{ backgroundColor: accentColor, ...borderStyle }} onClick={handleRsvpSubmit} disabled={isSubmittingRsvp}>
+                        {isSubmittingRsvp ? "전송 중..." : "전송하기"}
                       </Button>
                     </DialogContent>
                   </Dialog>

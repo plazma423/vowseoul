@@ -14,7 +14,10 @@ export async function GET(request: Request) {
       return new NextResponse(`Failed to fetch font from source: ${response.statusText}`, { status: response.status })
     }
 
-    const contentType = response.headers.get('content-type') || 'font/ttf'
+    let contentType = response.headers.get('content-type') || 'font/ttf'
+    if (contentType === 'application/octet-stream') {
+      contentType = 'font/ttf'
+    }
     const fontBuffer = await response.arrayBuffer()
 
     return new NextResponse(fontBuffer, {

@@ -114,7 +114,16 @@ export default function ThemeEditorPage() {
       krFamily = `'${krFont}'`;
     }
 
-    const genericFallback = (enFont === 'font-serif' || krFont === 'font-serif') ? 'serif' : 'sans-serif';
+    const isSerif = enFont.toLowerCase().includes('serif') || 
+                    krFont.toLowerCase().includes('serif') || 
+                    krFont.toLowerCase().includes('myeongjo') || 
+                    enFont.toLowerCase().includes('playfair') || 
+                    enFont.toLowerCase().includes('lora') ||
+                    enFont.toLowerCase().includes('cormorant') ||
+                    enFont.toLowerCase().includes('baskerville') ||
+                    krFont === 'font-serif' || 
+                    enFont === 'font-serif';
+    const genericFallback = isSerif ? 'serif' : 'sans-serif';
     return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
 

@@ -621,6 +621,9 @@ export default function AssetsPage() {
                     <Field>
                       <FieldLabel>폰트 패밀리명 (CSS font-family 명칭)</FieldLabel>
                       <Input placeholder="예: NanumBarunpen, NanumBrush" value={newFontFamily} onChange={e => setNewFontFamily(e.target.value)} />
+                      <p className="text-[11px] text-muted-foreground mt-1 text-red-500 font-medium">
+                        * Google Fonts 등 공백이 포함된 폰트는 공백을 포함하여 대소문자를 정확히 입력해주세요. (예: Lobster Two (O), LobsterTwo (X))
+                      </p>
                     </Field>
                     <Field>
                       <FieldLabel>등록 방식</FieldLabel>
