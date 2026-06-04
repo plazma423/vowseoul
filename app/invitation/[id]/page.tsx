@@ -196,8 +196,8 @@ export default function InvitationViewPage() {
       name: rsvpName,
       attendance: attendance,
       guestCount: attendance === 'yes' ? (parseInt(guestCount) || 1) : 0,
-      mealType: attendance === 'yes' ? mealType : 'none',
-      message: rsvpMessage,
+      mealType: (attendance === 'yes' && invitation.rsvpMealEnabled !== false) ? mealType : 'none',
+      message: invitation.rsvpCommentEnabled !== false ? rsvpMessage : '',
       createdAt: new Date().toISOString()
     }
 
@@ -811,25 +811,29 @@ export default function InvitationViewPage() {
                                 </div>
                               </RadioGroup>
                             </div>
-                            <div className="space-y-3">
-                              <Label>식사 선택</Label>
-                              <RadioGroup value={mealType} onValueChange={setMealType}>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="korean" id="korean" />
-                                  <Label htmlFor="korean" className="font-normal">한식</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="western" id="western" />
-                                  <Label htmlFor="western" className="font-normal">양식</Label>
-                                </div>
-                              </RadioGroup>
-                            </div>
+                            {invitation.rsvpMealEnabled !== false && (
+                              <div className="space-y-3">
+                                <Label>식사 선택</Label>
+                                <RadioGroup value={mealType} onValueChange={setMealType}>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="korean" id="korean" />
+                                    <Label htmlFor="korean" className="font-normal">한식</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="western" id="western" />
+                                    <Label htmlFor="western" className="font-normal">양식</Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                            )}
                           </>
                         )}
-                        <div className="space-y-3">
-                          <Label htmlFor="rsvp-msg">축하 메시지 (선택)</Label>
-                          <Textarea id="rsvp-msg" placeholder="축하 메시지를 남겨주세요" rows={3} value={rsvpMessage} onChange={(e) => setRsvpMessage(e.target.value)} />
-                        </div>
+                        {invitation.rsvpCommentEnabled !== false && (
+                          <div className="space-y-3">
+                            <Label htmlFor="rsvp-msg">축하 메시지 (선택)</Label>
+                            <Textarea id="rsvp-msg" placeholder="축하 메시지를 남겨주세요" rows={3} value={rsvpMessage} onChange={(e) => setRsvpMessage(e.target.value)} />
+                          </div>
+                        )}
                       </div>
                       <Button className="w-full text-white" style={{ backgroundColor: accentColor, ...borderStyle }} onClick={handleRsvpSubmit} disabled={isSubmittingRsvp}>
                         {isSubmittingRsvp ? "전송 중..." : "전송하기"}

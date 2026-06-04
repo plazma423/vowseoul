@@ -67,6 +67,8 @@ export default function EditorLayout({
             fontSet: defaultTheme.fontSets?.[0]?.id || 'default',
             galleryViewType: 'slide',
             rsvpEnabled: true,
+            rsvpMealEnabled: true,
+            rsvpCommentEnabled: true,
             guestbookType: 'text',
             bankAccounts: [],
             contacts: [],
@@ -190,7 +192,7 @@ export default function EditorLayout({
       {/* Editor Content */}
       <div className="flex flex-1">
         {/* Left Panel - Form */}
-        <div className="flex-1 overflow-auto p-6 lg:p-8">
+        <div className="flex-1 overflow-auto p-6 pb-24 lg:p-8 lg:pb-32">
           <div className="mx-auto max-w-2xl">
             {children}
           </div>

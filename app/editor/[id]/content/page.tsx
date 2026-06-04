@@ -481,10 +481,47 @@ export default function ContentPage() {
               />
             </div>
             {currentInvitation?.rsvpEnabled && (
-              <div className="mt-4 rounded-lg bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">
-                  하객용 RSVP 폼에서는 참석 여부, 참석 인원, 식사 여부를 입력받습니다.
-                </p>
+              <div className="mt-4 space-y-4 rounded-lg bg-muted/50 p-4 border border-border">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">기본 수집 정보 (고정)</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground border border-border">성함</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground border border-border">참석 여부</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground border border-border">참석 인원</span>
+                  </div>
+                </div>
+                
+                <div className="border-t border-border pt-4 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">추가 옵션 설정</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">식사 선택 기능</p>
+                      <p className="text-xs text-muted-foreground">하객이 한식/양식 등의 식사 선호를 선택하게 합니다.</p>
+                    </div>
+                    <Switch
+                      checked={currentInvitation?.rsvpMealEnabled !== false}
+                      onCheckedChange={(checked) => {
+                        updateCurrentInvitation({ rsvpMealEnabled: checked })
+                        setActiveSection('rsvp')
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border/50 pt-3">
+                    <div>
+                      <p className="text-sm font-medium">축하 메시지 입력</p>
+                      <p className="text-xs text-muted-foreground">하객이 참석 정보와 함께 축하 메시지를 남길 수 있게 합니다.</p>
+                    </div>
+                    <Switch
+                      checked={currentInvitation?.rsvpCommentEnabled !== false}
+                      onCheckedChange={(checked) => {
+                        updateCurrentInvitation({ rsvpCommentEnabled: checked })
+                        setActiveSection('rsvp')
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </AccordionContent>

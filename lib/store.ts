@@ -24,6 +24,8 @@ export interface WeddingInvitation {
   trafficInfo: string
   parkingInfo: string
   rsvpEnabled: boolean
+  rsvpMealEnabled?: boolean
+  rsvpCommentEnabled?: boolean
   guestbookType: 'text' | 'audio'
   bgmId: string | null
   kakaoThumbnail: string | null
@@ -566,6 +568,8 @@ export const sampleInvitations: WeddingInvitation[] = [
     trafficInfo: '지하철 6호선 이태원역 1번 출구에서 도보 5분',
     parkingInfo: '호텔 지하주차장 이용 가능 (3시간 무료)',
     rsvpEnabled: true,
+    rsvpMealEnabled: true,
+    rsvpCommentEnabled: true,
     guestbookType: 'text',
     bgmId: 'bgm1',
     kakaoThumbnail: null,

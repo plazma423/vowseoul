@@ -82,6 +82,8 @@ CREATE TABLE IF NOT EXISTS public.invitations (
   "trafficInfo" text,
   "parkingInfo" text,
   "rsvpEnabled" boolean,
+  "rsvpMealEnabled" boolean DEFAULT true,
+  "rsvpCommentEnabled" boolean DEFAULT true,
   "guestbookType" text,
   "bgmId" text,
   "kakaoThumbnail" text,
@@ -166,4 +168,9 @@ INSERT INTO public.notices ("id", "title", "content", "category", "createdAt") V
 ('notice2', '축의금 송금 계좌 및 연락처 편집 기능 업데이트 완료', '안녕하세요. VOW SEOUL입니다.\n고객님들의 피드백을 반영하여 청첩장 만들기 페이지에서 등록하신 축의금 송금 계좌번호 및 연락처의 "수정" 기능이 추가되었습니다.\n이제 오타 수정 및 세부 사항 변경을 위해 삭제 후 재등록할 필요 없이 즉시 수정하여 편리하게 청첩장을 제작할 수 있습니다.\n\n더 나은 사용성을 위해 계속 노력하겠습니다.', '업데이트', '2026-06-03'),
 ('notice3', '6월 서비스 안정화 및 정기 점검 안내 (6월 10일)', '안녕하세요. VOW SEOUL 개발팀입니다.\n안정적인 서비스 제공을 위해 정기 서버 점검 및 최적화 작업이 진행될 예정입니다.\n\n- 일시: 2026년 6월 10일(수) 오전 02:00 ~ 05:00 (약 3시간)\n- 대상: VOW SEOUL 전체 서비스\n- 내용: 데이터베이스 안정화 작업 및 보안 패치 적용\n\n점검 시간 동안에는 청첩장 작성 및 수정이 일시적으로 제한될 수 있으니 양해 부탁드립니다.', '점검', '2026-06-02')
 ON CONFLICT DO NOTHING;
+
+-- 9. 기존 테이블 업데이트 (신규 추가된 RSVP 옵션 컬럼)
+ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpMealEnabled" boolean DEFAULT true;
+ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpCommentEnabled" boolean DEFAULT true;
+
 
