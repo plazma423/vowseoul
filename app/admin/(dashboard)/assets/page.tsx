@@ -11,17 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
-import { sampleThemes, sampleBGMs, Theme } from '@/lib/store'
+import { sampleThemes, sampleBGMs, Theme, samplePhrases } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { Plus, Play, Pause, Trash2, Upload, Loader2, CheckCircle2 } from 'lucide-react'
 import { uploadFile, deleteFile } from '@/lib/storage'
 import Link from 'next/link'
-
-const samplePhrases = [
-  { id: '1', category: 'classic', text: '서로 다른 길을 걸어온 저희 두 사람이\n이제 하나의 길을 함께 걸어가려 합니다.' },
-  { id: '2', category: 'modern', text: '평생을 함께하고 싶은 사람을 만났습니다.\n서로의 손을 잡고 같은 곳을 바라보며 행복한 가정을 꾸려가겠습니다.' },
-  { id: '3', category: 'romantic', text: '사랑이란 두 영혼이 하나가 되는 것.\n저희 두 사람이 영원한 사랑의 약속을 나누려 합니다.' },
-]
 
 export default function AssetsPage() {
   const [activeTab, setActiveTab] = useState('themes')
@@ -449,7 +443,8 @@ export default function AssetsPage() {
                     <div className="flex-1">
                       <Badge variant="secondary" className="mb-2 text-xs">
                         {phrase.category === 'classic' ? '클래식' : 
-                         phrase.category === 'modern' ? '모던' : '로맨틱'}
+                         phrase.category === 'modern' ? '모던' : 
+                         phrase.category === 'romantic' ? '로맨틱' : '심플'}
                       </Badge>
                       <p className="whitespace-pre-line text-sm">{phrase.text}</p>
                     </div>

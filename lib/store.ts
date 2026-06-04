@@ -612,3 +612,33 @@ export const sampleNotices: Notice[] = [
     createdAt: '2026-06-02'
   }
 ]
+
+export interface Phrase {
+  id: string
+  category: 'classic' | 'modern' | 'romantic' | 'simple' | string
+  text: string
+}
+
+export const samplePhrases: Phrase[] = [
+  {
+    id: '1',
+    category: 'classic',
+    text: '서로 다른 길을 걸어온 저희 두 사람이\n이제 하나의 길을 함께 걸어가려 합니다.\n귀한 걸음으로 축복해 주시면 감사하겠습니다.'
+  },
+  {
+    id: '2',
+    category: 'modern',
+    text: '평생을 함께하고 싶은 사람을 만났습니다.\n서로의 손을 잡고 같은 곳을 바라보며\n행복한 가정을 꾸려가겠습니다.'
+  },
+  {
+    id: '3',
+    category: 'romantic',
+    text: '저희 두 사람이 사랑과 믿음으로\n한 가정을 이루게 되었습니다.\n오셔서 축복해 주시면 큰 기쁨이겠습니다.'
+  },
+  {
+    id: '4',
+    category: 'simple',
+    text: '소중한 분들을 모시고\n저희의 새로운 시작을 함께하고 싶습니다.\n바쁘시더라도 귀한 걸음 해주시어\n축복해 주시면 감사하겠습니다.'
+  }
+]
+

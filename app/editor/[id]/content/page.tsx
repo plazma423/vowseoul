@@ -13,17 +13,11 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, samplePhrases } from '@/lib/store'
+import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { uploadFile } from '@/lib/storage'
-
-const sampleMessages = [
-  '서로 다른 길을 걸어온 저희 두 사람이\n이제 하나의 길을 함께 걸어가려 합니다.\n귀한 걸음으로 축복해 주시면 감사하겠습니다.',
-  '평생을 함께하고 싶은 사람을 만났습니다.\n서로의 손을 잡고 같은 곳을 바라보며\n행복한 가정을 꾸려가겠습니다.',
-  '저희 두 사람이 사랑과 믿음으로\n한 가정을 이루게 되었습니다.\n오셔서 축복해 주시면 큰 기쁨이겠습니다.',
-  '소중한 분들을 모시고\n저희의 새로운 시작을 함께하고 싶습니다.\n바쁘시더라도 귀한 걸음 해주시어\n축복해 주시면 감사하겠습니다.',
-]
 
 export default function ContentPage() {
   const router = useRouter()
@@ -271,13 +265,20 @@ export default function ContentPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="mt-4 space-y-3">
-                  {sampleMessages.map((message, index) => (
+                  {samplePhrases.map((phrase) => (
                     <button
-                      key={index}
-                      onClick={() => handleSelectMessage(message)}
+                      key={phrase.id}
+                      onClick={() => handleSelectMessage(phrase.text)}
                       className="w-full rounded-lg border border-border p-4 text-left text-sm leading-relaxed transition-colors hover:bg-muted"
                     >
-                      {message}
+                      <div className="mb-2">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {phrase.category === 'classic' ? '클래식' : 
+                           phrase.category === 'modern' ? '모던' : 
+                           phrase.category === 'romantic' ? '로맨틱' : '심플'}
+                        </Badge>
+                      </div>
+                      <p className="whitespace-pre-line">{phrase.text}</p>
                     </button>
                   ))}
                 </div>
