@@ -28,6 +28,44 @@ export default function ContentPage() {
   
   const [isUploadingMain, setIsUploadingMain] = useState(false)
   const [isUploadingGallery, setIsUploadingGallery] = useState(false)
+  const [isUploadingSubway, setIsUploadingSubway] = useState(false)
+  const [isUploadingParking, setIsUploadingParking] = useState(false)
+
+  const subwayImageInputRef = useRef<HTMLInputElement>(null)
+  const parkingImageInputRef = useRef<HTMLInputElement>(null)
+
+  const updateCustomStyle = (key: string, value: any) => {
+    const customStyles = {
+      ...(currentInvitation?.customStyles || {}),
+      [key]: value
+    }
+    updateCurrentInvitation({ customStyles })
+  }
+
+  const handleTransportImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'subway' | 'parking') => {
+    if (!e.target.files || e.target.files.length === 0) return
+    const isSub = type === 'subway'
+    if (isSub) setIsUploadingSubway(true)
+    else setIsUploadingParking(true)
+    
+    try {
+      const url = await uploadFile(e.target.files[0], 'transport')
+      updateCustomStyle(isSub ? 'subwayImage' : 'parkingImage', url)
+      if (isSub) {
+        updateCustomStyle('subwayDisplayType', currentInvitation?.customStyles?.subwayDisplayType || 'popup')
+        updateCustomStyle('subwayButtonText', currentInvitation?.customStyles?.subwayButtonText || '이미지 보기')
+      } else {
+        updateCustomStyle('parkingDisplayType', currentInvitation?.customStyles?.parkingDisplayType || 'popup')
+        updateCustomStyle('parkingButtonText', currentInvitation?.customStyles?.parkingButtonText || '이미지 보기')
+      }
+    } catch (err) {
+      alert('이미지 업로드에 실패했습니다.')
+    } finally {
+      if (isSub) setIsUploadingSubway(false)
+      else setIsUploadingParking(false)
+      if (e.target) e.target.value = ''
+    }
+  }
   
   // Bank Account Dialog State
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
@@ -222,9 +260,38 @@ export default function ContentPage() {
                   {isUploadingMain ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                   이미지 업로드
                 </Button>
-                <Button variant="outline">
-                  자르기
-                </Button>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-3 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">대문 이름 연결 기호 (&amp;)</p>
+                    <p className="text-xs text-muted-foreground">신랑과 신부 이름 사이의 연결 기호를 지정합니다.</p>
+                  </div>
+                  <Select
+                    value={currentInvitation?.customStyles?.heroConnector || '&'}
+                    onValueChange={(val) => {
+                      const customStyles = {
+                        ...(currentInvitation?.customStyles || {}),
+                        heroConnector: val
+                      }
+                      updateCurrentInvitation({ customStyles })
+                      setActiveSection('hero')
+                    }}
+                  >
+                    <SelectTrigger className="w-[130px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="&">&amp; (엠퍼샌드)</SelectItem>
+                      <SelectItem value="♥">♥ (하트)</SelectItem>
+                      <SelectItem value="and">and (소문자)</SelectItem>
+                      <SelectItem value="AND">AND (대문자)</SelectItem>
+                      <SelectItem value="with">with</SelectItem>
+                      <SelectItem value="none">없음 (기호 제외)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </AccordionContent>
@@ -369,6 +436,181 @@ export default function ContentPage() {
           </AccordionContent>
         </AccordionItem>
 
+        {/* Sequence/Timeline */}
+        <AccordionItem value="sequence" className="rounded-lg border border-border">
+          <AccordionTrigger className="px-4 hover:no-underline" onClick={() => setActiveSection('sequence')}>
+            <span className="font-medium">식순 안내</span>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">식순 안내 기능 사용</p>
+                  <p className="text-xs text-muted-foreground">청첩장에 식순 타임라인을 표시합니다.</p>
+                </div>
+                <Switch
+                  checked={currentInvitation?.customStyles?.sequenceEnabled || false}
+                  onCheckedChange={(checked) => {
+                    updateCustomStyle('sequenceEnabled', checked)
+                    setActiveSection('sequence')
+                  }}
+                />
+              </div>
+
+              {currentInvitation?.customStyles?.sequenceEnabled && (
+                <div className="mt-4 space-y-4 rounded-lg bg-muted/50 p-4 border border-border">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field>
+                      <FieldLabel htmlFor="seq-title">대제목</FieldLabel>
+                      <Input
+                        id="seq-title"
+                        placeholder="식순 안내"
+                        value={currentInvitation?.customStyles?.sequenceTitle || ''}
+                        onChange={(e) => updateCustomStyle('sequenceTitle', e.target.value)}
+                        onFocus={() => setActiveSection('sequence')}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="seq-subtitle">소제목 (영문)</FieldLabel>
+                      <Input
+                        id="seq-subtitle"
+                        placeholder="WEDDING ORDER"
+                        value={currentInvitation?.customStyles?.sequenceSubtitle || ''}
+                        onChange={(e) => updateCustomStyle('sequenceSubtitle', e.target.value)}
+                        onFocus={() => setActiveSection('sequence')}
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">식순 목록</p>
+                    
+                    <div className="space-y-2">
+                      {((currentInvitation?.customStyles?.sequenceEvents) || [
+                        { id: '1', time: '12:00', title: '식전 영상 상영' },
+                        { id: '2', time: '12:10', title: '개식 및 화촉점화' },
+                        { id: '3', time: '12:20', title: '신랑 신부 입장' },
+                        { id: '4', time: '12:30', title: '혼인서약 및 성혼선언' },
+                        { id: '5', time: '12:45', title: '축가 및 하객 인사' },
+                        { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
+                      ]).map((event: any, index: number) => {
+                        const eventTime = event.time || '12:00';
+                        const [hour, minute] = eventTime.split(':');
+                        const eventsList = (currentInvitation?.customStyles?.sequenceEvents) || [
+                          { id: '1', time: '12:00', title: '식전 영상 상영' },
+                          { id: '2', time: '12:10', title: '개식 및 화촉점화' },
+                          { id: '3', time: '12:20', title: '신랑 신부 입장' },
+                          { id: '4', time: '12:30', title: '혼인서약 및 성혼선언' },
+                          { id: '5', time: '12:45', title: '축가 및 하객 인사' },
+                          { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
+                        ];
+
+                        const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+                        const minutes = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+                        return (
+                          <div key={event.id || index} className="flex items-center gap-2 bg-background p-2 rounded border border-border">
+                            {/* Time Selectors */}
+                            <div className="flex items-center gap-1">
+                              <Select
+                                value={hour}
+                                onValueChange={(newHour) => {
+                                  const newTime = `${newHour}:${minute}`;
+                                  const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                  updateCustomStyle('sequenceEvents', updated);
+                                }}
+                              >
+                                <SelectTrigger className="w-[60px] h-8 text-xs px-1.5">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {hours.map(h => (
+                                    <SelectItem key={h} value={h}>{h}시</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <span className="text-xs text-muted-foreground">:</span>
+
+                              <Select
+                                value={minute}
+                                onValueChange={(newMinute) => {
+                                  const newTime = `${hour}:${newMinute}`;
+                                  const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                  updateCustomStyle('sequenceEvents', updated);
+                                }}
+                              >
+                                <SelectTrigger className="w-[60px] h-8 text-xs px-1.5">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {minutes.map(m => (
+                                    <SelectItem key={m} value={m}>{m}분</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Title Input */}
+                            <Input
+                              placeholder="식순 내용을 입력하세요"
+                              value={event.title || ''}
+                              className="h-8 text-xs flex-1"
+                              onChange={(e) => {
+                                const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, title: e.target.value } : ev);
+                                updateCustomStyle('sequenceEvents', updated);
+                              }}
+                              onFocus={() => setActiveSection('sequence')}
+                            />
+
+                            {/* Delete Button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => {
+                                const updated = eventsList.filter(ev => ev.id !== event.id);
+                                updateCustomStyle('sequenceEvents', updated);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2 h-8 text-xs"
+                      onClick={() => {
+                        const eventsList = (currentInvitation?.customStyles?.sequenceEvents) || [
+                          { id: '1', time: '12:00', title: '식전 영상 상영' },
+                          { id: '2', time: '12:10', title: '개식 및 화촉점화' },
+                          { id: '3', time: '12:20', title: '신랑 신부 입장' },
+                          { id: '4', time: '12:30', title: '혼인서약 및 성혼선언' },
+                          { id: '5', time: '12:45', title: '축가 및 하객 인사' },
+                          { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
+                        ];
+                        const newEvent = {
+                          id: `seq_${Date.now()}`,
+                          time: '12:00',
+                          title: ''
+                        };
+                        updateCustomStyle('sequenceEvents', [...eventsList, newEvent]);
+                      }}
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      식순 추가
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
         {/* Directions */}
         <AccordionItem value="directions" className="rounded-lg border border-border">
           <AccordionTrigger className="px-4 hover:no-underline">
@@ -444,6 +686,72 @@ export default function ContentPage() {
                   onChange={(e) => updateCurrentInvitation({ trafficInfo: e.target.value })}
                   onFocus={() => setActiveSection('location')}
                 />
+                <div className="mt-3 space-y-2 border-t pt-3">
+                  <span className="text-xs font-semibold block">대중교통 안내 이미지</span>
+                  {currentInvitation?.customStyles?.subwayImage ? (
+                    <div className="space-y-2">
+                      <div className="relative w-40 aspect-video rounded border overflow-hidden bg-muted">
+                        <img src={currentInvitation.customStyles.subwayImage} className="w-full h-full object-cover" />
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute right-1 top-1 h-6 w-6" 
+                          onClick={() => updateCustomStyle('subwayImage', null)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <span className="text-[10px] text-muted-foreground block">노출 방식</span>
+                          <Select
+                            value={currentInvitation.customStyles?.subwayDisplayType || 'popup'}
+                            onValueChange={(val) => updateCustomStyle('subwayDisplayType', val)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="popup">팝업 버튼 노출</SelectItem>
+                              <SelectItem value="direct">바로 이미지 출력</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {currentInvitation.customStyles?.subwayDisplayType !== 'direct' && (
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-muted-foreground block">버튼 문구</span>
+                            <Input 
+                              className="h-8 text-xs" 
+                              placeholder="이미지 보기" 
+                              value={currentInvitation.customStyles?.subwayButtonText || ''} 
+                              onChange={(e) => updateCustomStyle('subwayButtonText', e.target.value)} 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 text-xs"
+                        onClick={() => subwayImageInputRef.current?.click()}
+                        disabled={isUploadingSubway}
+                      >
+                        {isUploadingSubway ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                        이미지 추가
+                      </Button>
+                      <input 
+                        type="file" 
+                        ref={subwayImageInputRef} 
+                        onChange={(e) => handleTransportImageUpload(e, 'subway')} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
+                    </div>
+                  )}
+                </div>
               </Field>
               <Field>
                 <FieldLabel htmlFor="parkingInfo">주차 안내</FieldLabel>
@@ -455,6 +763,72 @@ export default function ContentPage() {
                   onChange={(e) => updateCurrentInvitation({ parkingInfo: e.target.value })}
                   onFocus={() => setActiveSection('location')}
                 />
+                <div className="mt-3 space-y-2 border-t pt-3">
+                  <span className="text-xs font-semibold block">자가용 / 주차 안내 이미지</span>
+                  {currentInvitation?.customStyles?.parkingImage ? (
+                    <div className="space-y-2">
+                      <div className="relative w-40 aspect-video rounded border overflow-hidden bg-muted">
+                        <img src={currentInvitation.customStyles.parkingImage} className="w-full h-full object-cover" />
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute right-1 top-1 h-6 w-6" 
+                          onClick={() => updateCustomStyle('parkingImage', null)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <span className="text-[10px] text-muted-foreground block">노출 방식</span>
+                          <Select
+                            value={currentInvitation.customStyles?.parkingDisplayType || 'popup'}
+                            onValueChange={(val) => updateCustomStyle('parkingDisplayType', val)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="popup">팝업 버튼 노출</SelectItem>
+                              <SelectItem value="direct">바로 이미지 출력</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {currentInvitation.customStyles?.parkingDisplayType !== 'direct' && (
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-muted-foreground block">버튼 문구</span>
+                            <Input 
+                              className="h-8 text-xs" 
+                              placeholder="이미지 보기" 
+                              value={currentInvitation.customStyles?.parkingButtonText || ''} 
+                              onChange={(e) => updateCustomStyle('parkingButtonText', e.target.value)} 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 text-xs"
+                        onClick={() => parkingImageInputRef.current?.click()}
+                        disabled={isUploadingParking}
+                      >
+                        {isUploadingParking ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                        이미지 추가
+                      </Button>
+                      <input 
+                        type="file" 
+                        ref={parkingImageInputRef} 
+                        onChange={(e) => handleTransportImageUpload(e, 'parking')} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
+                    </div>
+                  )}
+                </div>
               </Field>
             </FieldGroup>
           </AccordionContent>
@@ -536,7 +910,31 @@ export default function ContentPage() {
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
               <div>
-                <h4 className="mb-2 font-medium">계좌번호</h4>
+                <div className="flex items-center justify-between mb-3 border-b pb-2">
+                  <h4 className="font-medium">계좌번호</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">노출 형식:</span>
+                    <Select
+                      value={currentInvitation?.customStyles?.accountLayout || '1col'}
+                      onValueChange={(val) => {
+                        const customStyles = {
+                          ...(currentInvitation?.customStyles || {}),
+                          accountLayout: val
+                        }
+                        updateCurrentInvitation({ customStyles })
+                        setActiveSection('account')
+                      }}
+                    >
+                      <SelectTrigger className="w-[125px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1col">1열 배치 (세로)</SelectItem>
+                        <SelectItem value="2col">2열 배치 (좌우)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 {(currentInvitation?.bankAccounts || []).map((account, index) => (
                   <div key={account.id} className="mb-2 flex items-center gap-2 rounded-lg border border-border p-3">
                     <div className="flex-1">

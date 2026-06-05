@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { useAppStore, sampleOrders, type Order } from '@/lib/store'
-import { Search, CalendarIcon, Eye, Plus } from 'lucide-react'
+import { Search, CalendarIcon, Eye, Plus, Settings } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -193,9 +193,10 @@ export default function OrdersPage() {
                       </Select>
                     </td>
                     <td className="py-3">
-                      <Button variant="ghost" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="h-8 gap-1">
                         <Link href={`/admin/orders/${order.id}`}>
-                          <Eye className="h-4 w-4" />
+                          <Settings className="h-3.5 w-3.5" />
+                          <span>관리</span>
                         </Link>
                       </Button>
                     </td>

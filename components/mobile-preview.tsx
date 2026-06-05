@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useAppStore, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { cn, getLegibleColor } from '@/lib/utils'
+import { toast } from 'sonner'
 import { 
   Calendar as CalendarIcon, 
   MapPin, 
@@ -15,7 +16,8 @@ import {
   Share2, 
   Heart,
   Navigation,
-  ChevronDown
+  ChevronDown,
+  Image
 } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
@@ -23,6 +25,7 @@ import { ko } from "date-fns/locale"
 export function MobilePreview({ className, isSticky = true }: { className?: string; isSticky?: boolean }) {
   const { currentInvitation, themes, activeSection } = useAppStore()
   const [customFonts, setCustomFonts] = useState<any[]>([])
+  const [activeImageModal, setActiveImageModal] = useState<string | null>(null)
 
   useEffect(() => {
     if (activeSection) {
@@ -74,6 +77,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const cardShadow = themeStyles.cardShadow || 'shadow-sm'
   const dividerType = themeStyles.dividerType || 'heart'
   const heroStyle = themeStyles.heroStyle || 'center'
+  const heroConnector = themeStyles.heroConnector === 'none_clear' ? '&' : (themeStyles.heroConnector || '&')
+  const accountLayout = themeStyles.accountLayout || '1col'
 
   const fontKr = themeStyles.fontKr || fontSet?.fonts?.[0] || 'font-serif'
   const fontEn = themeStyles.fontEn || fontSet?.fonts?.[1] || 'font-serif'
@@ -106,9 +111,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
     return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success("클립보드에 계좌번호가 복사되었습니다.")
+  }
+
   
   // Default section order if missing
-  const defaultOrder = ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
+  const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
   const sectionOrder = themeStyles.sectionOrder || defaultOrder
 
   // Generate calendar days
@@ -239,7 +249,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
-                            <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
+                            {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>{heroConnector}</div>}
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
@@ -253,7 +263,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div className="space-y-4 text-center w-full">
                             <h1 className="text-3xl font-light tracking-widest uppercase">
                               {currentInvitation?.groomNameEn || 'GROOM'}
-                              <span className="block text-sm opacity-55 my-1" style={{ color: accentColor }}>&amp;</span>
+                              {heroConnector !== 'none' && <span className="block text-sm opacity-55 my-1" style={{ color: accentColor }}>{heroConnector}</span>}
                               {currentInvitation?.brideNameEn || 'BRIDE'}
                             </h1>
                             <div className="w-8 h-px bg-current opacity-30 mx-auto" />
@@ -272,7 +282,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
-                            <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>&amp;</div>
+                            {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: accentColor }}>{heroConnector}</div>}
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
@@ -291,7 +301,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             ) : '2025년 00월 00일'}
                           </p>
                           <p>{currentInvitation?.weddingTime || '오후 12:00'}</p>
-                          <p className="truncate">{currentInvitation?.venueName || '예식장명'} {currentInvitation?.venueHall || '홀'}</p>
+                          <p className="truncate">{currentInvitation?.venueName || '예식장명'}{currentInvitation?.venueHall ? ' ' + currentInvitation.venueHall : ''}</p>
                         </div>
                       </div>
                       <div className="absolute bottom-6 animate-bounce z-10">
@@ -308,6 +318,41 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <p className="leading-relaxed whitespace-pre-line text-xs opacity-80 mb-6">
                         {currentInvitation?.invitationMessage || '초대의 말씀을 드립니다.\n이곳에 초대글이 표시됩니다.'}
                       </p>
+                    </section>
+                  )
+
+                case 'sequence':
+                  const sequenceEnabled = currentInvitation?.customStyles?.sequenceEnabled ?? false
+                  if (!sequenceEnabled) return null
+                  const sequenceTitle = currentInvitation?.customStyles?.sequenceTitle || '식순 안내'
+                  const sequenceSubtitle = currentInvitation?.customStyles?.sequenceSubtitle || 'WEDDING ORDER'
+                  const sequenceEvents = currentInvitation?.customStyles?.sequenceEvents || [
+                    { id: '1', time: '12:00', title: '식전 영상 상영' },
+                    { id: '2', time: '12:10', title: '개식 및 화촉점화' },
+                    { id: '3', time: '12:20', title: '신랑 신부 입장' },
+                    { id: '4', time: '12:30', title: '혼인서약 및 성혼선언' },
+                    { id: '5', time: '12:45', title: '축가 및 하객 인사' },
+                    { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
+                  ]
+
+                  return (
+                    <section key="sequence" id="preview-section-sequence" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      {showDivider && renderDivider()}
+                      <h2 className="text-center text-xs font-semibold tracking-wider mb-2">{sequenceTitle}</h2>
+                      <p className="text-center text-[10px] opacity-40 mb-6">{sequenceSubtitle}</p>
+                      
+                      <div className="relative border-l border-current/15 ml-4 pl-6 space-y-4 text-left max-w-[200px] mx-auto">
+                        {sequenceEvents.map((event: any) => (
+                          <div key={event.id} className="relative">
+                            {/* Dot */}
+                            <div className="absolute -left-[29.5px] top-1.5 w-2.5 h-2.5 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: accentColor }} />
+                            <div>
+                              <span className="font-mono text-[10px] font-semibold" style={{ color: accentColor }}>{event.time}</span>
+                              <p className="text-xs font-medium mt-0.5">{event.title}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </section>
                   )
 
@@ -401,12 +446,54 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 <div>
                                   <p className="font-semibold">교통 안내</p>
                                   <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.trafficInfo}</p>
+                                  {currentInvitation.customStyles?.subwayImage && (
+                                    currentInvitation.customStyles.subwayDisplayType === 'direct' ? (
+                                      <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                        <img 
+                                          src={currentInvitation.customStyles.subwayImage} 
+                                          className="w-full h-full object-contain cursor-pointer" 
+                                          onClick={() => setActiveImageModal(currentInvitation.customStyles.subwayImage)}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <button 
+                                        type="button"
+                                        onClick={() => setActiveImageModal(currentInvitation.customStyles.subwayImage)}
+                                        className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-black/5 dark:bg-white/5 border border-border/30 rounded-[4px] text-[8px] font-medium hover:bg-black/10 transition-colors"
+                                        style={{ color: accentColor }}
+                                      >
+                                        <Image className="w-2.5 h-2.5" />
+                                        <span>{currentInvitation.customStyles.subwayButtonText || '이미지 보기'}</span>
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               )}
                               {currentInvitation.parkingInfo && (
                                 <div>
                                   <p className="font-semibold">주차 안내</p>
                                   <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.parkingInfo}</p>
+                                  {currentInvitation.customStyles?.parkingImage && (
+                                    currentInvitation.customStyles.parkingDisplayType === 'direct' ? (
+                                      <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                        <img 
+                                          src={currentInvitation.customStyles.parkingImage} 
+                                          className="w-full h-full object-contain cursor-pointer" 
+                                          onClick={() => setActiveImageModal(currentInvitation.customStyles.parkingImage)}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <button 
+                                        type="button"
+                                        onClick={() => setActiveImageModal(currentInvitation.customStyles.parkingImage)}
+                                        className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-black/5 dark:bg-white/5 border border-border/30 rounded-[4px] text-[8px] font-medium hover:bg-black/10 transition-colors"
+                                        style={{ color: accentColor }}
+                                      >
+                                        <Image className="w-2.5 h-2.5" />
+                                        <span>{currentInvitation.customStyles.parkingButtonText || '이미지 보기'}</span>
+                                      </button>
+                                    )
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -458,34 +545,106 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
                 case 'account':
                   if (!currentInvitation?.bankAccounts || currentInvitation.bankAccounts.length === 0) return null
+                  const accountsList = currentInvitation.bankAccounts || []
+                  const groomAccounts = accountsList.filter((acc: any) => acc.relation === 'groom' || acc.relation === 'groomParent')
+                  const brideAccounts = accountsList.filter((acc: any) => acc.relation === 'bride' || acc.relation === 'brideParent')
+
                   return (
                     <section key="account" id="preview-section-account" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                       {showDivider && renderDivider()}
                       <h2 className="text-center text-xs font-semibold tracking-wider mb-2">ACCOUNT</h2>
                       <p className="text-center text-[10px] opacity-40 mb-6">마음 전하실 곳</p>
-                      <div className={cn("space-y-2", isTwoColumn && "grid grid-cols-2 gap-2 space-y-0")}>
-                        {currentInvitation.bankAccounts.map((account: any) => (
-                          <Card key={account.id} className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                            <CardContent className="p-3 text-left">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-[10px]" style={{ color: secondaryTextColor }}>
-                                    {account.relation === 'groom' && '신랑'}
-                                    {account.relation === 'bride' && '신부'}
-                                    {account.relation === 'groomParent' && '신랑 혼주'}
-                                    {account.relation === 'brideParent' && '신부 혼주'}
-                                  </p>
-                                  <p className="font-semibold text-xs mt-0.5">{account.bank} {account.accountNumber}</p>
-                                  <p className="text-[10px] mt-0.5" style={{ color: secondaryTextColor }}>예금주: {account.accountHolder}</p>
+                      
+                      {accountLayout === '2col' ? (
+                        <div className="grid grid-cols-2 gap-2 text-left items-start">
+                          {/* 신랑측 */}
+                          <div className="space-y-1.5">
+                            <div className="text-center text-[9px] font-semibold pb-1 border-b opacity-80" style={{ color: accentColor, borderColor: `${accentColor}20` }}>신랑측</div>
+                            {groomAccounts.map((account: any) => (
+                              <Card 
+                                key={account.id} 
+                                className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors", effectiveCardBg, shadowClass)} 
+                                style={borderStyle}
+                                onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                              >
+                                <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
+                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                    <span style={{ color: secondaryTextColor }}>
+                                      {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
+                                    </span>
+                                    <span className="font-semibold truncate max-w-[55px]">{account.accountHolder}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                    <span className="font-mono truncate max-w-[85px]">{account.accountNumber}</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: secondaryTextColor }}>{account.bank}</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                            {groomAccounts.length === 0 && (
+                              <p className="text-center text-[8px] opacity-30 py-3">등록 계좌 없음</p>
+                            )}
+                          </div>
+                          {/* 신부측 */}
+                          <div className="space-y-1.5">
+                            <div className="text-center text-[9px] font-semibold pb-1 border-b opacity-80" style={{ color: accentColor, borderColor: `${accentColor}20` }}>신부측</div>
+                            {brideAccounts.map((account: any) => (
+                              <Card 
+                                key={account.id} 
+                                className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors", effectiveCardBg, shadowClass)} 
+                                style={borderStyle}
+                                onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                              >
+                                <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
+                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                    <span style={{ color: secondaryTextColor }}>
+                                      {account.relation === 'bride' ? '신부' : '신부 혼주'}
+                                    </span>
+                                    <span className="font-semibold truncate max-w-[55px]">{account.accountHolder}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                    <span className="font-mono truncate max-w-[85px]">{account.accountNumber}</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: secondaryTextColor }}>{account.bank}</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                            {brideAccounts.length === 0 && (
+                              <p className="text-center text-[8px] opacity-30 py-3">등록 계좌 없음</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        // 1열 배치 (1col)
+                        <div className="space-y-2">
+                          {accountsList.map((account: any) => (
+                            <Card 
+                              key={account.id} 
+                              className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors", effectiveCardBg, shadowClass)} 
+                              style={borderStyle}
+                              onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                            >
+                              <CardContent className="p-3 text-left">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-[10px]" style={{ color: secondaryTextColor }}>
+                                      {account.relation === 'groom' && '신랑'}
+                                      {account.relation === 'bride' && '신부'}
+                                      {account.relation === 'groomParent' && '신랑 혼주'}
+                                      {account.relation === 'brideParent' && '신부 혼주'}
+                                    </p>
+                                    <p className="font-semibold text-xs mt-0.5">{account.bank} {account.accountNumber}</p>
+                                    <p className="text-[10px] mt-0.5" style={{ color: secondaryTextColor }}>예금주: {account.accountHolder}</p>
+                                  </div>
+                                  <div className="text-[9px] opacity-40 flex items-center justify-center">
+                                    <Copy className="w-3.5 h-3.5 opacity-70" />
+                                  </div>
                                 </div>
-                                <Button variant="outline" size="sm" className="h-7 w-7 p-0" style={borderStyle}>
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </section>
                   )
 
@@ -548,6 +707,22 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
         </ScrollArea>
       </div>
       <p className="mt-4 text-center text-xs text-muted-foreground">실시간 미리보기</p>
+      {activeImageModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 pointer-events-auto cursor-pointer" 
+          onClick={() => setActiveImageModal(null)}
+        >
+          <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            <img src={activeImageModal} alt="Popup Image" className="max-w-full max-h-[85vh] object-contain rounded shadow-2xl" />
+            <button 
+              className="absolute -top-10 right-0 text-white bg-black/40 hover:bg-black/60 rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold text-sm"
+              onClick={() => setActiveImageModal(null)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

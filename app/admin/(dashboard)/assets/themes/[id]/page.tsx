@@ -51,13 +51,16 @@ export default function ThemeEditorPage() {
     cardShadow: 'shadow-sm',
     dividerType: 'heart',
     heroStyle: 'center',
-    sectionOrder: ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'] as string[],
+    heroConnector: '&',
+    accountLayout: '1col',
+    sectionOrder: ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'] as string[],
     recommendedBgms: [] as string[]
   })
 
   const sectionLabels: Record<string, string> = {
     hero: '대문 이미지 (Hero)',
     greeting: '인사말 (Greeting)',
+    sequence: '식순 안내 (Sequence)',
     gallery: '갤러리 (Gallery)',
     calendar: '달력 (Calendar)',
     location: '예식장 위치/지도 (Location)',
@@ -153,7 +156,9 @@ export default function ThemeEditorPage() {
         cardShadow: data.styles?.cardShadow || 'shadow-sm',
         dividerType: data.styles?.dividerType || 'heart',
         heroStyle: data.styles?.heroStyle || 'center',
-        sectionOrder: data.styles?.sectionOrder || ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
+        heroConnector: data.styles?.heroConnector || '&',
+        accountLayout: data.styles?.accountLayout || '1col',
+        sectionOrder: data.styles?.sectionOrder || ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
         recommendedBgms: data.recommendedBgms || []
       })
       setColorSets(data.colorSets || [{
@@ -190,7 +195,9 @@ export default function ThemeEditorPage() {
           cardShadow: 'shadow-sm',
           dividerType: 'heart',
           heroStyle: 'center',
-          sectionOrder: ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
+          heroConnector: '&',
+          accountLayout: '1col',
+          sectionOrder: ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
           recommendedBgms: sample.recommendedBgms || []
         })
         setColorSets(sample.colorSets || [])
@@ -267,6 +274,8 @@ export default function ThemeEditorPage() {
         cardShadow: theme.cardShadow,
         dividerType: theme.dividerType,
         heroStyle: theme.heroStyle,
+        heroConnector: theme.heroConnector,
+        accountLayout: theme.accountLayout,
         sectionOrder: theme.sectionOrder,
       },
       colorSets: updatedColorSets,
@@ -726,6 +735,30 @@ export default function ThemeEditorPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>대문 이름 연결 기호 (&amp;)</Label>
+                <Select value={theme.heroConnector || '&'} onValueChange={v => setTheme({...theme, heroConnector: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="&amp;">&amp; (엠퍼샌드)</SelectItem>
+                    <SelectItem value="♥">♥ (하트)</SelectItem>
+                    <SelectItem value="and">and (소문자)</SelectItem>
+                    <SelectItem value="AND">AND (대문자)</SelectItem>
+                    <SelectItem value="with">with</SelectItem>
+                    <SelectItem value="none">없음 (기호 제외)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>계좌 노출 레이아웃</Label>
+                <Select value={theme.accountLayout || '1col'} onValueChange={v => setTheme({...theme, accountLayout: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1col">1열 배치 (세로형)</SelectItem>
+                    <SelectItem value="2col">2열 배치 (신랑/신부)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
 
@@ -898,6 +931,8 @@ export default function ThemeEditorPage() {
               const sectionBg = isMinimal ? 'bg-transparent' : (isEven ? 'bg-white/40 backdrop-blur-sm' : 'bg-black/5')
               const sectionBorderClass = isGrid ? 'border border-current/15 mx-2 my-2' : ''
               const effectiveCardBg = isMinimal ? 'bg-transparent' : theme.cardBg
+              const heroConnector = theme.heroConnector === 'none_clear' ? '&' : (theme.heroConnector || '&')
+              const accountLayout = theme.accountLayout || '1col'
 
               const renderDivider = () => {
                 if (theme.dividerType === 'line') {
@@ -932,7 +967,7 @@ export default function ThemeEditorPage() {
                                 {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
                                 <h1 className="text-xl font-light">홍길동</h1>
                               </div>
-                              <div className="text-xs opacity-50">&amp;</div>
+                              {heroConnector !== 'none' && <div className="text-xs opacity-50">{heroConnector}</div>}
                               <div>
                                 {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
                                 <h1 className="text-xl font-light">김영희</h1>
@@ -944,7 +979,7 @@ export default function ThemeEditorPage() {
                                 <p className="text-[8px] opacity-75">신랑 혼주 정보</p>
                                 <h1 className="text-xl font-light">홍길동</h1>
                               </div>
-                              <div className="text-md" style={{ color: legiblePrimaryColor }}>&amp;</div>
+                              {heroConnector !== 'none' && <div className="text-md" style={{ color: legiblePrimaryColor }}>{heroConnector}</div>}
                               <div className="space-y-0.5">
                                 <p className="text-[8px] opacity-75">신부 혼주 정보</p>
                                 <h1 className="text-xl font-light">김영희</h1>
@@ -962,6 +997,30 @@ export default function ThemeEditorPage() {
                         <p className="leading-relaxed text-[10px] opacity-80">
                           서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
                         </p>
+                      </section>
+                    )
+                  case 'sequence':
+                    return (
+                      <section key="sequence" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                        {renderDivider()}
+                        <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">식순 안내</h2>
+                        <p className="text-center text-[9px] opacity-40 mb-4">WEDDING ORDER</p>
+                        <div className="relative border-l border-current/15 ml-3 pl-4 space-y-3 text-left max-w-[150px] mx-auto">
+                          <div className="relative">
+                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: legiblePrimaryColor }} />
+                            <div>
+                              <span className="font-mono text-[9px] font-semibold" style={{ color: legiblePrimaryColor }}>12:00</span>
+                              <p className="text-[9px] font-medium mt-0.5">신랑 신부 입장</p>
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: legiblePrimaryColor }} />
+                            <div>
+                              <span className="font-mono text-[9px] font-semibold" style={{ color: legiblePrimaryColor }}>13:00</span>
+                              <p className="text-[9px] font-medium mt-0.5">축가 및 기념 촬영</p>
+                            </div>
+                          </div>
+                        </div>
                       </section>
                     )
                   case 'gallery':
@@ -1064,19 +1123,57 @@ export default function ThemeEditorPage() {
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">ACCOUNT</h2>
                         <p className="text-center text-[9px] opacity-40 mb-4">마음 전하실 곳</p>
-                        <div className={cn("space-y-2", isTwoColumn && "grid grid-cols-2 gap-2 space-y-0")}>
-                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
-                            <CardContent className="p-2.5 flex items-center justify-between text-left">
-                              <div>
-                                <p className="text-[9px]" style={{ color: legibleSecondaryTextColor }}>신랑측</p>
-                                <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
-                              </div>
-                              <Button variant="outline" size="sm" className="h-6 w-6 p-0" style={borderStyle}>
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        </div>
+                        {accountLayout === '2col' ? (
+                          <div className="grid grid-cols-2 gap-2 text-left items-start">
+                            {/* 신랑측 */}
+                            <div className="space-y-1.5">
+                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-80" style={{ color: legiblePrimaryColor, borderColor: `${legiblePrimaryColor}20` }}>신랑측</div>
+                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                                <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
+                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                    <span style={{ color: legibleSecondaryTextColor }}>신랑</span>
+                                    <span className="font-semibold truncate max-w-[55px]">홍길동</span>
+                                  </div>
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                    <span className="font-mono truncate max-w-[85px]">110-123-456789</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: legibleSecondaryTextColor }}>신한은행</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                            {/* 신부측 */}
+                            <div className="space-y-1.5">
+                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-80" style={{ color: legiblePrimaryColor, borderColor: `${legiblePrimaryColor}20` }}>신부측</div>
+                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                                <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
+                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                    <span style={{ color: legibleSecondaryTextColor }}>신부</span>
+                                    <span className="font-semibold truncate max-w-[55px]">김영희</span>
+                                  </div>
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                    <span className="font-mono truncate max-w-[85px]">123-456-789012</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: legibleSecondaryTextColor }}>국민은행</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </div>
+                        ) : (
+                          // 1col
+                          <div className="space-y-2">
+                            <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                              <CardContent className="p-2.5 flex items-center justify-between text-left">
+                                <div>
+                                  <p className="text-[9px]" style={{ color: legibleSecondaryTextColor }}>신랑측</p>
+                                  <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
+                                </div>
+                                <div className="text-[8px] opacity-40 flex items-center justify-center">
+                                  <Copy className="w-3 h-3 opacity-70" />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
                       </section>
                     )
                   case 'rsvp':
@@ -1332,6 +1429,35 @@ export default function ThemeEditorPage() {
                         <SelectItem value="center">중앙 정렬 (Center)</SelectItem>
                         <SelectItem value="left">왼쪽 정렬 (Left)</SelectItem>
                         <SelectItem value="classic">클래식 스타일</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>대문 이름 연결 기호 (&amp;)</Label>
+                    <Select value={theme.heroConnector || '&'} onValueChange={v => setTheme({...theme, heroConnector: v})}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="&amp;">&amp; (엠퍼샌드)</SelectItem>
+                        <SelectItem value="♥">♥ (하트)</SelectItem>
+                        <SelectItem value="and">and (소문자)</SelectItem>
+                        <SelectItem value="AND">AND (대문자)</SelectItem>
+                        <SelectItem value="with">with</SelectItem>
+                        <SelectItem value="none">없음 (기호 제외)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {activeEditSection === 'account' && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>계좌 노출 레이아웃</Label>
+                    <Select value={theme.accountLayout || '1col'} onValueChange={v => setTheme({...theme, accountLayout: v})}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1col">1열 배치 (세로형)</SelectItem>
+                        <SelectItem value="2col">2열 배치 (신랑/신부)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

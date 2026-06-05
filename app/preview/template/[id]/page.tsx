@@ -296,7 +296,7 @@ export default function TemplatePreviewPage() {
   }
 
   
-  const defaultOrder = ['hero', 'greeting', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
+  const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
   const sectionOrder = themeStyles.sectionOrder || defaultOrder
 
   return (
@@ -628,6 +628,35 @@ export default function TemplatePreviewPage() {
                           </Button>
                         </CardContent>
                       </Card>
+                    ))}
+                  </div>
+                </section>
+              )
+
+            case 'sequence':
+              return (
+                <section key="sequence" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                  {showDivider && renderDivider()}
+                  <h2 className="text-center text-xs font-semibold tracking-wider mb-2">식순 안내</h2>
+                  <p className="text-center text-sm opacity-40 mb-8">WEDDING ORDER</p>
+                  
+                  <div className="relative border-l border-current/15 ml-6 pl-8 space-y-6 text-left max-w-[280px] mx-auto">
+                    {[
+                      { id: '1', time: '12:00', title: '식전 영상 상영' },
+                      { id: '2', time: '12:10', title: '개식 및 화촉점화' },
+                      { id: '3', time: '12:20', title: '신랑 신부 입장' },
+                      { id: '4', time: '12:30', title: '혼인서약 및 성혼선언' },
+                      { id: '5', time: '12:45', title: '축가 및 하객 인사' },
+                      { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
+                    ].map((event: any) => (
+                      <div key={event.id} className="relative">
+                        {/* Dot */}
+                        <div className="absolute -left-[37.5px] top-1.5 w-3.5 h-3.5 rounded-full bg-current opacity-70 border-2 border-background" style={{ backgroundColor: accentColor }} />
+                        <div>
+                          <span className="font-mono text-sm font-semibold" style={{ color: accentColor }}>{event.time}</span>
+                          <p className="text-sm font-medium mt-1">{event.title}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </section>
