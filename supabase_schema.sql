@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS public.invitations (
   "contacts" jsonb,
   "status" text,
   "createdAt" text,
-  "publishedUrl" text
+  "publishedUrl" text,
+  "customStyles" jsonb
 );
 
 -- 6. Inquiries (Contact) 테이블
@@ -172,5 +173,6 @@ ON CONFLICT DO NOTHING;
 -- 9. 기존 테이블 업데이트 (신규 추가된 RSVP 옵션 컬럼)
 ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpMealEnabled" boolean DEFAULT true;
 ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpCommentEnabled" boolean DEFAULT true;
+ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "customStyles" jsonb;
 
 

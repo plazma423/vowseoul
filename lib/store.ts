@@ -36,6 +36,7 @@ export interface WeddingInvitation {
   status: 'draft' | 'paid' | 'published' | 'expired'
   createdAt: string
   publishedUrl: string | null
+  customStyles?: Record<string, any>
 }
 
 export interface BankAccount {

@@ -52,18 +52,22 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const colorSet = theme?.colorSets?.find(c => c.id === currentInvitation?.colorSet) || theme?.colorSets?.[0]
   const fontSet = theme?.fontSets?.find(f => f.id === currentInvitation?.fontSet) || theme?.fontSets?.[0]
   
-  const bgColor = colorSet?.colors?.[0] || '#faf9f7'
-  const rawAccentColor = colorSet?.colors?.[1] || '#c4a574'
-  const rawTextColor = colorSet?.colors?.[2] || '#3d3d3d'
-  const rawSecondaryTextColor = theme?.styles?.secondaryTextColor || '#8a8a8a'
+  // Styles with fallbacks
+  const themeStyles = {
+    ...theme?.styles,
+    ...(currentInvitation?.customStyles || {})
+  }
+
+  const bgColor = themeStyles.backgroundColor || colorSet?.colors?.[0] || '#faf9f7'
+  const rawAccentColor = themeStyles.primaryColor || colorSet?.colors?.[1] || '#c4a574'
+  const rawTextColor = themeStyles.textColor || colorSet?.colors?.[2] || '#3d3d3d'
+  const rawSecondaryTextColor = themeStyles.secondaryTextColor || '#8a8a8a'
 
   const accentColor = getLegibleColor(bgColor, rawAccentColor, false)
   const textColor = getLegibleColor(bgColor, rawTextColor, true)
   const secondaryTextColor = getLegibleColor(bgColor, rawSecondaryTextColor, false)
   const fontClass = fontSet?.id === 'serif' ? 'font-serif' : 'font-sans'
 
-  // Styles with fallbacks
-  const themeStyles = theme?.styles || {}
   const borderRadius = themeStyles.borderRadius || '8px'
   const sectionSpacing = themeStyles.sectionSpacing || 'py-12'
   const cardBg = themeStyles.cardBg || 'bg-white/40'
@@ -71,8 +75,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const dividerType = themeStyles.dividerType || 'heart'
   const heroStyle = themeStyles.heroStyle || 'center'
 
-  const fontKr = fontSet?.fonts?.[0] || themeStyles.fontKr || 'font-serif'
-  const fontEn = fontSet?.fonts?.[1] || themeStyles.fontEn || 'font-serif'
+  const fontKr = themeStyles.fontKr || fontSet?.fonts?.[0] || 'font-serif'
+  const fontEn = themeStyles.fontEn || fontSet?.fonts?.[1] || 'font-serif'
 
   const getFontFamily = (krFont: string, enFont: string) => {
     let enFamily = '';

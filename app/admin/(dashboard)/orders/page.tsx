@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { useAppStore, sampleOrders, type Order } from '@/lib/store'
-import { Search, CalendarIcon, Eye } from 'lucide-react'
+import { Search, CalendarIcon, Eye, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -53,9 +53,17 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">주문 관리</h1>
-        <p className="text-muted-foreground">청첩장 주문 내역을 조회하고 관리합니다.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">주문 관리</h1>
+          <p className="text-muted-foreground">청첩장 주문 내역을 조회하고 관리합니다.</p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/orders/create">
+            <Plus className="mr-2 h-4 w-4" />
+            청첩장 추가하기
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
