@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { useAppStore, sampleBGMs } from '@/lib/store'
+import { useAppStore, sampleBGMs, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, ArrowRight, Play, Pause, Upload, Star, Loader2, Image } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
@@ -19,13 +19,23 @@ import { uploadFile } from '@/lib/storage'
 export default function FeaturesPage() {
   const router = useRouter()
   const params = useParams()
-  const { currentInvitation, updateCurrentInvitation, saveInvitation, setActiveSection } = useAppStore()
+  const { currentInvitation, updateCurrentInvitation, saveInvitation, setActiveSection, themes } = useAppStore()
+
+  const theme = (themes && themes.length > 0) 
+    ? (themes.find(t => t.id === currentInvitation?.themeId) || themes[0])
+    : (sampleThemes.find(t => t.id === currentInvitation?.themeId) || sampleThemes[0])
+  const colorSet = theme?.colorSets?.find(c => c.id === currentInvitation?.colorSet) || theme?.colorSets?.[0]
+  const defaultAccentColor = colorSet?.colors?.[1] || '#c4a574'
+
+  const isCustomSvg = currentInvitation?.customStyles?.calendarDayCustomShapeUrl?.toLowerCase().split('?')[0].endsWith('.svg') ?? false
   const invitationId = params.id as string
   const [playingBgm, setPlayingBgm] = useState<string | null>(null)
   const [paperTexture, setPaperTexture] = useState(false)
   const [isUploadingKakao, setIsUploadingKakao] = useState(false)
   const [isUploadingShape, setIsUploadingShape] = useState(false)
   const calendarShapeInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingGreetingIcon, setIsUploadingGreetingIcon] = useState(false)
+  const greetingIconInputRef = useRef<HTMLInputElement>(null)
 
   const handleCalendarShapeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
@@ -44,6 +54,27 @@ export default function FeaturesPage() {
       alert('강조 이미지 업로드에 실패했습니다.')
     } finally {
       setIsUploadingShape(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleGreetingIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setIsUploadingGreetingIcon(true)
+    try {
+      const url = await uploadFile(e.target.files[0], 'greeting-icons')
+      const prevStyles = currentInvitation?.customStyles || {}
+      updateCurrentInvitation({
+        customStyles: {
+          ...prevStyles,
+          greetingIconCustomUrl: url
+        }
+      })
+      setActiveSection('greeting')
+    } catch (err) {
+      alert('아이콘 이미지 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingGreetingIcon(false)
       if (e.target) e.target.value = ''
     }
   }
@@ -343,6 +374,205 @@ export default function FeaturesPage() {
                 }}
               >
                 기본값(흰색) 복원
+              </Button>
+            </div>
+          </div>
+
+          {/* Custom Shape SVG Color Picker */}
+          {currentInvitation?.customStyles?.calendarDayShape === 'custom' && isCustomSvg && (
+            <div className="space-y-2 pt-2 border-t">
+              <div>
+                <p className="font-medium text-sm">업로드된 SVG 강조 이미지 색상</p>
+                <p className="text-xs text-muted-foreground">업로드한 SVG 이미지의 색상을 변경합니다. (기본값: 청첩장 포인트 색상)</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={currentInvitation?.customStyles?.calendarDaySvgColor || defaultAccentColor}
+                  onChange={(e) => {
+                    const prevStyles = currentInvitation?.customStyles || {}
+                    updateCurrentInvitation({
+                      customStyles: {
+                        ...prevStyles,
+                        calendarDaySvgColor: e.target.value
+                      }
+                    })
+                    setActiveSection('calendar')
+                  }}
+                  className="h-8 w-14 rounded border cursor-pointer p-0 bg-transparent"
+                />
+                <span className="text-xs font-mono">{currentInvitation?.customStyles?.calendarDaySvgColor || defaultAccentColor}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-[10px]"
+                  onClick={() => {
+                    const prevStyles = currentInvitation?.customStyles || {}
+                    updateCurrentInvitation({
+                      customStyles: {
+                        ...prevStyles,
+                        calendarDaySvgColor: defaultAccentColor
+                      }
+                    })
+                    setActiveSection('calendar')
+                  }}
+                >
+                  기본 포인트색상 복원
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Greeting Icon Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">초대 인사말 아이콘 설정</CardTitle>
+          <CardDescription>초대 인사말 위의 아이콘 모양과 디자인을 설정합니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Greeting Icon Shape Selector */}
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium text-sm">아이콘 표시 모양</p>
+              <p className="text-xs text-muted-foreground">인사말 위에 노출할 아이콘 모양을 선택합니다.</p>
+            </div>
+            <RadioGroup
+              value={currentInvitation?.customStyles?.greetingIconShape || 'heart'}
+              onValueChange={(val) => {
+                const prevStyles = currentInvitation?.customStyles || {}
+                updateCurrentInvitation({
+                  customStyles: {
+                    ...prevStyles,
+                    greetingIconShape: val
+                  }
+                })
+                setActiveSection('greeting')
+              }}
+              className="grid grid-cols-4 gap-2"
+            >
+              <div>
+                <RadioGroupItem value="heart" id="icon-heart" className="peer sr-only" />
+                <Label
+                  htmlFor="icon-heart"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <span className="text-primary text-base leading-none mb-1">♥</span>
+                  하트
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="circle" id="icon-circle" className="peer sr-only" />
+                <Label
+                  htmlFor="icon-circle"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <div className="h-4 w-4 rounded-full border border-primary mb-1" />
+                  동그라미
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="star" id="icon-star" className="peer sr-only" />
+                <Label
+                  htmlFor="icon-star"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <span className="text-primary text-base leading-none mb-1">★</span>
+                  별
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="custom" id="icon-custom" className="peer sr-only" />
+                <Label
+                  htmlFor="icon-custom"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <Upload className="h-4 w-4 text-primary mb-1.5" />
+                  직접 업로드
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Custom Greeting Icon Upload */}
+          {currentInvitation?.customStyles?.greetingIconShape === 'custom' && (
+            <div className="space-y-2 pt-2 border-t">
+              <span className="text-xs font-semibold block">커스텀 아이콘 업로드 (PNG/SVG 권장)</span>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded border bg-muted flex items-center justify-center overflow-hidden">
+                  {currentInvitation.customStyles?.greetingIconCustomUrl ? (
+                    <img src={currentInvitation.customStyles.greetingIconCustomUrl} className="h-full w-full object-contain" />
+                  ) : (
+                    <Image className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-xs"
+                    onClick={() => greetingIconInputRef.current?.click()}
+                    disabled={isUploadingGreetingIcon}
+                  >
+                    {isUploadingGreetingIcon ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                    이미지 추가
+                  </Button>
+                  <input 
+                    type="file" 
+                    ref={greetingIconInputRef} 
+                    onChange={handleGreetingIconUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                    disabled={isUploadingGreetingIcon}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Greeting Icon Color */}
+          <div className="space-y-2 pt-2 border-t">
+            <div>
+              <p className="font-medium text-sm">아이콘 색상 설정</p>
+              <p className="text-xs text-muted-foreground">아이콘의 렌더링 색상을 지정합니다. (직접 업로드한 SVG에도 적용됩니다)</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={currentInvitation?.customStyles?.greetingIconColor || defaultAccentColor}
+                onChange={(e) => {
+                  const prevStyles = currentInvitation?.customStyles || {}
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...prevStyles,
+                      greetingIconColor: e.target.value
+                    }
+                  })
+                  setActiveSection('greeting')
+                }}
+                className="h-8 w-14 rounded border cursor-pointer p-0 bg-transparent"
+              />
+              <span className="text-xs font-mono">{currentInvitation?.customStyles?.greetingIconColor || defaultAccentColor}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px]"
+                onClick={() => {
+                  const prevStyles = currentInvitation?.customStyles || {}
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...prevStyles,
+                      greetingIconColor: defaultAccentColor
+                    }
+                  })
+                  setActiveSection('greeting')
+                }}
+              >
+                기본 포인트색상 복원
               </Button>
             </div>
           </div>

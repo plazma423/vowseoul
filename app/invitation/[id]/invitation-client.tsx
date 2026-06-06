@@ -23,6 +23,8 @@ import {
   Copy, 
   Share2, 
   Heart,
+  Circle,
+  Star,
   Navigation,
   ChevronDown,
   Music,
@@ -574,10 +576,54 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
               )
 
             case 'greeting':
+              const greetingIconShape = invitation.customStyles?.greetingIconShape || 'heart'
+              const greetingIconColor = invitation.customStyles?.greetingIconColor || accentColor
+              const greetingIconCustomUrl = invitation.customStyles?.greetingIconCustomUrl
+              const isGreetingCustomSvg = greetingIconCustomUrl?.toLowerCase().split('?')[0].endsWith('.svg') ?? false
+
+              const renderGreetingIcon = () => {
+                if (greetingIconShape === 'custom' && greetingIconCustomUrl) {
+                  if (isGreetingCustomSvg) {
+                    return (
+                      <div 
+                        className="w-6 h-6 mx-auto mb-6 opacity-60 pointer-events-none"
+                        style={{
+                          backgroundColor: greetingIconColor,
+                          WebkitMaskImage: `url(${greetingIconCustomUrl})`,
+                          maskImage: `url(${greetingIconCustomUrl})`,
+                          WebkitMaskSize: 'contain',
+                          maskSize: 'contain',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskPosition: 'center',
+                          maskPosition: 'center',
+                        }}
+                      />
+                    )
+                  } else {
+                    return (
+                      <img 
+                        src={greetingIconCustomUrl} 
+                        alt="custom greeting icon" 
+                        className="w-6 h-6 mx-auto mb-6 object-contain opacity-80"
+                      />
+                    )
+                  }
+                }
+
+                if (greetingIconShape === 'circle') {
+                  return <Circle className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+                }
+                if (greetingIconShape === 'star') {
+                  return <Star className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+                }
+                return <Heart className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+              }
+
               return (
                 <section key="greeting" className={cn(spacingClass, "px-8 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                   {showDivider && renderDivider()}
-                  <Heart className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: accentColor }} />
+                  {renderGreetingIcon()}
                   <p className="leading-relaxed whitespace-pre-line text-sm opacity-80 mb-6">
                     {invitation.invitationMessage || '초대의 말씀을 드립니다.'}
                   </p>
@@ -680,17 +726,35 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                             const highlightTextColor = invitation.customStyles?.calendarDayTextColor || '#ffffff'
                             
                             if (shapeType === 'custom' && customShapeUrl) {
+                              const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
                               return (
                                 <div
                                   key={i}
                                   className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto font-bold"
                                   style={{ color: highlightTextColor }}
                                 >
-                                  <img 
-                                    src={customShapeUrl} 
-                                    alt="wedding day mark" 
-                                    className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
-                                  />
+                                  {isSvg ? (
+                                    <div 
+                                      className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+                                      style={{
+                                        backgroundColor: invitation.customStyles?.calendarDaySvgColor || accentColor,
+                                        WebkitMaskImage: `url(${customShapeUrl})`,
+                                        maskImage: `url(${customShapeUrl})`,
+                                        WebkitMaskSize: 'contain',
+                                        maskSize: 'contain',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        maskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center',
+                                        maskPosition: 'center',
+                                      }}
+                                    />
+                                  ) : (
+                                    <img 
+                                      src={customShapeUrl} 
+                                      alt="wedding day mark" 
+                                      className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
+                                    />
+                                  )}
                                   <span className="relative z-10">{day}</span>
                                 </div>
                               )

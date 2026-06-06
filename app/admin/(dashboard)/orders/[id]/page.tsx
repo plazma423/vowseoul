@@ -53,6 +53,7 @@ export default function OrderDetailPage() {
   const [isUploadingParking, setIsUploadingParking] = useState(false)
   const [isUploadingShape, setIsUploadingShape] = useState(false)
   const calendarShapeInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingGreetingIcon, setIsUploadingGreetingIcon] = useState(false)
 
   // Dialog / Modal States
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
@@ -84,6 +85,7 @@ export default function OrderDetailPage() {
   const kakaoImageInputRef = useRef<HTMLInputElement>(null)
   const subwayImageInputRef = useRef<HTMLInputElement>(null)
   const parkingImageInputRef = useRef<HTMLInputElement>(null)
+  const greetingIconInputRef = useRef<HTMLInputElement>(null)
 
   // Load Initial Data
   useEffect(() => {
@@ -335,6 +337,27 @@ export default function OrderDetailPage() {
     }
   }
 
+  const handleGreetingIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setIsUploadingGreetingIcon(true)
+    try {
+      const url = await uploadFile(e.target.files[0], 'greeting-icons')
+      const prevStyles = currentInvitation?.customStyles || {}
+      updateCurrentInvitation({
+        customStyles: {
+          ...prevStyles,
+          greetingIconCustomUrl: url
+        }
+      })
+      toast.success('아이콘 이미지가 업로드되었습니다.')
+    } catch (err) {
+      toast.error('아이콘 이미지 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingGreetingIcon(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
   // BGM Audio Play Handler
   const handlePlayBgm = (url: string) => {
     if (playingBgmUrl === url) {
@@ -427,6 +450,9 @@ export default function OrderDetailPage() {
   }
 
   const activeTheme = themes.find(t => t.id === currentInvitation?.themeId) || sampleThemes.find(t => t.id === currentInvitation?.themeId) || sampleThemes[0]
+  const colorSet = activeTheme?.colorSets?.find(c => c.id === currentInvitation?.colorSet) || activeTheme?.colorSets?.[0]
+  const defaultAccentColor = colorSet?.colors?.[1] || '#c4a574'
+  const isCustomSvg = currentInvitation?.customStyles?.calendarDayCustomShapeUrl?.toLowerCase().split('?')[0].endsWith('.svg') ?? false
 
   // Reorder Sections
   const handleMoveSection = (index: number, direction: 'up' | 'down') => {
@@ -1432,6 +1458,148 @@ export default function OrderDetailPage() {
                         onClick={() => updateCustomStyle('calendarDayTextColor', '#ffffff')}
                       >
                         기본값(흰색) 복원
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Custom Shape SVG Color Picker */}
+                  {currentInvitation.customStyles?.calendarDayShape === 'custom' && isCustomSvg && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div>
+                        <p className="font-medium text-sm">업로드된 SVG 강조 이미지 색상</p>
+                        <p className="text-xs text-muted-foreground">업로드한 SVG 이미지의 색상을 변경합니다. (기본값: 청첩장 포인트 색상)</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={currentInvitation.customStyles?.calendarDaySvgColor || defaultAccentColor}
+                          onChange={(e) => updateCustomStyle('calendarDaySvgColor', e.target.value)}
+                          className="h-8 w-14 rounded border cursor-pointer p-0 bg-transparent"
+                        />
+                        <span className="text-xs font-mono">{currentInvitation.customStyles?.calendarDaySvgColor || defaultAccentColor}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[10px]"
+                          onClick={() => updateCustomStyle('calendarDaySvgColor', defaultAccentColor)}
+                        >
+                          기본 포인트색상 복원
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Greeting Icon Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">초대 인사말 아이콘 설정</CardTitle>
+                  <CardDescription>초대 인사말 위의 아이콘 모양과 디자인을 설정합니다.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Greeting Icon Shape Selector */}
+                  <div className="space-y-4">
+                    <div>
+                      <p className="font-medium text-sm">아이콘 표시 모양</p>
+                      <p className="text-xs text-muted-foreground">인사말 위에 노출할 아이콘 모양을 선택합니다.</p>
+                    </div>
+                    <RadioGroup
+                      value={currentInvitation.customStyles?.greetingIconShape || 'heart'}
+                      onValueChange={(val) => updateCustomStyle('greetingIconShape', val)}
+                      className="grid grid-cols-4 gap-2"
+                    >
+                      <div className="flex items-center space-x-2 border border-border rounded-lg p-3 cursor-pointer hover:bg-muted/30">
+                        <RadioGroupItem value="heart" id="icon-heart" />
+                        <Label htmlFor="icon-heart" className="cursor-pointer text-sm font-medium flex items-center gap-1.5">
+                          <span className="text-primary text-sm leading-none">♥</span>
+                          하트
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border border-border rounded-lg p-3 cursor-pointer hover:bg-muted/30">
+                        <RadioGroupItem value="circle" id="icon-circle" />
+                        <Label htmlFor="icon-circle" className="cursor-pointer text-sm font-medium flex items-center gap-1.5">
+                          <div className="h-3.5 w-3.5 rounded-full border border-primary" />
+                          동그라미
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border border-border rounded-lg p-3 cursor-pointer hover:bg-muted/30">
+                        <RadioGroupItem value="star" id="icon-star" />
+                        <Label htmlFor="icon-star" className="cursor-pointer text-sm font-medium flex items-center gap-1.5">
+                          <span className="text-primary text-sm leading-none">★</span>
+                          별
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 border border-border rounded-lg p-3 cursor-pointer hover:bg-muted/30">
+                        <RadioGroupItem value="custom" id="icon-custom" />
+                        <Label htmlFor="icon-custom" className="cursor-pointer text-sm font-medium flex items-center gap-1.5">
+                          <Upload className="h-3.5 w-3.5 text-primary" />
+                          직접 업로드
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Custom Greeting Icon Upload */}
+                  {currentInvitation.customStyles?.greetingIconShape === 'custom' && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <span className="text-xs font-semibold block">커스텀 아이콘 업로드 (PNG/SVG 권장)</span>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded border bg-muted flex items-center justify-center overflow-hidden">
+                          {currentInvitation.customStyles?.greetingIconCustomUrl ? (
+                            <img src={currentInvitation.customStyles.greetingIconCustomUrl} className="h-full w-full object-contain" />
+                          ) : (
+                            <Image className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 text-xs"
+                            onClick={() => greetingIconInputRef.current?.click()}
+                            disabled={isUploadingGreetingIcon}
+                          >
+                            {isUploadingGreetingIcon ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                            이미지 추가
+                          </Button>
+                          <input 
+                            type="file" 
+                            ref={greetingIconInputRef} 
+                            onChange={handleGreetingIconUpload} 
+                            accept="image/*" 
+                            className="hidden" 
+                            disabled={isUploadingGreetingIcon}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Greeting Icon Color */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div>
+                      <p className="font-medium text-sm">아이콘 색상 설정</p>
+                      <p className="text-xs text-muted-foreground">아이콘의 렌더링 색상을 지정합니다. (직접 업로드한 SVG에도 적용됩니다)</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={currentInvitation.customStyles?.greetingIconColor || defaultAccentColor}
+                        onChange={(e) => updateCustomStyle('greetingIconColor', e.target.value)}
+                        className="h-8 w-14 rounded border cursor-pointer p-0 bg-transparent"
+                      />
+                      <span className="text-xs font-mono">{currentInvitation.customStyles?.greetingIconColor || defaultAccentColor}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[10px]"
+                        onClick={() => updateCustomStyle('greetingIconColor', defaultAccentColor)}
+                      >
+                        기본 포인트색상 복원
                       </Button>
                     </div>
                   </div>
