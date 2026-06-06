@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from '@/components/logo'
 
 export function Footer() {
   return (
@@ -6,8 +7,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-4">
           <div className="md:col-span-2">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              VOW SEOUL
+            <Link href="/" className="flex items-center">
+              <Logo className="h-5 w-auto text-foreground" />
             </Link>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
               Where your VOW begins. 소중한 서약의 순간을 담아드립니다.
@@ -64,7 +65,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-border pt-8">
           <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} VOW SEOUL. All rights reserved.
+            &copy; {new Date().getFullYear()} VOWSEOUL. All rights reserved.
           </p>
         </div>
       </div>

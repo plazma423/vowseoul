@@ -50,14 +50,13 @@ export default function ContentPage() {
     
     try {
       const url = await uploadFile(e.target.files[0], 'transport')
-      updateCustomStyle(isSub ? 'subwayImage' : 'parkingImage', url)
-      if (isSub) {
-        updateCustomStyle('subwayDisplayType', currentInvitation?.customStyles?.subwayDisplayType || 'popup')
-        updateCustomStyle('subwayButtonText', currentInvitation?.customStyles?.subwayButtonText || '이미지 보기')
-      } else {
-        updateCustomStyle('parkingDisplayType', currentInvitation?.customStyles?.parkingDisplayType || 'popup')
-        updateCustomStyle('parkingButtonText', currentInvitation?.customStyles?.parkingButtonText || '이미지 보기')
+      const newStyles = {
+        ...(currentInvitation?.customStyles || {}),
+        [isSub ? 'subwayImage' : 'parkingImage']: url,
+        [isSub ? 'subwayDisplayType' : 'parkingDisplayType']: currentInvitation?.customStyles?.[isSub ? 'subwayDisplayType' : 'parkingDisplayType'] || 'popup',
+        [isSub ? 'subwayButtonText' : 'parkingButtonText']: currentInvitation?.customStyles?.[isSub ? 'subwayButtonText' : 'parkingButtonText'] || '이미지 보기'
       }
+      updateCurrentInvitation({ customStyles: newStyles })
     } catch (err) {
       alert('이미지 업로드에 실패했습니다.')
     } finally {

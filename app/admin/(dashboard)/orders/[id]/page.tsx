@@ -294,14 +294,13 @@ export default function OrderDetailPage() {
     
     try {
       const url = await uploadFile(e.target.files[0], 'transport')
-      updateCustomStyle(isSub ? 'subwayImage' : 'parkingImage', url)
-      if (isSub) {
-        updateCustomStyle('subwayDisplayType', currentInvitation?.customStyles?.subwayDisplayType || 'popup')
-        updateCustomStyle('subwayButtonText', currentInvitation?.customStyles?.subwayButtonText || '이미지 보기')
-      } else {
-        updateCustomStyle('parkingDisplayType', currentInvitation?.customStyles?.parkingDisplayType || 'popup')
-        updateCustomStyle('parkingButtonText', currentInvitation?.customStyles?.parkingButtonText || '이미지 보기')
+      const newStyles = {
+        ...(currentInvitation.customStyles || {}),
+        [isSub ? 'subwayImage' : 'parkingImage']: url,
+        [isSub ? 'subwayDisplayType' : 'parkingDisplayType']: currentInvitation.customStyles?.[isSub ? 'subwayDisplayType' : 'parkingDisplayType'] || 'popup',
+        [isSub ? 'subwayButtonText' : 'parkingButtonText']: currentInvitation.customStyles?.[isSub ? 'subwayButtonText' : 'parkingButtonText'] || '이미지 보기'
       }
+      updateCurrentInvitation({ customStyles: newStyles })
       toast.success('교통 정보 이미지가 업로드되었습니다.')
     } catch (err) {
       toast.error('이미지 업로드에 실패했습니다.')
@@ -409,7 +408,15 @@ export default function OrderDetailPage() {
   const handleMoveSection = (index: number, direction: 'up' | 'down') => {
     if (!currentInvitation) return
     const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
-    const sectionOrder = [...(currentInvitation.customStyles?.sectionOrder || activeTheme?.styles?.sectionOrder || defaultOrder)]
+    const rawOrder = currentInvitation.customStyles?.sectionOrder || activeTheme?.styles?.sectionOrder || defaultOrder
+    const sectionOrder = rawOrder.includes('sequence')
+      ? [...rawOrder]
+      : (() => {
+          const idx = rawOrder.indexOf('greeting')
+          const newOrder = [...rawOrder]
+          newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
+          return newOrder
+        })()
     
     const targetIndex = direction === 'up' ? index - 1 : index + 1
     if (targetIndex < 0 || targetIndex >= sectionOrder.length) return
@@ -1912,7 +1919,15 @@ export default function OrderDetailPage() {
                     <div className="space-y-2 max-w-md bg-muted/40 border rounded-lg p-4">
                       {(() => {
                         const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
-                        const sectionOrder = currentInvitation.customStyles?.sectionOrder || activeTheme?.styles?.sectionOrder || defaultOrder
+                        const rawOrder = currentInvitation.customStyles?.sectionOrder || activeTheme?.styles?.sectionOrder || defaultOrder
+                        const sectionOrder = rawOrder.includes('sequence')
+                          ? rawOrder
+                          : (() => {
+                              const idx = rawOrder.indexOf('greeting')
+                              const newOrder = [...rawOrder]
+                              newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
+                              return newOrder
+                            })()
                         
                         return sectionOrder.map((section, idx) => (
                           <div key={section} className="flex justify-between items-center bg-background border rounded px-3 py-2 text-xs shadow-sm">

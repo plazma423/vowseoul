@@ -12,6 +12,8 @@ import { Menu, ChevronLeft } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { usePathname, useRouter } from 'next/navigation'
 
+import { Logo } from '@/components/logo'
+
 export function Header() {
   const { isAuthenticated, setAuth } = useAppStore()
   const pathname = usePathname()
@@ -30,7 +32,7 @@ export function Header() {
           )}
           <Link href="/" className="flex items-center gap-2">
             {!isHome && <ChevronLeft className="h-5 w-5 hidden md:block text-muted-foreground" />}
-            <span className="text-xl font-semibold tracking-tight">VOW SEOUL</span>
+            <Logo className="h-5 w-auto text-foreground" />
           </Link>
         </div>
 

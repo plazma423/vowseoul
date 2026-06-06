@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Logo } from '@/components/logo'
 
 const editorSteps = [
   { id: 1, name: '기본정보', path: '' },
@@ -122,7 +123,7 @@ export default function EditorLayout({
                 <span className="sr-only">뒤로가기</span>
               </Link>
             </Button>
-            <span className="text-lg font-semibold">VOW SEOUL</span>
+            <Logo className="h-4.5 w-auto text-foreground" />
           </div>
 
           {/* Step Indicator */}

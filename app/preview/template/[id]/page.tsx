@@ -35,6 +35,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { sampleThemes } from '@/lib/store'
 import { cn, getLegibleColor } from '@/lib/utils'
+import { Logo } from '@/components/logo'
 
 export default function TemplatePreviewPage() {
   const params = useParams()
@@ -220,7 +221,7 @@ export default function TemplatePreviewPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center">
-        <p className="text-sm text-[#8b7355] tracking-widest animate-pulse">VOW SEOUL</p>
+        <Logo className="h-5 w-auto text-[#8b7355] animate-pulse" />
         <p className="text-xs text-gray-400 mt-2">샘플 미리보기를 준비하는 중입니다...</p>
       </div>
     )
@@ -297,7 +298,15 @@ export default function TemplatePreviewPage() {
 
   
   const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
-  const sectionOrder = themeStyles.sectionOrder || defaultOrder
+  const rawOrder = themeStyles.sectionOrder || defaultOrder
+  const sectionOrder = rawOrder.includes('sequence')
+    ? rawOrder
+    : (() => {
+        const idx = rawOrder.indexOf('greeting')
+        const newOrder = [...rawOrder]
+        newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
+        return newOrder
+      })()
 
   return (
     <div className={cn("min-h-screen", fontClass)} style={{ backgroundColor: bgColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
@@ -853,8 +862,8 @@ export default function TemplatePreviewPage() {
         </section>
 
         {/* Footer */}
-        <footer className="py-6 px-6 text-center opacity-30 text-[9px] tracking-wider">
-          VOW SEOUL
+        <footer className="py-6 px-6 text-center opacity-30 text-[9px] tracking-wider flex justify-center">
+          <Logo className="h-3.5 w-auto text-current" />
         </footer>
       </div>
     </div>

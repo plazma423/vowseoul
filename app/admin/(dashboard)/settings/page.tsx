@@ -41,6 +41,10 @@ export default function AdminSettingsPage() {
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
+  // Custom logo settings state
+  const [logoPath, setLogoPath] = useState<string>('')
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+
   useEffect(() => {
     fetchCurrentSetting()
     fetchImages()
@@ -67,6 +71,16 @@ export default function AdminSettingsPage() {
     if (textData?.value) {
       setHeroContent(textData.value)
     }
+
+    const { data: logoData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'logo_image')
+      .single()
+
+    if (logoData?.value?.path) {
+      setLogoPath(logoData.value.path)
+    }
   }
 
   const fetchImages = async () => {
@@ -77,6 +91,46 @@ export default function AdminSettingsPage() {
       setImages(validImages)
     }
     setIsLoadingImages(false)
+  }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingLogo(true)
+    const fileExt = file.name.split('.').pop()
+    const fileName = `logo_${Date.now()}.${fileExt}`
+    const filePath = `logo-images/${fileName}`
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('vow-seoul-storage')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+
+      const { error: dbError } = await supabase.from('settings').upsert({
+        key: 'logo_image',
+        value: { path: filePath }
+      })
+
+      if (dbError) throw dbError
+
+      setLogoPath(filePath)
+      // Force refresh cached logo url in localStorage
+      const publicUrl = supabase.storage.from('vow-seoul-storage').getPublicUrl(filePath).data.publicUrl
+      if (typeof window !== 'undefined' && publicUrl) {
+        localStorage.setItem('vow_seoul_custom_logo', publicUrl)
+      }
+
+      toast.success('로고가 성공적으로 업로드 및 적용되었습니다.')
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast.error('로고 이미지 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingLogo(false)
+      if (event.target) event.target.value = ''
+    }
   }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +237,61 @@ export default function AdminSettingsPage() {
                   defaultValue="프리미엄 모바일 청첩장 서비스"
                   rows={3}
                 />
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">로고 설정</h4>
+                <p className="text-xs text-muted-foreground">사이트 상단 네비게이션 및 다양한 화면에 표시될 로고 이미지(SVG 권장)를 설정합니다.</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-40 h-16 border rounded bg-muted/20 flex items-center justify-center overflow-hidden p-2">
+                    {logoPath ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img 
+                        src={supabase.storage.from('vow-seoul-storage').getPublicUrl(logoPath).data.publicUrl} 
+                        alt="Logo Preview" 
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">기본 로고 사용 중</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" className="relative cursor-pointer overflow-hidden" disabled={isUploadingLogo}>
+                      {isUploadingLogo ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 업로드 중...</>
+                      ) : (
+                        <><Upload className="w-4 h-4 mr-2" /> 로고 업로드</>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={handleLogoUpload}
+                        disabled={isUploadingLogo}
+                      />
+                    </Button>
+                    {logoPath && (
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive text-xs hover:text-destructive hover:bg-destructive/10"
+                        onClick={async () => {
+                          const { error } = await supabase.from('settings').delete().eq('key', 'logo_image')
+                          if (!error) {
+                            setLogoPath('')
+                            if (typeof window !== 'undefined') {
+                              localStorage.removeItem('vow_seoul_custom_logo')
+                            }
+                            toast.success('기본 로고로 설정이 초기화되었습니다.')
+                          }
+                        }}
+                      >
+                        기본 로고로 초기화
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
               <Separator />
               <div className="space-y-4">

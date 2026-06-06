@@ -35,6 +35,7 @@ import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { sampleThemes } from "@/lib/store"
 import { cn, getLegibleColor } from "@/lib/utils"
+import { Logo } from "@/components/logo"
 
 export default function InvitationClient({ id, initialInvitation }: { id: string; initialInvitation?: any }) {
   const [invitation, setInvitation] = useState<any>(initialInvitation || null)
@@ -86,20 +87,17 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
         const { data: themesData } = await supabase.from('themes').select('*')
         if (themesData) setThemes(themesData)
 
-        // 1. Fetch invitation if not provided or to ensure fresh data
-        let currentInvite = invitation
-        if (!currentInvite) {
-          const { data: inviteData, error: inviteError } = await supabase
-            .from('invitations')
-            .select('*')
-            .eq('id', id)
-            .single()
+        // 1. Fetch invitation to ensure fresh data
+        const { data: inviteData, error: inviteError } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('id', id)
+          .single()
 
-          if (inviteError) throw inviteError
-          if (inviteData) {
-            setInvitation(inviteData)
-            currentInvite = inviteData
-          }
+        if (inviteError) throw inviteError
+        let currentInvite = inviteData
+        if (inviteData) {
+          setInvitation(inviteData)
         }
 
         if (currentInvite) {
@@ -308,7 +306,7 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
   if (loading) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center">
-        <p className="text-sm text-[#8b7355] tracking-widest animate-pulse">VOW SEOUL</p>
+        <Logo className="h-5 w-auto text-[#8b7355] animate-pulse" />
         <p className="text-xs text-gray-400 mt-2">청첩장을 불러오는 중입니다...</p>
       </div>
     )
@@ -389,7 +387,15 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
   }
 
   const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
-  const sectionOrder = themeStyles.sectionOrder || defaultOrder
+  const rawOrder = themeStyles.sectionOrder || defaultOrder
+  const sectionOrder = rawOrder.includes('sequence')
+    ? rawOrder
+    : (() => {
+        const idx = rawOrder.indexOf('greeting')
+        const newOrder = [...rawOrder]
+        newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
+        return newOrder
+      })()
 
   return (
     <div className={cn("min-h-screen", fontClass)} style={{ backgroundColor: bgColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
@@ -681,12 +687,14 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                         <p className="text-xs mt-1" style={{ color: secondaryTextColor }}>{invitation.venueAddress}</p>
                       </div>
 
-                      {(invitation.trafficInfo || invitation.parkingInfo) && (
+                      {(invitation.trafficInfo || invitation.parkingInfo || invitation.customStyles?.subwayImage || invitation.customStyles?.parkingImage) && (
                         <div className="space-y-4 pt-4 border-t border-gray-100/10 text-xs">
-                          {invitation.trafficInfo && (
+                          {(invitation.trafficInfo || invitation.customStyles?.subwayImage) && (
                             <div>
                               <p className="font-semibold">교통 안내</p>
-                              <p className="whitespace-pre-line mt-1 leading-relaxed" style={{ color: secondaryTextColor }}>{invitation.trafficInfo}</p>
+                              {invitation.trafficInfo && (
+                                <p className="whitespace-pre-line mt-1 leading-relaxed" style={{ color: secondaryTextColor }}>{invitation.trafficInfo}</p>
+                              )}
                               {invitation.customStyles?.subwayImage && (
                                 invitation.customStyles.subwayDisplayType === 'direct' ? (
                                   <div className="mt-2 rounded overflow-hidden max-h-[160px] bg-black/5 dark:bg-white/5 border border-border/50">
@@ -710,10 +718,12 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                               )}
                             </div>
                           )}
-                          {invitation.parkingInfo && (
+                          {(invitation.parkingInfo || invitation.customStyles?.parkingImage) && (
                             <div>
                               <p className="font-semibold">주차 안내</p>
-                              <p className="whitespace-pre-line mt-1 leading-relaxed" style={{ color: secondaryTextColor }}>{invitation.parkingInfo}</p>
+                              {invitation.parkingInfo && (
+                                <p className="whitespace-pre-line mt-1 leading-relaxed" style={{ color: secondaryTextColor }}>{invitation.parkingInfo}</p>
+                              )}
                               {invitation.customStyles?.parkingImage && (
                                 invitation.customStyles.parkingDisplayType === 'direct' ? (
                                   <div className="mt-2 rounded overflow-hidden max-h-[160px] bg-black/5 dark:bg-white/5 border border-border/50">
@@ -1056,8 +1066,8 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
         </section>
 
         {/* Footer */}
-        <footer className="py-8 px-8 bg-transparent text-center opacity-30 text-xs">
-          <p>VOW SEOUL</p>
+        <footer className="py-8 px-8 bg-transparent text-center opacity-30 text-xs flex flex-col items-center justify-center">
+          <Logo className="h-3.5 w-auto text-current" />
         </footer>
       </div>
       {activeImageModal && (

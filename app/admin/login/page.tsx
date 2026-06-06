@@ -10,6 +10,8 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { useAppStore } from '@/lib/store'
 import { Spinner } from '@/components/ui/spinner'
 
+import { Logo } from '@/components/logo'
+
 export default function AdminLoginPage() {
   const router = useRouter()
   const { setAuth } = useAppStore()
@@ -41,8 +43,8 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            <span className="text-2xl font-semibold tracking-tight">VOW SEOUL</span>
+          <div className="mx-auto mb-4 flex justify-center">
+            <Logo className="h-6 w-auto text-foreground" />
           </div>
           <CardTitle className="text-xl">관리자 로그인</CardTitle>
           <CardDescription>

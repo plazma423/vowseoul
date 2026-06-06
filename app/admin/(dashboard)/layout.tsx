@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/lib/store'
+import { Logo } from '@/components/logo'
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -56,9 +57,9 @@ export default function AdminLayout({
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="hidden w-64 border-r border-border bg-background lg:block">
-        <div className="flex h-16 items-center border-b border-border px-6">
-          <Link href="/admin" className="text-lg font-semibold tracking-tight">
-            VOW SEOUL
+        <div className="flex h-16 items-center border-b border-border px-6 gap-2">
+          <Link href="/admin" className="flex items-center">
+            <Logo className="h-4.5 w-auto text-foreground" />
           </Link>
           <span className="ml-2 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
             Admin
@@ -113,7 +114,9 @@ export default function AdminLayout({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <span className="text-lg font-semibold lg:hidden">VOW SEOUL Admin</span>
+            <span className="text-lg font-semibold lg:hidden flex items-center gap-1.5">
+              <Logo className="h-4.5 w-auto text-foreground" /> Admin
+            </span>
           </div>
 
           <DropdownMenu>

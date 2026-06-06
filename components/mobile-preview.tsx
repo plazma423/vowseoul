@@ -8,6 +8,7 @@ import { useAppStore, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { cn, getLegibleColor } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Logo } from '@/components/logo'
 import { 
   Calendar as CalendarIcon, 
   MapPin, 
@@ -118,8 +119,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
   
   // Default section order if missing
-  const defaultOrder = ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook']
-  const sectionOrder = themeStyles.sectionOrder || defaultOrder
+  const rawOrder = themeStyles.sectionOrder || defaultOrder
+  const sectionOrder = rawOrder.includes('sequence')
+    ? rawOrder
+    : (() => {
+        const idx = rawOrder.indexOf('greeting')
+        const newOrder = [...rawOrder]
+        newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
+        return newOrder
+      })()
 
   // Generate calendar days
   const getCalendarDays = (dateStr: string) => {
@@ -440,12 +448,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           </div>
 
                           {/* Traffic Info & Parking Info */}
-                          {(currentInvitation?.trafficInfo || currentInvitation?.parkingInfo) && (
+                          {(currentInvitation?.trafficInfo || currentInvitation?.parkingInfo || currentInvitation?.customStyles?.subwayImage || currentInvitation?.customStyles?.parkingImage) && (
                             <div className="space-y-3 pt-3 border-t border-gray-100/10 text-[10px]">
-                              {currentInvitation.trafficInfo && (
+                              {(currentInvitation.trafficInfo || currentInvitation.customStyles?.subwayImage) && (
                                 <div>
                                   <p className="font-semibold">교통 안내</p>
-                                  <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.trafficInfo}</p>
+                                  {currentInvitation.trafficInfo && (
+                                    <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.trafficInfo}</p>
+                                  )}
                                   {currentInvitation.customStyles?.subwayImage && (
                                     currentInvitation.customStyles.subwayDisplayType === 'direct' ? (
                                       <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
@@ -469,10 +479,12 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   )}
                                 </div>
                               )}
-                              {currentInvitation.parkingInfo && (
+                              {(currentInvitation.parkingInfo || currentInvitation.customStyles?.parkingImage) && (
                                 <div>
                                   <p className="font-semibold">주차 안내</p>
-                                  <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.parkingInfo}</p>
+                                  {currentInvitation.parkingInfo && (
+                                    <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: secondaryTextColor }}>{currentInvitation.parkingInfo}</p>
+                                  )}
                                   {currentInvitation.customStyles?.parkingImage && (
                                     currentInvitation.customStyles.parkingDisplayType === 'direct' ? (
                                       <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
@@ -699,8 +711,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             </section>
 
             {/* Footer */}
-            <footer className="py-6 px-6 text-center opacity-30 text-[9px] tracking-wider">
-              VOW SEOUL
+            <footer className="py-6 px-6 text-center opacity-30 text-[9px] tracking-wider flex justify-center">
+              <Logo className="h-3.5 w-auto text-current" />
             </footer>
             
           </div>

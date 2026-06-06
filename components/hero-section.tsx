@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Logo } from '@/components/logo'
+import { cn } from '@/lib/utils'
 
 export function HeroSection() {
   const [bgImageUrl, setBgImageUrl] = useState<string>(() => {
@@ -89,7 +91,14 @@ export function HeroSection() {
       
       {/* Content */}
       <div className={`relative z-10 px-4 w-full max-w-5xl mx-auto ${heroContent.layout}`}>
-        <p className="mb-4 text-sm tracking-[0.4em] text-white/80">VOW SEOUL</p>
+        <div className={cn(
+          "mb-4 flex",
+          heroContent.layout === 'text-center' && "justify-center",
+          heroContent.layout === 'text-right' && "justify-end",
+          heroContent.layout === 'text-left' && "justify-start"
+        )}>
+          <Logo className="h-4 w-auto text-white/80" />
+        </div>
         <h1 className={`mb-6 font-light leading-tight tracking-wide text-white ${heroContent.fontFamily} ${heroContent.titleFontSize}`}>
           {heroContent.title.split('\n').map((line, i) => (
             <span key={i}>
