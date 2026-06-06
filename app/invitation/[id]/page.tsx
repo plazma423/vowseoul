@@ -3,11 +3,11 @@ import InvitationClient from "./invitation-client"
 import { Metadata } from "next"
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = params
+  const { id } = await params
 
   try {
     const { data: inviteData } = await supabase
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function Page({ params }: PageProps) {
-  const { id } = params
+  const { id } = await params
 
   // Pre-fetch invitation data to pass to the client component
   let initialInvitation = null
