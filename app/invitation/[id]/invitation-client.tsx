@@ -50,6 +50,20 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
   const [rsvpMessage, setRsvpMessage] = useState("")
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false)
 
+  const getDDayString = (dateStr: string) => {
+    if (!dateStr) return null
+    const wedding = new Date(dateStr + 'T00:00:00')
+    const today = new Date()
+    wedding.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0)
+    const diffTime = wedding.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'D-Day'
+    if (diffDays > 0) return `D-${diffDays}`
+    return `D+${Math.abs(diffDays)}`
+  }
+
   // Guestbook states
   const [guestbookMessages, setGuestbookMessages] = useState<any[]>([])
   const [newCommentName, setNewCommentName] = useState("")
@@ -633,10 +647,19 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
 
             case 'calendar':
               if (!invitation.weddingDate) return null
+              const ddayEnabled = invitation.customStyles?.ddayEnabled ?? false
               return (
                 <section key="calendar" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                   {showDivider && renderDivider()}
-                  <h2 className="text-center text-xs font-semibold tracking-wider mb-8">CALENDAR</h2>
+                  <h2 className={cn("text-center text-xs font-semibold tracking-wider", ddayEnabled ? "mb-2" : "mb-8")}>CALENDAR</h2>
+                  {ddayEnabled && (
+                    <div 
+                      className="text-center text-sm font-bold tracking-wider mb-6 animate-pulse" 
+                      style={{ color: accentColor }}
+                    >
+                      {getDDayString(invitation.weddingDate)}
+                    </div>
+                  )}
                   <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
                     <CardContent className="p-6">
                       <div className="text-center mb-4">
@@ -649,14 +672,61 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                         ))}
                         {calDays.map((day, i) => {
                           if (day === null) return <div key={`empty-${i}`} />
+                          const isWeddingDay = day === calDay
+                          
+                          if (isWeddingDay) {
+                            const shapeType = invitation.customStyles?.calendarDayShape || 'circle'
+                            const customShapeUrl = invitation.customStyles?.calendarDayCustomShapeUrl
+                            const highlightTextColor = invitation.customStyles?.calendarDayTextColor || '#ffffff'
+                            
+                            if (shapeType === 'custom' && customShapeUrl) {
+                              return (
+                                <div
+                                  key={i}
+                                  className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto font-bold"
+                                  style={{ color: highlightTextColor }}
+                                >
+                                  <img 
+                                    src={customShapeUrl} 
+                                    alt="wedding day mark" 
+                                    className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
+                                  />
+                                  <span className="relative z-10">{day}</span>
+                                </div>
+                              )
+                            }
+                            
+                            if (shapeType === 'heart') {
+                              return (
+                                <div
+                                  key={i}
+                                  className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto font-bold"
+                                  style={{ color: highlightTextColor }}
+                                >
+                                  <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none fill-current" viewBox="0 0 24 24" style={{ color: accentColor }}>
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                  </svg>
+                                  <span className="relative z-10">{day}</span>
+                                </div>
+                              )
+                            }
+                            
+                            return (
+                              <div
+                                key={i}
+                                className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto rounded-full font-bold"
+                                style={{ backgroundColor: accentColor, color: highlightTextColor }}
+                              >
+                                <span className="relative z-10">{day}</span>
+                              </div>
+                            )
+                          }
+                          
                           return (
                             <div
                               key={i}
-                              className={cn(
-                                "py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto rounded-full",
-                                day === calDay && "text-white font-bold"
-                              )}
-                              style={day === calDay ? { backgroundColor: accentColor } : { color: secondaryTextColor }}
+                              className="py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto text-center"
+                              style={{ color: secondaryTextColor }}
                             >
                               {day}
                             </div>

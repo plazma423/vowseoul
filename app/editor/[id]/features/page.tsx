@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { useAppStore, sampleBGMs } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, ArrowRight, Play, Pause, Upload, Star, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Play, Pause, Upload, Star, Loader2, Image } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { uploadFile } from '@/lib/storage'
@@ -24,6 +24,29 @@ export default function FeaturesPage() {
   const [playingBgm, setPlayingBgm] = useState<string | null>(null)
   const [paperTexture, setPaperTexture] = useState(false)
   const [isUploadingKakao, setIsUploadingKakao] = useState(false)
+  const [isUploadingShape, setIsUploadingShape] = useState(false)
+  const calendarShapeInputRef = useRef<HTMLInputElement>(null)
+
+  const handleCalendarShapeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setIsUploadingShape(true)
+    try {
+      const url = await uploadFile(e.target.files[0], 'calendar-shapes')
+      const prevStyles = currentInvitation?.customStyles || {}
+      updateCurrentInvitation({
+        customStyles: {
+          ...prevStyles,
+          calendarDayCustomShapeUrl: url
+        }
+      })
+      setActiveSection('calendar')
+    } catch (err) {
+      alert('강조 이미지 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingShape(false)
+      if (e.target) e.target.value = ''
+    }
+  }
   
   const [bgms, setBgms] = useState<any[]>([])
   const [themeRecommendedBgms, setThemeRecommendedBgms] = useState<string[]>([])
@@ -158,6 +181,172 @@ export default function FeaturesPage() {
             )}
           </CardContent>
         )}
+      </Card>
+
+      {/* Calendar Detail Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">달력 상세 설정</CardTitle>
+          <CardDescription>달력의 디데이 표시 및 예식일 강조 디자인을 설정합니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* D-Day Toggle */}
+          <div className="flex items-center justify-between pb-4 border-b">
+            <div>
+              <p className="font-medium text-sm">달력 디데이 (D-Day) 표시</p>
+              <p className="text-xs text-muted-foreground">
+                달력 섹션 제목 아래에 결혼일자까지 남은 일수(예: D-30)를 표시합니다.
+              </p>
+            </div>
+            <Switch
+              checked={currentInvitation?.customStyles?.ddayEnabled ?? false}
+              onCheckedChange={(checked) => {
+                const prevStyles = currentInvitation?.customStyles || {}
+                updateCurrentInvitation({
+                  customStyles: {
+                    ...prevStyles,
+                    ddayEnabled: checked
+                  }
+                })
+                setActiveSection('calendar')
+              }}
+            />
+          </div>
+
+          {/* Wedding Date Highlight Shape */}
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium text-sm">예식일 강조 표시 모양</p>
+              <p className="text-xs text-muted-foreground">달력에서 결혼식 날짜를 강조할 도형을 선택합니다.</p>
+            </div>
+            <RadioGroup
+              value={currentInvitation?.customStyles?.calendarDayShape || 'circle'}
+              onValueChange={(val) => {
+                const prevStyles = currentInvitation?.customStyles || {}
+                updateCurrentInvitation({
+                  customStyles: {
+                    ...prevStyles,
+                    calendarDayShape: val
+                  }
+                })
+                setActiveSection('calendar')
+              }}
+              className="grid grid-cols-3 gap-2"
+            >
+              <div>
+                <RadioGroupItem value="circle" id="shape-circle" className="peer sr-only" />
+                <Label
+                  htmlFor="shape-circle"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <div className="h-5 w-5 rounded-full bg-primary/20 border border-primary mb-1" />
+                  동그라미
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="heart" id="shape-heart" className="peer sr-only" />
+                <Label
+                  htmlFor="shape-heart"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <span className="text-primary text-base leading-none mb-1">♥</span>
+                  하트
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="custom" id="shape-custom" className="peer sr-only" />
+                <Label
+                  htmlFor="shape-custom"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-xs"
+                >
+                  <Upload className="h-4 w-4 text-primary mb-1.5" />
+                  직접 업로드
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Custom Shape Upload */}
+          {currentInvitation?.customStyles?.calendarDayShape === 'custom' && (
+            <div className="space-y-2 pt-2 border-t">
+              <span className="text-xs font-semibold block">강조 이미지 업로드 (PNG/SVG 권장)</span>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded border bg-muted flex items-center justify-center overflow-hidden">
+                  {currentInvitation.customStyles?.calendarDayCustomShapeUrl ? (
+                    <img src={currentInvitation.customStyles.calendarDayCustomShapeUrl} className="h-full w-full object-contain" />
+                  ) : (
+                    <Image className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-xs"
+                    onClick={() => calendarShapeInputRef.current?.click()}
+                    disabled={isUploadingShape}
+                  >
+                    {isUploadingShape ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                    이미지 추가
+                  </Button>
+                  <input 
+                    type="file" 
+                    ref={calendarShapeInputRef} 
+                    onChange={handleCalendarShapeUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                    disabled={isUploadingShape}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Highlight Date Text Color */}
+          <div className="space-y-2 pt-2 border-t">
+            <div>
+              <p className="font-medium text-sm">강조일자 텍스트 색상</p>
+              <p className="text-xs text-muted-foreground">강조 도형 위의 날짜 숫자 텍스트 색상을 설정합니다.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={currentInvitation?.customStyles?.calendarDayTextColor || '#ffffff'}
+                onChange={(e) => {
+                  const prevStyles = currentInvitation?.customStyles || {}
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...prevStyles,
+                      calendarDayTextColor: e.target.value
+                    }
+                  })
+                  setActiveSection('calendar')
+                }}
+                className="h-8 w-14 rounded border cursor-pointer p-0 bg-transparent"
+              />
+              <span className="text-xs font-mono">{currentInvitation?.customStyles?.calendarDayTextColor || '#ffffff'}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px]"
+                onClick={() => {
+                  const prevStyles = currentInvitation?.customStyles || {}
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...prevStyles,
+                      calendarDayTextColor: '#ffffff'
+                    }
+                  })
+                  setActiveSection('calendar')
+                }}
+              >
+                기본값(흰색) 복원
+              </Button>
+            </div>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Digital Stationery */}
