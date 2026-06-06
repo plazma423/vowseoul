@@ -697,10 +697,10 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                               )}
                               {invitation.customStyles?.subwayImage && (
                                 invitation.customStyles.subwayDisplayType === 'direct' ? (
-                                  <div className="mt-2 rounded overflow-hidden max-h-[160px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                  <div className="mt-2 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                     <img 
                                       src={invitation.customStyles.subwayImage} 
-                                      className="w-full h-full object-contain cursor-pointer" 
+                                      className="w-full h-auto cursor-pointer" 
                                       onClick={() => setActiveImageModal(invitation.customStyles.subwayImage)}
                                     />
                                   </div>
@@ -726,10 +726,10 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                               )}
                               {invitation.customStyles?.parkingImage && (
                                 invitation.customStyles.parkingDisplayType === 'direct' ? (
-                                  <div className="mt-2 rounded overflow-hidden max-h-[160px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                  <div className="mt-2 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                     <img 
                                       src={invitation.customStyles.parkingImage} 
-                                      className="w-full h-full object-contain cursor-pointer" 
+                                      className="w-full h-auto cursor-pointer" 
                                       onClick={() => setActiveImageModal(invitation.customStyles.parkingImage)}
                                     />
                                   </div>
@@ -1055,12 +1055,12 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
         })}
 
         {/* Share Section */}
-        <section className="py-16 px-8 bg-white/40 backdrop-blur-sm text-center">
-          <Button variant="outline" className="gap-2 border-current/30" onClick={() => {
+        <section className="py-12 px-8 bg-transparent text-center">
+          <Button variant="ghost" className="text-xs text-muted-foreground opacity-60 hover:opacity-100 hover:bg-transparent gap-1.5" onClick={() => {
             navigator.clipboard.writeText(window.location.href);
             toast.success("청첩장 주소가 복사되었습니다.");
           }}>
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-3.5 h-3.5" />
             청첩장 주소 복사하기
           </Button>
         </section>

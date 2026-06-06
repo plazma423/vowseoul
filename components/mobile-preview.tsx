@@ -458,10 +458,10 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   )}
                                   {currentInvitation.customStyles?.subwayImage && (
                                     currentInvitation.customStyles.subwayDisplayType === 'direct' ? (
-                                      <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                      <div className="mt-1.5 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                         <img 
                                           src={currentInvitation.customStyles.subwayImage} 
-                                          className="w-full h-full object-contain cursor-pointer" 
+                                          className="w-full h-auto cursor-pointer" 
                                           onClick={() => setActiveImageModal(currentInvitation.customStyles.subwayImage)}
                                         />
                                       </div>
@@ -487,10 +487,10 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   )}
                                   {currentInvitation.customStyles?.parkingImage && (
                                     currentInvitation.customStyles.parkingDisplayType === 'direct' ? (
-                                      <div className="mt-1.5 rounded overflow-hidden max-h-[120px] bg-black/5 dark:bg-white/5 border border-border/50">
+                                      <div className="mt-1.5 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                         <img 
                                           src={currentInvitation.customStyles.parkingImage} 
-                                          className="w-full h-full object-contain cursor-pointer" 
+                                          className="w-full h-auto cursor-pointer" 
                                           onClick={() => setActiveImageModal(currentInvitation.customStyles.parkingImage)}
                                         />
                                       </div>
@@ -703,9 +703,9 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             })}
 
             {/* Share Section */}
-            <section className="py-8 px-6 bg-white/40 backdrop-blur-sm text-center">
-              <Button variant="outline" className="gap-1.5 text-[10px] h-8 border-current/30">
-                <Share2 className="w-3.5 h-3.5" />
+            <section className="py-6 px-6 bg-transparent text-center">
+              <Button variant="ghost" className="text-[10px] h-auto p-0 text-muted-foreground opacity-60 hover:opacity-100 hover:bg-transparent gap-1">
+                <Share2 className="w-3 h-3" />
                 청첩장 주소 복사하기
               </Button>
             </section>
