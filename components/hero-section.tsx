@@ -97,7 +97,10 @@ export function HeroSection() {
           heroContent.layout === 'text-right' && "justify-end",
           heroContent.layout === 'text-left' && "justify-start"
         )}>
-          <Logo className="h-4 w-auto text-white/80" />
+          <Logo 
+            className="h-4 w-auto" 
+            style={{ filter: 'brightness(0) invert(1)', opacity: 0.8 }} 
+          />
         </div>
         <h1 className={`mb-6 font-light leading-tight tracking-wide text-white ${heroContent.fontFamily} ${heroContent.titleFontSize}`}>
           {heroContent.title.split('\n').map((line, i) => (
