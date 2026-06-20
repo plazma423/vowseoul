@@ -460,7 +460,7 @@ export default function TemplatePreviewPage() {
                       <p>바우하우스 서울 라움홀 1층</p>
                     </div>
                   </div>
-                  <div className="absolute bottom-8 animate-bounce z-10">
+                  <div className="absolute bottom-8 animate-float z-10">
                     <ChevronDown className="w-6 h-6" style={{ color: accentColor }} />
                   </div>
                 </div>

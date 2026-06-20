@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppStore, sampleThemes, Theme } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
@@ -48,19 +51,30 @@ export default function DesignPage() {
   const invitationId = params.id as string
 
   const [themes, setThemes] = useState<Theme[]>([])
+  const [customFonts, setCustomFonts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const fetchThemes = async () => {
-      const { data } = await supabase.from('themes').select('*')
-      if (data && data.length > 0) {
-        setThemes(data as any)
+    const fetchThemesAndFonts = async () => {
+      const { data: themeData } = await supabase.from('themes').select('*')
+      if (themeData && themeData.length > 0) {
+        setThemes(themeData as any)
       } else {
         setThemes(sampleThemes)
       }
+      
+      try {
+        const { data: fontData } = await supabase.from('settings').select('*').eq('key', 'fonts')
+        if (fontData && fontData.length > 0 && fontData[0].value) {
+          setCustomFonts(fontData[0].value)
+        }
+      } catch (err) {
+        console.error('Error fetching fonts in DesignPage:', err)
+      }
+      
       setIsLoading(false)
     }
-    fetchThemes()
+    fetchThemesAndFonts()
   }, [])
 
   const selectedTheme = themes.find(t => t.id === currentInvitation?.themeId) || themes[0]
@@ -201,6 +215,94 @@ export default function DesignPage() {
               </div>
             ))}
           </RadioGroup>
+
+          {/* 직접 설정하기 Toggle */}
+          <div className="mt-6 pt-6 border-t border-border space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="custom-colors-toggle" className="text-sm font-medium">직접 설정하기 (커스텀 듀오톤)</Label>
+                <p className="text-xs text-muted-foreground">테마 프리셋 대신 내가 원하는 두 가지 색상 조합으로 청첩장을 꾸밉니다.</p>
+              </div>
+              <Switch 
+                id="custom-colors-toggle"
+                checked={currentInvitation?.customStyles?.customColorsEnabled || false}
+                onCheckedChange={(checked) => {
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...(currentInvitation?.customStyles || {}),
+                      customColorsEnabled: checked,
+                      duotoneEnabled: checked // automatically enable duotone alternating if custom colors are used
+                    }
+                  })
+                }}
+              />
+            </div>
+
+            {currentInvitation?.customStyles?.customColorsEnabled && (
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 animate-in fade-in duration-200">
+                <div className="space-y-2">
+                  <Label className="text-xs">배경 색상 (Color 1 - 밝은색 권장)</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="color" 
+                      className="w-10 h-10 p-1 cursor-pointer border" 
+                      value={currentInvitation?.customStyles?.customBgColor || '#CCECFF'} 
+                      onChange={(e) => {
+                        updateCurrentInvitation({
+                          customStyles: {
+                            ...(currentInvitation?.customStyles || {}),
+                            customBgColor: e.target.value
+                          }
+                        })
+                      }}
+                    />
+                    <Input 
+                      className="flex-1 uppercase font-mono text-sm" 
+                      value={currentInvitation?.customStyles?.customBgColor || '#CCECFF'} 
+                      onChange={(e) => {
+                        updateCurrentInvitation({
+                          customStyles: {
+                            ...(currentInvitation?.customStyles || {}),
+                            customBgColor: e.target.value
+                          }
+                        })
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">주요 색상 (Color 2 - 어두운색 권장)</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="color" 
+                      className="w-10 h-10 p-1 cursor-pointer border" 
+                      value={currentInvitation?.customStyles?.customPrimaryColor || '#361623'} 
+                      onChange={(e) => {
+                        updateCurrentInvitation({
+                          customStyles: {
+                            ...(currentInvitation?.customStyles || {}),
+                            customPrimaryColor: e.target.value
+                          }
+                        })
+                      }}
+                    />
+                    <Input 
+                      className="flex-1 uppercase font-mono text-sm" 
+                      value={currentInvitation?.customStyles?.customPrimaryColor || '#361623'} 
+                      onChange={(e) => {
+                        updateCurrentInvitation({
+                          customStyles: {
+                            ...(currentInvitation?.customStyles || {}),
+                            customPrimaryColor: e.target.value
+                          }
+                        })
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -213,7 +315,15 @@ export default function DesignPage() {
         <CardContent>
           <RadioGroup
             value={currentInvitation?.fontSet || selectedTheme?.fontSets?.[0]?.id || 'default'}
-            onValueChange={(value) => updateCurrentInvitation({ fontSet: value })}
+            onValueChange={(value) => {
+              const updatedStyles = { ...(currentInvitation?.customStyles || {}) }
+              delete updatedStyles.fontKr
+              delete updatedStyles.fontEn
+              updateCurrentInvitation({ 
+                fontSet: value,
+                customStyles: updatedStyles
+              })
+            }}
             className="grid gap-4 sm:grid-cols-2"
           >
             {selectedTheme?.fontSets?.map((fontSet) => {
@@ -249,6 +359,80 @@ export default function DesignPage() {
               )
             })}
           </RadioGroup>
+        </CardContent>
+      </Card>
+
+      {/* Hero Subtitle settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">히어로 서브타이틀 설정 (대문 이미지 문구)</CardTitle>
+          <CardDescription>청첩장 최상단 대문 섹션에 표시될 영어 서브타이틀의 문구와 스타일을 수정합니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label className="text-sm">타이틀 문구</Label>
+              <Input 
+                value={currentInvitation?.customStyles?.heroSubtitleText ?? 'save the date'} 
+                placeholder="save the date" 
+                onChange={(e) => {
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...(currentInvitation?.customStyles || {}),
+                      heroSubtitleText: e.target.value
+                    }
+                  })
+                }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">폰트 선택</Label>
+              <Select
+                value={currentInvitation?.customStyles?.heroSubtitleFont || 'font-serif'}
+                onValueChange={(val) => {
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...(currentInvitation?.customStyles || {}),
+                      heroSubtitleFont: val
+                    }
+                  })
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="font-serif">기본 명조체 (Playfair / Lora)</SelectItem>
+                  <SelectItem value="font-sans">기본 고딕체 (Inter)</SelectItem>
+                  {customFonts.map((font) => (
+                    <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">폰트 크기</Label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  type="number" 
+                  min="10" 
+                  max="60" 
+                  value={currentInvitation?.customStyles?.heroSubtitleSize ?? 20} 
+                  onChange={(e) => {
+                    updateCurrentInvitation({
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        heroSubtitleSize: parseInt(e.target.value) || 20
+                      }
+                    })
+                  }}
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">px</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

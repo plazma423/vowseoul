@@ -54,7 +54,11 @@ export default function ThemeEditorPage() {
     heroConnector: '&',
     accountLayout: '1col',
     sectionOrder: ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'] as string[],
-    recommendedBgms: [] as string[]
+    recommendedBgms: [] as string[],
+    duotoneEnabled: false,
+    heroSubtitleText: 'save the date',
+    heroSubtitleFont: 'font-serif',
+    heroSubtitleSize: '20'
   })
 
   const sectionLabels: Record<string, string> = {
@@ -159,7 +163,11 @@ export default function ThemeEditorPage() {
         heroConnector: data.styles?.heroConnector || '&',
         accountLayout: data.styles?.accountLayout || '1col',
         sectionOrder: data.styles?.sectionOrder || ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
-        recommendedBgms: data.recommendedBgms || []
+        recommendedBgms: data.recommendedBgms || [],
+        duotoneEnabled: data.styles?.duotoneEnabled === true || themeId === 'duotone-contrast',
+        heroSubtitleText: data.styles?.heroSubtitleText || 'save the date',
+        heroSubtitleFont: data.styles?.heroSubtitleFont || 'font-serif',
+        heroSubtitleSize: data.styles?.heroSubtitleSize?.toString() || '20'
       })
       setColorSets(data.colorSets || [{
         id: 'default',
@@ -198,7 +206,11 @@ export default function ThemeEditorPage() {
           heroConnector: '&',
           accountLayout: '1col',
           sectionOrder: ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
-          recommendedBgms: sample.recommendedBgms || []
+          recommendedBgms: sample.recommendedBgms || [],
+          duotoneEnabled: sample.id === 'duotone-contrast' || sample.styles?.duotoneEnabled === true,
+          heroSubtitleText: sample.styles?.heroSubtitleText || 'save the date',
+          heroSubtitleFont: sample.styles?.heroSubtitleFont || 'font-serif',
+          heroSubtitleSize: sample.styles?.heroSubtitleSize?.toString() || '20'
         })
         setColorSets(sample.colorSets || [])
         setFontSets(sample.fontSets || [])
@@ -277,6 +289,10 @@ export default function ThemeEditorPage() {
         heroConnector: theme.heroConnector,
         accountLayout: theme.accountLayout,
         sectionOrder: theme.sectionOrder,
+        duotoneEnabled: theme.duotoneEnabled,
+        heroSubtitleText: theme.heroSubtitleText,
+        heroSubtitleFont: theme.heroSubtitleFont,
+        heroSubtitleSize: parseInt(theme.heroSubtitleSize) || 20
       },
       colorSets: updatedColorSets,
       fontSets: updatedFontSets,
@@ -346,10 +362,56 @@ export default function ThemeEditorPage() {
   ]
 
   const fontClass = theme.fontKr === 'font-serif' ? 'font-serif' : 'font-sans'
-
   const legibleTextColor = getLegibleColor(theme.backgroundColor, theme.textColor, true)
   const legiblePrimaryColor = getLegibleColor(theme.backgroundColor, theme.primaryColor, false)
   const legibleSecondaryTextColor = getLegibleColor(theme.backgroundColor, theme.secondaryTextColor, false)
+
+  const isDuotone = themeId === 'duotone-contrast' || theme.duotoneEnabled === true
+  // 듀오톤 테마 미리보기 시 컬러셋 색상을 올바르게 읽어오도록 개선
+  let color1 = '#CCECFF'
+  let color2 = '#361623'
+  const activeColorSet = colorSets.find(c => c.id === 'default') || colorSets[0]
+  if (activeColorSet && activeColorSet.colors && activeColorSet.colors.length >= 2) {
+    color1 = activeColorSet.colors[0]
+    color2 = activeColorSet.colors[1]
+  } else {
+    color1 = theme.backgroundColor || '#CCECFF'
+    color2 = theme.primaryColor || '#361623'
+  }
+
+  const getSectionColors = (sectionId: string, index: number) => {
+    if (!isDuotone) {
+      return {
+        bgStyle: theme.layout === 'minimal' ? { backgroundColor: 'transparent' } : {},
+        textStyle: { color: legibleTextColor },
+        accent: legiblePrimaryColor,
+        isDark: false,
+        bgColorVal: theme.backgroundColor,
+        textColorVal: legibleTextColor,
+        secondaryTextColorVal: legibleSecondaryTextColor,
+        cardBgVal: theme.cardBg
+      }
+    }
+    
+    // Duotone alternating behavior
+    const darkSections = ['hero', 'sequence', 'gallery', 'calendar', 'rsvp', 'guestbook', 'footer']
+    const isDark = darkSections.includes(sectionId)
+    
+    const bgVal = isDark ? color2 : color1
+    const textVal = isDark ? color1 : color2
+    const accVal = isDark ? color1 : color2
+    
+    return {
+      bgStyle: { backgroundColor: bgVal },
+      textStyle: { color: textVal },
+      accent: accVal,
+      isDark,
+      bgColorVal: bgVal,
+      textColorVal: textVal,
+      secondaryTextColorVal: isDark ? `${color1}cc` : `${color2}cc`,
+      cardBgVal: isDark ? 'bg-white/10' : 'bg-black/5'
+    }
+  }
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-6 -mt-2">
@@ -660,6 +722,17 @@ export default function ThemeEditorPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20 mt-2">
+                <div className="space-y-0.5">
+                  <Label htmlFor="duotone-toggle" className="text-xs font-semibold">듀오톤 스타일 활성화</Label>
+                  <p className="text-[10px] text-muted-foreground">두 컬러가 섹션별로 교차 적용되는 듀오톤 디자인 레이아웃을 사용합니다.</p>
+                </div>
+                <Switch
+                  id="duotone-toggle"
+                  checked={theme.duotoneEnabled || false}
+                  onCheckedChange={checked => setTheme({...theme, duotoneEnabled: checked})}
+                />
+              </div>
             </div>
           </section>
 
@@ -734,6 +807,36 @@ export default function ThemeEditorPage() {
                     <SelectItem value="classic">클래식 스타일</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>대문 서브타이틀 문구 (Hero Subtitle)</Label>
+                <Input
+                  value={theme.heroSubtitleText || ''}
+                  onChange={e => setTheme({...theme, heroSubtitleText: e.target.value})}
+                  placeholder="save the date"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>대문 서브타이틀 폰트</Label>
+                <Select value={theme.heroSubtitleFont || 'font-serif'} onValueChange={v => setTheme({...theme, heroSubtitleFont: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="font-sans">Pretendard / Noto Sans KR</SelectItem>
+                    <SelectItem value="font-serif">Noto Serif KR / 나눔명조</SelectItem>
+                    <SelectItem value="font-mono">나눔바른고딕</SelectItem>
+                    {customFonts.map(font => (
+                      <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>대문 서브타이틀 크기 (px)</Label>
+                <Input
+                  type="number"
+                  value={theme.heroSubtitleSize || '20'}
+                  onChange={e => setTheme({...theme, heroSubtitleSize: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>대문 이름 연결 기호 (&amp;)</Label>
@@ -873,7 +976,7 @@ export default function ThemeEditorPage() {
         <div 
           className="w-[320px] h-[650px] border-8 border-gray-900 rounded-[2.5rem] shadow-xl overflow-y-auto relative transition-colors duration-300 scrollbar-hide"
           style={{ 
-            backgroundColor: theme.backgroundColor, 
+            backgroundColor: isDuotone ? color1 : theme.backgroundColor, 
             fontSize: `${theme.fontSize}px`,
             letterSpacing: `${theme.letterSpacing}em`,
             fontFamily: getFontFamily(theme.fontKr, theme.fontEn)
@@ -881,7 +984,7 @@ export default function ThemeEditorPage() {
         >
           {/* Top Notch */}
           <div className="absolute top-0 inset-x-0 h-6 bg-gray-900 rounded-b-xl mx-24 z-20"></div>
-
+ 
           {/* Dynamic Style injection for custom fonts */}
           <style dangerouslySetInnerHTML={{
             __html: (() => {
@@ -907,15 +1010,15 @@ export default function ThemeEditorPage() {
               return `${defaultGoogleFonts}\n${imports}\n${directImports}\n${fontFaces}`;
             })()
           }} />
-
+ 
           {/* Preview Content */}
-          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: legibleTextColor, fontFamily: getFontFamily(theme.fontKr, theme.fontEn) }}>
+          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: isDuotone ? color2 : legibleTextColor, fontFamily: getFontFamily(theme.fontKr, theme.fontEn) }}>
             {theme.sectionOrder.map((sectionId, idx) => {
               // Layout-specific styling rules
               const isMinimal = theme.layout === 'minimal'
               const isGrid = theme.layout === 'grid'
               const isTwoColumn = theme.layout === 'two-column'
-
+ 
               const borderStyle = { borderRadius: isGrid ? '0px' : `${theme.borderRadius}px` }
               const shadowClass = isMinimal ? 'shadow-none' : theme.cardShadow
               
@@ -926,74 +1029,145 @@ export default function ThemeEditorPage() {
                 else if (theme.sectionSpacing === 'py-16') spacingClass = 'py-32'
                 else if (theme.sectionSpacing === 'py-20') spacingClass = 'py-40'
               }
-
+ 
+              const sectColors = getSectionColors(sectionId, idx)
               const isEven = idx % 2 === 0
-              const sectionBg = isMinimal ? 'bg-transparent' : (isEven ? 'bg-white/40 backdrop-blur-sm' : 'bg-black/5')
+              const sectionBg = isDuotone ? '' : (isMinimal ? 'bg-transparent' : (isEven ? 'bg-white/40 backdrop-blur-sm' : 'bg-black/5'))
               const sectionBorderClass = isGrid ? 'border border-current/15 mx-2 my-2' : ''
-              const effectiveCardBg = isMinimal ? 'bg-transparent' : theme.cardBg
+              const effectiveCardBg = isDuotone ? sectColors.cardBgVal : (isMinimal ? 'bg-transparent' : theme.cardBg)
               const heroConnector = theme.heroConnector === 'none_clear' ? '&' : (theme.heroConnector || '&')
               const accountLayout = theme.accountLayout || '1col'
-
+              const showDivider = idx > 0 && !isDuotone
+ 
               const renderDivider = () => {
+                if (!showDivider) return null
                 if (theme.dividerType === 'line') {
                   return <div className="mx-auto my-6 h-px w-24 bg-current opacity-20" />
                 }
                 if (theme.dividerType === 'heart') {
-                  return <div className="text-center opacity-40 my-6 text-[10px]" style={{ color: legiblePrimaryColor }}>♥</div>
+                  return <div className="text-center opacity-40 my-6 text-[10px]" style={{ color: sectColors.accent }}>♥</div>
                 }
                 if (theme.dividerType === 'space') {
                   return <div className="my-6 h-4" />
                 }
                 return null
               }
-
+ 
               const sectionContent = (() => {
                 switch (sectionId) {
                   case 'hero':
+                    if (isDuotone) {
+                      const subtitleText = theme.heroSubtitleText || 'save the date'
+                      const subtitleFont = theme.heroSubtitleFont || theme.fontEn
+                      const subtitleSize = parseInt(theme.heroSubtitleSize) || 20
+                      const subtitleStyle = {
+                        fontFamily: getFontFamily(theme.fontKr, subtitleFont),
+                        fontSize: `${subtitleSize}px`,
+                        letterSpacing: '0.2em'
+                      }
+                      return (
+                        <div 
+                          key="hero" 
+                          className="relative h-[560px] flex flex-col items-center justify-between text-center px-6 py-8 overflow-hidden"
+                          style={{ ...sectColors.bgStyle, ...sectColors.textStyle }}
+                        >
+                          {/* Subtitle */}
+                          <div style={subtitleStyle} className="mt-2 uppercase tracking-[0.2em] font-light">
+                            {subtitleText}
+                          </div>
+                          
+                          {/* Foreground Main Image */}
+                          {theme.thumbnail ? (
+                            <div className="w-[150px] h-[200px] my-3 overflow-hidden border border-current/10 shadow-md">
+                              <img
+                                src={theme.thumbnail}
+                                alt="Main Visual"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-[150px] h-[200px] my-3 flex items-center justify-center border border-dashed border-current/30 bg-current/5">
+                              <span className="text-[10px] opacity-40">사진을 등록해주세요</span>
+                            </div>
+                          )}
+                          
+                          {/* Groom & Bride names */}
+                          <div className="flex items-center justify-center gap-4 text-sm font-light tracking-wide mt-1">
+                            <span>홍길동</span>
+                            <span className="opacity-60 text-xs font-serif">&amp;</span>
+                            <span>김영희</span>
+                          </div>
+                          
+                          {/* Details */}
+                          <div className="space-y-1 opacity-85 text-[10px] tracking-wide pt-3 border-t border-current/10 w-full max-w-[200px] mx-auto mb-2">
+                            <p className="uppercase truncate">예식장명</p>
+                            <p>MAY 24, 2026 12:00 PM</p>
+                          </div>
+                          
+                          <div className="animate-float">
+                            <ChevronLeft className="w-4 h-4 opacity-55 -rotate-90" style={{ color: sectColors.accent }} />
+                          </div>
+                        </div>
+                      )
+                    }
+
                     return (
-                      <div key="hero" className="relative h-[320px] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+                      <div key="hero" className="relative h-[560px] flex flex-col items-center justify-center text-center px-6 overflow-hidden" style={{ ...sectColors.bgStyle, ...sectColors.textStyle }}>
                         {theme.thumbnail && (
                           <div className="absolute inset-0 z-0">
                             <img src={theme.thumbnail} alt="Main Visual" className="w-full h-full object-cover opacity-20" />
                             <div className="absolute inset-0 bg-gradient-to-t" style={{ backgroundImage: `linear-gradient(to top, ${theme.backgroundColor}, transparent, ${theme.backgroundColor}80)` }} />
                           </div>
                         )}
-                        <div className="space-y-4 z-10 w-full max-w-[200px] mx-auto">
-                          <p className="text-[10px] tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
+                        <div className="space-y-6 z-10 w-full">
+                          <p className="text-xs tracking-[0.3em] opacity-60">WEDDING INVITATION</p>
                           
                           {theme.heroStyle === 'left' ? (
-                            <div className="space-y-2 text-left w-full">
-                              <div>
-                                {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
-                                <h1 className="text-xl font-light">홍길동</h1>
+                            <div className="space-y-4 text-left px-4 w-full">
+                              <div className="space-y-1">
+                                <p className="text-[10px] opacity-75">신랑 혼주 정보</p>
+                                <h1 className="text-2xl font-light tracking-wide">홍길동</h1>
                               </div>
-                              {heroConnector !== 'none' && <div className="text-xs opacity-50">{heroConnector}</div>}
-                              <div>
-                                {theme.name && <p className="text-[8px] opacity-75">{theme.name}</p>}
-                                <h1 className="text-xl font-light">김영희</h1>
+                              {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: sectColors.accent }}>{heroConnector}</div>}
+                              <div className="space-y-1">
+                                <p className="text-[10px] opacity-75">신부 혼주 정보</p>
+                                <h1 className="text-2xl font-light tracking-wide">김영희</h1>
                               </div>
                             </div>
+                          ) : theme.heroStyle === 'classic' ? (
+                            <div className="space-y-4 text-center w-full">
+                              <h1 className="text-3xl font-light tracking-widest uppercase">
+                                GROOM
+                                {heroConnector !== 'none' && <span className="block text-sm opacity-55 my-1" style={{ color: sectColors.accent }}>{heroConnector}</span>}
+                                BRIDE
+                              </h1>
+                              <div className="w-8 h-px bg-current opacity-30 mx-auto" />
+                              <p className="text-sm tracking-wide">홍길동 · 김영희</p>
+                            </div>
                           ) : (
-                            <div className="space-y-3">
-                              <div className="space-y-0.5">
-                                <p className="text-[8px] opacity-75">신랑 혼주 정보</p>
-                                <h1 className="text-xl font-light">홍길동</h1>
+                            <div className="space-y-4">
+                              <div className="space-y-1">
+                                <p className="text-[10px] opacity-75">신랑 혼주 정보</p>
+                                <h1 className="text-2xl font-light tracking-wide">홍길동</h1>
                               </div>
-                              {heroConnector !== 'none' && <div className="text-md" style={{ color: legiblePrimaryColor }}>{heroConnector}</div>}
-                              <div className="space-y-0.5">
-                                <p className="text-[8px] opacity-75">신부 혼주 정보</p>
-                                <h1 className="text-xl font-light">김영희</h1>
+                              {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: sectColors.accent }}>{heroConnector}</div>}
+                              <div className="space-y-1">
+                                <p className="text-[10px] opacity-75">신부 혼주 정보</p>
+                                <h1 className="text-2xl font-light tracking-wide">김영희</h1>
                               </div>
                             </div>
                           )}
+                        </div>
+                        <div className="absolute bottom-6 animate-float z-10">
+                          <ChevronLeft className="w-4 h-4 opacity-55 -rotate-90" style={{ color: sectColors.accent }} />
                         </div>
                       </div>
                     )
                   case 'greeting':
                     return (
-                      <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
-                        <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: legiblePrimaryColor }} />
+                        <Heart className="w-4 h-4 mx-auto mb-3 opacity-60" style={{ color: sectColors.accent }} />
                         <p className="leading-relaxed text-[10px] opacity-80">
                           서로 다른 길을 걸어온 저희 두 사람이<br/>이제 하나의 길을 함께 걸어가려 합니다.<br/>오셔서 축복해주시면 감사하겠습니다.
                         </p>
@@ -1001,22 +1175,22 @@ export default function ThemeEditorPage() {
                     )
                   case 'sequence':
                     return (
-                      <section key="sequence" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="sequence" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">식순 안내</h2>
                         <p className="text-center text-[9px] opacity-40 mb-4">WEDDING ORDER</p>
                         <div className="relative border-l border-current/15 ml-3 pl-4 space-y-3 text-left max-w-[150px] mx-auto">
                           <div className="relative">
-                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: legiblePrimaryColor }} />
+                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: sectColors.accent }} />
                             <div>
-                              <span className="font-mono text-[9px] font-semibold" style={{ color: legiblePrimaryColor }}>12:00</span>
+                              <span className="font-mono text-[9px] font-semibold" style={{ color: sectColors.accent }}>12:00</span>
                               <p className="text-[9px] font-medium mt-0.5">신랑 신부 입장</p>
                             </div>
                           </div>
                           <div className="relative">
-                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: legiblePrimaryColor }} />
+                            <div className="absolute -left-[20.5px] top-1 w-2 h-2 rounded-full bg-current opacity-70 border border-background" style={{ backgroundColor: sectColors.accent }} />
                             <div>
-                              <span className="font-mono text-[9px] font-semibold" style={{ color: legiblePrimaryColor }}>13:00</span>
+                              <span className="font-mono text-[9px] font-semibold" style={{ color: sectColors.accent }}>13:00</span>
                               <p className="text-[9px] font-medium mt-0.5">축가 및 기념 촬영</p>
                             </div>
                           </div>
@@ -1025,7 +1199,7 @@ export default function ThemeEditorPage() {
                     )
                   case 'gallery':
                     return (
-                      <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GALLERY</h2>
                         <div className={cn("grid gap-1.5", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
@@ -1037,13 +1211,13 @@ export default function ThemeEditorPage() {
                     )
                   case 'calendar':
                     return (
-                      <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CALENDAR</h2>
-                        <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={borderStyle}>
+                        <Card className={cn("border-0 shadow-none", effectiveCardBg)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-3">
                             <div className="text-center mb-2">
-                              <p className="text-sm font-medium" style={{ color: legiblePrimaryColor }}>{calMonth}</p>
+                              <p className="text-sm font-medium" style={{ color: sectColors.accent }}>{calMonth}</p>
                               <p className="text-[9px] opacity-40">{calYear}</p>
                             </div>
                             <div className="grid grid-cols-7 gap-0.5 text-center text-[8px]">
@@ -1056,7 +1230,7 @@ export default function ThemeEditorPage() {
                                   <div
                                     key={i}
                                     className="py-0.5 text-[8px] flex items-center justify-center w-5 h-5 mx-auto rounded-full"
-                                    style={day === calDay ? { backgroundColor: legiblePrimaryColor, color: '#fff', fontWeight: 'bold' } : { color: legibleSecondaryTextColor }}
+                                    style={day === calDay ? { backgroundColor: sectColors.accent, color: '#fff', fontWeight: 'bold' } : { color: sectColors.secondaryTextColorVal }}
                                   >
                                     {day}
                                   </div>
@@ -1069,20 +1243,23 @@ export default function ThemeEditorPage() {
                     )
                   case 'location':
                     return (
-                      <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">LOCATION</h2>
-                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                        <Card 
+                          className={cn("border-0", effectiveCardBg, shadowClass)} 
+                          style={isDuotone ? { backgroundColor: color2, color: color1, borderRadius: borderStyle.borderRadius } : borderStyle}
+                        >
                           <CardContent className="p-3 text-left space-y-2">
                             <div>
                               <h3 className="font-semibold text-[10px]">예식장명</h3>
-                              <p className="text-[8px]" style={{ color: legibleSecondaryTextColor }}>서울특별시 용산구 소월로 322</p>
+                              <p className="text-[8px]" style={{ color: sectColors.secondaryTextColorVal }}>서울특별시 용산구 소월로 322</p>
                             </div>
                             <div className="flex gap-1">
-                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 네이버지도
                               </Button>
-                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={borderStyle}>
+                              <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 카카오맵
                               </Button>
                             </div>
@@ -1092,24 +1269,24 @@ export default function ThemeEditorPage() {
                     )
                   case 'contact':
                     return (
-                      <section key="contact" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="contact" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">CONTACT</h2>
                         <div className="grid grid-cols-2 gap-2">
-                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                             <CardContent className="p-2 text-center">
-                              <p className="text-[9px] mb-0.5" style={{ color: legibleSecondaryTextColor }}>신랑</p>
+                              <p className="text-[9px] mb-0.5" style={{ color: sectColors.secondaryTextColorVal }}>신랑</p>
                               <p className="font-semibold text-[10px] mb-1.5 truncate">홍길동</p>
-                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 전화
                               </Button>
                             </CardContent>
                           </Card>
-                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                          <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                             <CardContent className="p-2 text-center">
-                              <p className="text-[9px] mb-0.5" style={{ color: legibleSecondaryTextColor }}>신부</p>
+                              <p className="text-[9px] mb-0.5" style={{ color: sectColors.secondaryTextColorVal }}>신부</p>
                               <p className="font-semibold text-[10px] mb-1.5 truncate">김영희</p>
-                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={borderStyle}>
+                              <Button variant="outline" size="sm" className="w-full text-[9px] h-6 px-0" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 전화
                               </Button>
                             </CardContent>
@@ -1119,7 +1296,7 @@ export default function ThemeEditorPage() {
                     )
                   case 'account':
                     return (
-                      <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">ACCOUNT</h2>
                         <p className="text-center text-[9px] opacity-40 mb-4">마음 전하실 곳</p>
@@ -1127,32 +1304,32 @@ export default function ThemeEditorPage() {
                           <div className="grid grid-cols-2 gap-2 text-left items-start">
                             {/* 신랑측 */}
                             <div className="space-y-1.5">
-                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-80" style={{ color: legiblePrimaryColor, borderColor: `${legiblePrimaryColor}20` }}>신랑측</div>
-                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-80" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신랑측</div>
+                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                                 <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
                                   <div className="flex justify-between items-center w-full text-[8px] leading-tight">
-                                    <span style={{ color: legibleSecondaryTextColor }}>신랑</span>
+                                    <span style={{ color: sectColors.secondaryTextColorVal }}>신랑</span>
                                     <span className="font-semibold truncate max-w-[55px]">홍길동</span>
                                   </div>
                                   <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
                                     <span className="font-mono truncate max-w-[85px]">110-123-456789</span>
-                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: legibleSecondaryTextColor }}>신한은행</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: sectColors.secondaryTextColorVal }}>신한은행</span>
                                   </div>
                                 </CardContent>
                               </Card>
                             </div>
                             {/* 신부측 */}
                             <div className="space-y-1.5">
-                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-80" style={{ color: legiblePrimaryColor, borderColor: `${legiblePrimaryColor}20` }}>신부측</div>
-                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                              <div className="text-center text-[9px] font-semibold pb-0.5 border-b opacity-85" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신부측</div>
+                              <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                                 <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
                                   <div className="flex justify-between items-center w-full text-[8px] leading-tight">
-                                    <span style={{ color: legibleSecondaryTextColor }}>신부</span>
+                                    <span style={{ color: sectColors.secondaryTextColorVal }}>신부</span>
                                     <span className="font-semibold truncate max-w-[55px]">김영희</span>
                                   </div>
                                   <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
                                     <span className="font-mono truncate max-w-[85px]">123-456-789012</span>
-                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: legibleSecondaryTextColor }}>국민은행</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: sectColors.secondaryTextColorVal }}>국민은행</span>
                                   </div>
                                 </CardContent>
                               </Card>
@@ -1161,10 +1338,10 @@ export default function ThemeEditorPage() {
                         ) : (
                           // 1col
                           <div className="space-y-2">
-                            <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={borderStyle}>
+                            <Card className={cn("border-0 cursor-pointer", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                               <CardContent className="p-2.5 flex items-center justify-between text-left">
                                 <div>
-                                  <p className="text-[9px]" style={{ color: legibleSecondaryTextColor }}>신랑측</p>
+                                  <p className="text-[9px]" style={{ color: sectColors.secondaryTextColorVal }}>신랑측</p>
                                   <p className="font-semibold text-[10px]">신한은행 110-123-456789</p>
                                 </div>
                                 <div className="text-[8px] opacity-40 flex items-center justify-center">
@@ -1178,21 +1355,21 @@ export default function ThemeEditorPage() {
                     )
                   case 'rsvp':
                     return (
-                      <section key="rsvp" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="rsvp" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-1">RSVP</h2>
                         <p className="text-center text-[9px] opacity-40 mb-4">참석 여부를 알려주세요</p>
-                        <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: legiblePrimaryColor, ...borderStyle }}>
+                        <Button className="w-full text-[10px] text-white h-8" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#fff', ...borderStyle }}>
                           참석 의사 전달하기
                         </Button>
                       </section>
                     )
                   case 'guestbook':
                     return (
-                      <section key="guestbook" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                      <section key="guestbook" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
                         <h2 className="text-center text-[10px] font-semibold tracking-wider mb-4">GUESTBOOK</h2>
-                        <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={borderStyle}>
+                        <Card className={cn("border-0 shadow-sm", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-2.5 text-left">
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-semibold text-[9px]">하객 성함</span>
@@ -1207,9 +1384,9 @@ export default function ThemeEditorPage() {
                     return null
                 }
               })()
-
+ 
               if (!sectionContent) return null
-
+ 
               return (
                 <div
                   key={sectionId}

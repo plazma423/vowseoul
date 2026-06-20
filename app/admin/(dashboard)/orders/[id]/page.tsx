@@ -132,13 +132,58 @@ export default function OrderDetailPage() {
         setOrder(orderData)
 
         // 2. Load Invitation
-        const { data: inviteData, error: inviteError } = await supabase
+        let inviteData = null
+        const { data: fetchInvite, error: inviteError } = await supabase
           .from('invitations')
           .select('*')
           .eq('id', orderData.invitationId)
           .single()
 
-        if (inviteError) throw inviteError
+        if (inviteError) {
+          if (inviteError.code === 'PGRST116') {
+            console.warn(`Invitation ${orderData.invitationId} not found, generating default fallback.`)
+            inviteData = {
+              id: orderData.invitationId,
+              groomName: orderData.groomName || '신랑',
+              groomNameEn: 'Groom',
+              groomParentRelation: '의 아들',
+              brideName: orderData.brideName || '신부',
+              brideNameEn: 'Bride',
+              brideParentRelation: '의 딸',
+              weddingDate: orderData.weddingDate || new Date().toISOString().split('T')[0],
+              weddingTime: '12:00',
+              venueName: '예식장',
+              venueHall: '그랜드홀',
+              venueAddress: '서울시',
+              themeId: 'classic-white',
+              colorSet: 'ivory',
+              fontSet: 'serif',
+              mainImage: null,
+              invitationMessage: '서로 다른 길을 걸어온 저희 두 사람이\n이제 하나의 길을 함께 걸어가려 합니다.\n귀한 걸음으로 축복해 주시면 감사하겠습니다.',
+              galleryImages: [],
+              galleryViewType: 'slide',
+              trafficInfo: '',
+              parkingInfo: '',
+              rsvpEnabled: false,
+              guestbookType: 'text',
+              bgmId: null,
+              kakaoThumbnail: null,
+              kakaoTitle: `${orderData.groomName || '신랑'} ♥ ${orderData.brideName || '신부'} 결혼합니다`,
+              kakaoDescription: `${orderData.weddingDate || ''} 결혼식에 초대합니다.`,
+              bankAccounts: [],
+              contacts: [],
+              status: 'draft',
+              createdAt: new Date().toISOString(),
+              publishedUrl: null,
+              customStyles: {}
+            }
+          } else {
+            throw inviteError
+          }
+        } else {
+          inviteData = fetchInvite
+        }
+
         if (inviteData) {
           // Normalize customStyles in case it is null/undefined
           const normalizedInvitation = {
@@ -181,8 +226,7 @@ export default function OrderDetailPage() {
       // 2. Update Invitation in DB
       const { error: inviteError } = await supabase
         .from('invitations')
-        .update(currentInvitation)
-        .eq('id', currentInvitation.id)
+        .upsert(currentInvitation)
 
       if (inviteError) throw inviteError
 
@@ -1938,6 +1982,99 @@ export default function OrderDetailPage() {
                       </Select>
                     </Field>
                   </div>
+
+                  {/* 직접 설정하기 Toggle */}
+                  <div className="mt-4 pt-4 border-t border-border space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="admin-custom-colors-toggle" className="text-sm font-medium">직접 설정하기 (커스텀 듀오톤)</Label>
+                        <p className="text-xs text-muted-foreground">테마 프리셋 대신 내가 원하는 두 가지 색상 조합으로 청첩장을 꾸밉니다.</p>
+                      </div>
+                      <Switch 
+                        id="admin-custom-colors-toggle"
+                        checked={currentInvitation.customStyles?.customColorsEnabled || false}
+                        onCheckedChange={(checked) => {
+                          updateCurrentInvitation({
+                            ...currentInvitation,
+                            customStyles: {
+                              ...(currentInvitation.customStyles || {}),
+                              customColorsEnabled: checked,
+                              duotoneEnabled: checked
+                            }
+                          })
+                        }}
+                      />
+                    </div>
+
+                    {currentInvitation.customStyles?.customColorsEnabled && (
+                      <div className="grid gap-4 sm:grid-cols-2 pt-2 animate-in fade-in duration-200">
+                        <div className="space-y-2">
+                          <Label className="text-xs">배경 색상 (Color 1 - 밝은색 권장)</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              type="color" 
+                              className="w-10 h-10 p-1 cursor-pointer border" 
+                              value={currentInvitation.customStyles?.customBgColor || '#CCECFF'} 
+                              onChange={(e) => {
+                                updateCurrentInvitation({
+                                  ...currentInvitation,
+                                  customStyles: {
+                                    ...(currentInvitation.customStyles || {}),
+                                    customBgColor: e.target.value
+                                  }
+                                })
+                              }}
+                            />
+                            <Input 
+                              className="flex-1 uppercase font-mono text-sm" 
+                              value={currentInvitation.customStyles?.customBgColor || '#CCECFF'} 
+                              onChange={(e) => {
+                                updateCurrentInvitation({
+                                  ...currentInvitation,
+                                  customStyles: {
+                                    ...(currentInvitation.customStyles || {}),
+                                    customBgColor: e.target.value
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">주요 색상 (Color 2 - 어두운색 권장)</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              type="color" 
+                              className="w-10 h-10 p-1 cursor-pointer border" 
+                              value={currentInvitation.customStyles?.customPrimaryColor || '#361623'} 
+                              onChange={(e) => {
+                                updateCurrentInvitation({
+                                  ...currentInvitation,
+                                  customStyles: {
+                                    ...(currentInvitation.customStyles || {}),
+                                    customPrimaryColor: e.target.value
+                                  }
+                                })
+                              }}
+                            />
+                            <Input 
+                              className="flex-1 uppercase font-mono text-sm" 
+                              value={currentInvitation.customStyles?.customPrimaryColor || '#361623'} 
+                              onChange={(e) => {
+                                updateCurrentInvitation({
+                                  ...currentInvitation,
+                                  customStyles: {
+                                    ...(currentInvitation.customStyles || {}),
+                                    customPrimaryColor: e.target.value
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -2221,6 +2358,52 @@ export default function OrderDetailPage() {
                             <SelectItem value="none">없음 (기호 제외)</SelectItem>
                           </SelectContent>
                         </Select>
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Hero Subtitle Settings */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="font-semibold text-sm border-b pb-1">히어로 서브타이틀 설정 (대문 이미지 문구)</h3>
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+                      <Field>
+                        <FieldLabel>타이틀 문구</FieldLabel>
+                        <Input 
+                          value={currentInvitation.customStyles?.heroSubtitleText ?? 'save the date'} 
+                          placeholder="save the date" 
+                          onChange={(e) => updateCustomStyle('heroSubtitleText', e.target.value)}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel>폰트 선택</FieldLabel>
+                        <Select
+                          value={currentInvitation.customStyles?.heroSubtitleFont || 'font-serif'}
+                          onValueChange={(val) => updateCustomStyle('heroSubtitleFont', val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="font-serif">기본 명조체 (Playfair / Lora)</SelectItem>
+                            <SelectItem value="font-sans">기본 고딕체 (Inter)</SelectItem>
+                            {customFonts.map((font: any) => (
+                              <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field>
+                        <FieldLabel>폰트 크기 (px)</FieldLabel>
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            min="10" 
+                            max="60" 
+                            value={currentInvitation.customStyles?.heroSubtitleSize ?? 20} 
+                            onChange={(e) => updateCustomStyle('heroSubtitleSize', parseInt(e.target.value) || 20)}
+                          />
+                          <span className="text-xs text-muted-foreground">px</span>
+                        </div>
                       </Field>
                     </div>
                   </div>

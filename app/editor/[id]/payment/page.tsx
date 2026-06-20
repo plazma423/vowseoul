@@ -314,7 +314,7 @@ export default function PaymentPage() {
         {isSuccessDialogOpen && <Confetti />}
         <DialogContent className="sm:max-w-md border border-green-200">
           <DialogHeader className="text-center flex flex-col items-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600 animate-bounce">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600 animate-pulse">
               <Award className="h-8 w-8" />
             </div>
             <DialogTitle className="text-2xl font-bold tracking-tight text-foreground text-center">
