@@ -919,6 +919,20 @@ export default function OrderDetailPage() {
                         <SelectItem value="grid">그리드형</SelectItem>
                       </SelectContent>
                     </Select>
+                    {currentInvitation.galleryViewType === 'slide' && (
+                      <Select
+                        value={currentInvitation.customStyles?.galleryAlign || 'center'}
+                        onValueChange={(val: any) => updateCustomStyle('galleryAlign', val)}
+                      >
+                        <SelectTrigger className="w-[110px] h-8 text-xs">
+                          <SelectValue placeholder="정렬 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="center">중앙 정렬</SelectItem>
+                          <SelectItem value="bottom">하단 정렬</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
 
                     <Button size="sm" onClick={() => galleryInputRef.current?.click()} disabled={isUploadingGallery}>
                       {isUploadingGallery ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
@@ -2462,7 +2476,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Right Mobile Preview Sticky */}
-        <div className="w-full lg:w-[360px] flex justify-center shrink-0">
+        <div className="w-full lg:w-[360px] flex justify-center items-start shrink-0">
           <div className="sticky top-20 w-full flex flex-col items-center">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">실시간 프리뷰</p>
             <MobilePreview className="w-full" isSticky={false} />

@@ -847,14 +847,15 @@ export default function InvitationClient({
             case 'gallery':
               if (!invitation.galleryImages || invitation.galleryImages.length === 0) return null
               const isSlide = invitation?.galleryViewType === 'slide'
+              const galleryAlign = invitation?.customStyles?.galleryAlign || 'center'
               return (
-                <section key="gallery" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
+                <section key="gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                   {showDivider && renderDivider()}
-                  <h2 className="text-center text-xs font-semibold tracking-wider mb-8">GALLERY</h2>
+                  <h2 className="text-center text-xs font-semibold tracking-wider mb-8 px-8">GALLERY</h2>
                   {isSlide ? (
-                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
+                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-8">
                       {invitation.galleryImages.map((img: string, idx: number) => (
-                        <div key={idx} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                        <div key={idx} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
                           <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" />
                         </div>
                       ))}

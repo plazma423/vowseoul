@@ -490,14 +490,14 @@ export default function TemplatePreviewPage() {
                 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
               ]
               return (
-                <section key="gallery" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
+                <section key="gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-8", sectionBg, sectionBorderClass)} style={isGrid ? borderStyle : undefined}>
                   {showDivider && renderDivider()}
-                  <h2 className="text-center text-xs font-semibold tracking-wider mb-8">GALLERY</h2>
+                  <h2 className="text-center text-xs font-semibold tracking-wider mb-8 px-8">GALLERY</h2>
                   {isSlide ? (
-                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
+                    <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-8">
                       {mockImages.map((img: string, index: number) => (
-                        <div key={index} className={cn("w-4/5 aspect-[4/3] flex-shrink-0 snap-center overflow-hidden bg-black/10 hover:scale-105 transition-transform duration-300", shadowClass)} style={borderStyle}>
-                          <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                        <div key={index} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${index + 1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" />
                         </div>
                       ))}
                     </div>

@@ -596,14 +596,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'gallery':
                   if (!currentInvitation?.galleryImages || currentInvitation.galleryImages.length === 0) return null
                   const isSlide = currentInvitation?.galleryViewType === 'slide'
+                  const galleryAlign = currentInvitation?.customStyles?.galleryAlign || 'center'
                   return (
-                    <section key="gallery" id="preview-section-gallery" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
+                    <section key="gallery" id="preview-section-gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6">GALLERY</h2>
+                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6 px-6">GALLERY</h2>
                       {isSlide ? (
-                        <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
+                        <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-6">
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
-                            <div key={idx} className={cn("w-[240px] h-[300px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                            <div key={idx} className={cn("w-[240px] h-[300px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
                               <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain" />
                             </div>
                           ))}

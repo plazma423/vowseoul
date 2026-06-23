@@ -377,6 +377,25 @@ export default function ContentPage() {
                   </div>
                 </RadioGroup>
               </Field>
+              {currentInvitation?.galleryViewType === 'slide' && (
+                <Field>
+                  <FieldLabel>사진 정렬 방식</FieldLabel>
+                  <RadioGroup
+                    value={currentInvitation?.customStyles?.galleryAlign || 'center'}
+                    onValueChange={(value: 'center' | 'bottom') => updateCustomStyle('galleryAlign', value)}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="center" id="align-center" />
+                      <Label htmlFor="align-center">중앙 정렬</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="bottom" id="align-bottom" />
+                      <Label htmlFor="align-bottom">하단 정렬</Label>
+                    </div>
+                  </RadioGroup>
+                </Field>
+              )}
               <Field>
                 <FieldLabel>사진 업로드</FieldLabel>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
