@@ -39,9 +39,20 @@ import { sampleThemes } from "@/lib/store"
 import { cn, getLegibleColor } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 
-export default function InvitationClient({ id, initialInvitation }: { id: string; initialInvitation?: any }) {
+export default function InvitationClient({ 
+  id, 
+  initialInvitation,
+  initialThemes,
+  initialFonts
+}: { 
+  id: string; 
+  initialInvitation?: any;
+  initialThemes?: any[];
+  initialFonts?: any[];
+}) {
   const [invitation, setInvitation] = useState<any>(initialInvitation || null)
-  const [themes, setThemes] = useState<any[]>([])
+  const [themes, setThemes] = useState<any[]>(initialThemes || [])
+  const [customFonts, setCustomFonts] = useState<any[]>(initialFonts || [])
   const [loading, setLoading] = useState(!initialInvitation)
   const [isPlaying, setIsPlaying] = useState(false)
   const [showRsvp, setShowRsvp] = useState(false)
@@ -77,7 +88,6 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [bgmUrl, setBgmUrl] = useState<string | null>(null)
 
-  const [customFonts, setCustomFonts] = useState<any[]>([])
   const [activeImageModal, setActiveImageModal] = useState<string | null>(null)
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 })
 
@@ -115,6 +125,7 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
 
   useEffect(() => {
     const loadFonts = async () => {
+      if (initialFonts && initialFonts.length > 0) return
       try {
         const { data } = await supabase.from('settings').select('*').eq('key', 'fonts')
         if (data && data.length > 0 && data[0].value) {
@@ -125,16 +136,18 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
       }
     }
     loadFonts()
-  }, [])
+  }, [initialFonts])
 
   useEffect(() => {
     if (!id) return
 
     const loadData = async () => {
       try {
-        // Fetch themes
-        const { data: themesData } = await supabase.from('themes').select('*')
-        if (themesData) setThemes(themesData)
+        // Fetch themes (Skip if pre-fetched)
+        if (!initialThemes || initialThemes.length === 0) {
+          const { data: themesData } = await supabase.from('themes').select('*')
+          if (themesData) setThemes(themesData)
+        }
 
         // 1. Fetch invitation to ensure fresh data
         const { data: inviteData, error: inviteError } = await supabase
@@ -512,7 +525,7 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
       )}
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto relative shadow-md min-h-screen pb-12" style={{ backgroundColor: bgColor, color: textColor }}>
+      <div className={cn("max-w-md mx-auto relative shadow-md min-h-screen", isDuotone ? "" : "pb-12")} style={{ backgroundColor: bgColor, color: textColor }}>
         {/* Dynamic Style injection for custom fonts */}
         <style dangerouslySetInnerHTML={{
           __html: (() => {
@@ -841,8 +854,8 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
                   {isSlide ? (
                     <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
                       {invitation.galleryImages.map((img: string, idx: number) => (
-                        <div key={idx} className={cn("w-4/5 aspect-[4/3] flex-shrink-0 snap-center overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        <div key={idx} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                          <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" />
                         </div>
                       ))}
                     </div>
@@ -1391,8 +1404,8 @@ export default function InvitationClient({ id, initialInvitation }: { id: string
         </section>
 
         {/* Footer */}
-        <footer className="py-8 px-8 text-center text-xs flex flex-col items-center justify-center" style={isDuotone ? { backgroundColor: color2, color: color1, opacity: 0.6 } : { opacity: 0.3 }}>
-          <Logo className="h-3.5 w-auto text-current" />
+        <footer className="py-8 px-8 text-center text-xs flex flex-col items-center justify-center" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+          <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
         </footer>
       </div>
       {activeImageModal && (

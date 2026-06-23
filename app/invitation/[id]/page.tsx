@@ -55,18 +55,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function Page({ params }: PageProps) {
   const { id } = await params
 
-  // Pre-fetch invitation data to pass to the client component
+  // Pre-fetch invitation, themes, and font settings on server
   let initialInvitation = null
+  let initialThemes = []
+  let initialFonts = []
   try {
-    const { data } = await supabase
-      .from('invitations')
-      .select('*')
-      .eq('id', id)
-      .single()
-    initialInvitation = data
+    const [inviteResult, themesResult, fontsResult] = await Promise.all([
+      supabase.from('invitations').select('*').eq('id', id).single(),
+      supabase.from('themes').select('*'),
+      supabase.from('settings').select('*').eq('key', 'fonts')
+    ])
+
+    initialInvitation = inviteResult.data
+    initialThemes = themesResult.data || []
+    if (fontsResult.data && fontsResult.data.length > 0) {
+      initialFonts = fontsResult.data[0].value || []
+    }
   } catch (err) {
-    console.error('Error fetching initial invitation on server:', err)
+    console.error('Error fetching initial data on server:', err)
   }
 
-  return <InvitationClient id={id} initialInvitation={initialInvitation} />
+  return (
+    <InvitationClient 
+      id={id} 
+      initialInvitation={initialInvitation} 
+      initialThemes={initialThemes}
+      initialFonts={initialFonts}
+    />
+  )
 }

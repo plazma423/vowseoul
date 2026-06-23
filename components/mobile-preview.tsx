@@ -295,7 +295,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             })()
           }} />
 
-          <div className={cn("pb-12 text-center select-none", fontClass)} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
+          <div className={cn("text-center select-none", fontClass, isDuotone ? "" : "pb-12")} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
             
             {sectionOrder.map((sectionId, idx) => {
               // Layout-specific styling rules
@@ -603,8 +603,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       {isSlide ? (
                         <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-1">
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
-                            <div key={idx} className={cn("w-4/5 aspect-[4/3] flex-shrink-0 snap-center overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                              <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                            <div key={idx} className={cn("w-[240px] h-[300px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                              <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain" />
                             </div>
                           ))}
                         </div>
@@ -1038,8 +1038,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             </section>
 
             {/* Footer */}
-            <footer className="py-6 px-6 text-center text-[9px] tracking-wider flex justify-center" style={isDuotone ? { backgroundColor: color2, color: color1, opacity: 0.6 } : { opacity: 0.3 }}>
-              <Logo className="h-3.5 w-auto text-current" />
+            <footer className="py-6 px-6 text-center text-[9px] tracking-wider flex justify-center" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+              <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
             </footer>
             
           </div>
