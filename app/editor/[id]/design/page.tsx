@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppStore, sampleThemes, Theme } from '@/lib/store'
@@ -53,6 +54,7 @@ export default function DesignPage() {
   const [themes, setThemes] = useState<Theme[]>([])
   const [customFonts, setCustomFonts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeHeaderSection, setActiveHeaderSection] = useState('gallery')
 
   useEffect(() => {
     const fetchThemesAndFonts = async () => {
@@ -362,6 +364,71 @@ export default function DesignPage() {
         </CardContent>
       </Card>
 
+      {/* Detailed Body Font Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">본문 서체 상세 설정 (개별 서체 선택)</CardTitle>
+          <CardDescription>청첩장의 기본 본문 내용(국문/영문)에 적용될 서체를 개별적으로 세밀하게 지정합니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm">국문 본문 서체</Label>
+              <Select
+                value={currentInvitation?.customStyles?.fontKr || 'none_clear'}
+                onValueChange={(val) => {
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...(currentInvitation?.customStyles || {}),
+                      fontKr: val === 'none_clear' ? undefined : val
+                    }
+                  })
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="기본 조합 서체 사용" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none_clear">기본 조합 서체 사용</SelectItem>
+                  <SelectItem value="font-serif">기본 명조체 (Noto Serif)</SelectItem>
+                  <SelectItem value="font-sans">기본 고딕체 (Pretendard)</SelectItem>
+                  {customFonts.map((font) => (
+                    <SelectItem key={font.id} value={font.family || font.name}>{font.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">영문 본문 서체</Label>
+              <Select
+                value={currentInvitation?.customStyles?.fontEn || 'none_clear'}
+                onValueChange={(val) => {
+                  updateCurrentInvitation({
+                    customStyles: {
+                      ...(currentInvitation?.customStyles || {}),
+                      fontEn: val === 'none_clear' ? undefined : val
+                    }
+                  })
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="기본 조합 서체 사용" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none_clear">기본 조합 서체 사용</SelectItem>
+                  <SelectItem value="font-serif">기본 명조체 (Playfair)</SelectItem>
+                  <SelectItem value="font-sans">기본 고딕체 (Inter)</SelectItem>
+                  {customFonts.map((font) => (
+                    <SelectItem key={font.id} value={font.family || font.name}>{font.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Hero Subtitle settings */}
       <Card>
         <CardHeader>
@@ -433,6 +500,231 @@ export default function DesignPage() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Header Customization */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">섹션 타이틀 상세 설정</CardTitle>
+          <CardDescription>
+            각 섹션별 영어/한국어 제목의 노출 여부, 문구 수정 및 텍스트 레이아웃(서체, 크기, 스타일)을 변경합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label className="text-sm">편집할 섹션 선택</Label>
+            <Select
+              value={activeHeaderSection}
+              onValueChange={(val) => setActiveHeaderSection(val)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sequence">식순 안내 (Sequence)</SelectItem>
+                <SelectItem value="gallery">사진첩 (Gallery)</SelectItem>
+                <SelectItem value="calendar">소중한 날 (Calendar)</SelectItem>
+                <SelectItem value="location">식장 위치 (Location)</SelectItem>
+                <SelectItem value="contact">연락처 (Contact)</SelectItem>
+                <SelectItem value="account">마음 전하실 곳 (Account)</SelectItem>
+                <SelectItem value="rsvp">참석 의사 알리기 (RSVP)</SelectItem>
+                <SelectItem value="guestbook">방명록 (Guestbook)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(() => {
+            const sectionId = activeHeaderSection
+            const headers = currentInvitation?.customStyles?.sectionHeaders || {}
+            const settings = headers[sectionId] || {}
+            
+            const isShow = settings.show ?? true
+            const titleEn = settings.titleEn ?? (
+              sectionId === 'sequence' ? 'WEDDING ORDER' :
+              sectionId === 'gallery' ? 'Gallery' :
+              sectionId === 'calendar' ? 'Calendar' :
+              sectionId === 'location' ? 'Location' :
+              sectionId === 'contact' ? 'Contact' :
+              sectionId === 'account' ? 'Account' :
+              sectionId === 'rsvp' ? 'RSVP' : 'Guestbook'
+            )
+            const titleKr = settings.titleKr ?? (
+              sectionId === 'sequence' ? '식순 안내' :
+              sectionId === 'gallery' ? '사진첩' :
+              sectionId === 'calendar' ? '소중한 날' :
+              sectionId === 'location' ? '식장 위치' :
+              sectionId === 'contact' ? '연락처' :
+              sectionId === 'account' ? '마음 전하실 곳' :
+              sectionId === 'rsvp' ? '참석 의사 알리기' : '방명록'
+            )
+            const fontEnVal = settings.fontEn || 'font-serif'
+            const fontKrVal = settings.fontKr || 'font-serif'
+            const sizeEn = settings.sizeEn ?? (sectionId === 'sequence' ? 24 : 20)
+            const sizeKr = settings.sizeKr ?? (sectionId === 'sequence' ? 10 : 9)
+            const italicEn = settings.italicEn ?? true
+            const italicKr = settings.italicKr ?? false
+            const boldEn = settings.boldEn ?? false
+            const boldKr = settings.boldKr ?? true
+
+            const updateSetting = (key: string, value: any) => {
+              updateCurrentInvitation({
+                customStyles: {
+                  ...(currentInvitation?.customStyles || {}),
+                  sectionHeaders: {
+                    ...headers,
+                    [sectionId]: {
+                      ...settings,
+                      [key]: value
+                    }
+                  }
+                }
+              })
+            }
+
+            return (
+              <div className="space-y-4 pt-4 border-t border-muted/50">
+                {/* 1. Show/Hide Switch */}
+                <div className="flex items-center justify-between pb-2">
+                  <Label htmlFor="header-show-toggle" className="text-sm font-medium">섹션 타이틀 노출 여부</Label>
+                  <Switch
+                    id="header-show-toggle"
+                    checked={isShow}
+                    onCheckedChange={(checked) => updateSetting('show', checked)}
+                  />
+                </div>
+
+                {isShow && (
+                  <div className="space-y-4 pt-2">
+                    {/* 2. Text Inputs */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs">영문 타이틀 문구</Label>
+                        <Input
+                          value={titleEn}
+                          onChange={(e) => updateSetting('titleEn', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">국문 타이틀 문구</Label>
+                        <Input
+                          value={titleKr}
+                          onChange={(e) => updateSetting('titleKr', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 3. Typography Styles */}
+                    <div className="border border-muted/30 p-4 rounded-lg space-y-4 bg-muted/5">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">영문 타이틀 레이아웃</h4>
+                      <div className="grid gap-4 sm:grid-cols-3 items-end">
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">서체 선택</Label>
+                          <Select
+                            value={fontEnVal}
+                            onValueChange={(val) => updateSetting('fontEn', val)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="font-serif">기본 명조체 (Playfair)</SelectItem>
+                              <SelectItem value="font-sans">기본 고딕체 (Inter)</SelectItem>
+                              {customFonts.map((f) => (
+                                <SelectItem key={f.id} value={f.family}>{f.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">크기</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              type="number"
+                              className="h-8 text-xs w-20"
+                              value={sizeEn}
+                              onChange={(e) => updateSetting('sizeEn', parseInt(e.target.value) || 20)}
+                            />
+                            <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-4 pb-2">
+                          <div className="flex items-center space-x-1.5">
+                            <Checkbox
+                              id="italic-en-toggle"
+                              checked={italicEn}
+                              onCheckedChange={(checked) => updateSetting('italicEn', !!checked)}
+                            />
+                            <Label htmlFor="italic-en-toggle" className="text-xs select-none">이탤릭</Label>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <Checkbox
+                              id="bold-en-toggle"
+                              checked={boldEn}
+                              onCheckedChange={(checked) => updateSetting('boldEn', !!checked)}
+                            />
+                            <Label htmlFor="bold-en-toggle" className="text-xs select-none">굵게</Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2 border-t border-muted/20">국문 타이틀 레이아웃</h4>
+                      <div className="grid gap-4 sm:grid-cols-3 items-end">
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">서체 선택</Label>
+                          <Select
+                            value={fontKrVal}
+                            onValueChange={(val) => updateSetting('fontKr', val)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="font-serif">기본 명조체 (Noto Serif)</SelectItem>
+                              <SelectItem value="font-sans">기본 고딕체 (Pretendard)</SelectItem>
+                              {customFonts.map((f) => (
+                                <SelectItem key={f.id} value={f.family}>{f.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">크기</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              type="number"
+                              className="h-8 text-xs w-20"
+                              value={sizeKr}
+                              onChange={(e) => updateSetting('sizeKr', parseInt(e.target.value) || 9)}
+                            />
+                            <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-4 pb-2">
+                          <div className="flex items-center space-x-1.5">
+                            <Checkbox
+                              id="italic-kr-toggle"
+                              checked={italicKr}
+                              onCheckedChange={(checked) => updateSetting('italicKr', !!checked)}
+                            />
+                            <Label htmlFor="italic-kr-toggle" className="text-xs select-none">이탤릭</Label>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <Checkbox
+                              id="bold-kr-toggle"
+                              checked={boldKr}
+                              onCheckedChange={(checked) => updateSetting('boldKr', !!checked)}
+                            />
+                            <Label htmlFor="bold-kr-toggle" className="text-xs select-none">굵게</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </CardContent>
       </Card>
 

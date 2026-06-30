@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppStore, samplePhrases } from '@/lib/store'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2, Pencil } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Upload, GripVertical, Plus, Trash2, FileText, Loader2, Pencil, Image } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { uploadFile } from '@/lib/storage'
 
@@ -1184,6 +1184,97 @@ export default function ContentPage() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Section Insert Images */}
+      <Card>
+        <CardHeader>
+          <CardTitle>섹션 사이 사진 삽입</CardTitle>
+          <CardDescription>각 섹션 아래에 원하는 사진을 삽입합니다. 사진은 모바일 가로 꽉 차게 배치됩니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {(() => {
+            const sectionLabelsForImages: Record<string, string> = {
+              hero: '메인 (Hero)', sequence: '식순 안내', gallery: '사진첩',
+              calendar: '소중한 날 (달력)', location: '식장 위치', contact: '연락처',
+              account: '마음 전하실 곳', rsvp: '참석 의사 알리기', guestbook: '방명록'
+            }
+            const sectionImages: Record<string, { url: string; caption?: string }[]> = currentInvitation?.customStyles?.sectionImages || {}
+            const allSections = ['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]
+
+            const updateSectionImages = (sectionId: string, images: { url: string; caption?: string }[]) => {
+              updateCurrentInvitation({
+                customStyles: {
+                  ...(currentInvitation?.customStyles || {}),
+                  sectionImages: { ...sectionImages, [sectionId]: images }
+                }
+              })
+            }
+
+            return allSections.map(sectionId => {
+              const images = sectionImages[sectionId] || []
+              return (
+                <div key={sectionId} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold">{sectionLabelsForImages[sectionId] || sectionId} <span className="text-muted-foreground font-normal">아래에 삽입</span></p>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          try {
+                            const url = await uploadFile(file, 'section-images')
+                            const updated = [...images, { url, caption: '' }]
+                            updateSectionImages(sectionId, updated)
+                          } catch (err) {
+                            console.error(err)
+                          }
+                          e.target.value = ''
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-dashed border-muted-foreground/40 hover:border-primary hover:text-primary transition-colors">
+                        <Image className="h-3 w-3" />
+                        사진 추가
+                      </span>
+                    </label>
+                  </div>
+                  {images.length > 0 && (
+                    <div className="space-y-2">
+                      {images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="flex items-center gap-2 bg-muted/30 rounded p-2">
+                          <img src={img.url} alt={`preview ${imgIdx}`} className="w-10 h-10 object-cover rounded shrink-0 border" />
+                          <Input
+                            className="h-7 text-xs flex-1"
+                            placeholder="캡션 (선택사항)"
+                            value={img.caption || ''}
+                            onChange={(e) => {
+                              const updated = images.map((item, i) => i === imgIdx ? { ...item, caption: e.target.value } : item)
+                              updateSectionImages(sectionId, updated)
+                            }}
+                          />
+                          <Button
+                            variant="ghost" size="icon"
+                            className="h-7 w-7 shrink-0"
+                            type="button"
+                            onClick={() => {
+                              const updated = images.filter((_, i) => i !== imgIdx)
+                              updateSectionImages(sectionId, updated)
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          })()}
+        </CardContent>
+      </Card>
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-4">

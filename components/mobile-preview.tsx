@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,18 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+
+const getSvgMaskStyle = (url: string, color: string) => ({
+  backgroundColor: color,
+  WebkitMaskImage: `url(${url})`,
+  maskImage: `url(${url})`,
+  WebkitMaskSize: 'contain',
+  maskSize: 'contain',
+  WebkitMaskRepeat: 'no-repeat',
+  maskRepeat: 'no-repeat',
+  WebkitMaskPosition: 'center',
+  maskPosition: 'center',
+})
 
 export function MobilePreview({ className, isSticky = true }: { className?: string; isSticky?: boolean }) {
   const { currentInvitation, themes, activeSection } = useAppStore()
@@ -98,6 +110,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   }
 
   const isDuotone = theme?.id === 'duotone-contrast' || themeStyles.duotoneEnabled === true
+  const isSereneBlue = theme?.id === 'serene-blue'
   
   let color1 = '#CCECFF'
   let color2 = '#361623'
@@ -258,6 +271,55 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
   const { year: calYear, month: calMonth, day: calDay, days: calDays } = getCalendarDays(currentInvitation?.weddingDate || '')
 
+  const renderSectionHeader = (sectionId: string, defaultEn: string, defaultKr: string, extraMb = 'mb-6', px = '') => {
+    const headerSettings = themeStyles.sectionHeaders?.[sectionId] || {}
+    const show = headerSettings.show ?? true
+    if (!show) return null
+
+    const titleEn = headerSettings.titleEn !== undefined ? headerSettings.titleEn : defaultEn
+    const titleKr = headerSettings.titleKr !== undefined ? headerSettings.titleKr : defaultKr
+    const fontEnVal = headerSettings.fontEn || fontEn
+    const fontKrVal = headerSettings.fontKr || fontKr
+    const sizeEn = headerSettings.sizeEn ?? 20
+    const sizeKr = headerSettings.sizeKr ?? 9
+    const italicEn = headerSettings.italicEn ?? true
+    const italicKr = headerSettings.italicKr ?? false
+    const boldEn = headerSettings.boldEn ?? false
+    const boldKr = headerSettings.boldKr ?? true
+
+    return (
+      <div className={cn("text-center", extraMb, px)}>
+        <h2 
+          className={cn(
+            italicEn && "italic", 
+            boldEn ? "font-bold" : "font-light",
+            "leading-none tracking-wide"
+          )}
+          style={{ 
+            fontFamily: getFontFamily(fontKrVal, fontEnVal),
+            fontSize: `${sizeEn}px`
+          }}
+        >
+          {titleEn}
+        </h2>
+        <p 
+          className={cn(
+            "tracking-[0.2em] uppercase mt-1.5 font-sans",
+            italicKr && "italic",
+            boldKr ? "font-semibold" : "font-medium",
+            "opacity-55"
+          )}
+          style={{ 
+            fontFamily: getFontFamily(fontKrVal, fontEnVal),
+            fontSize: `${sizeKr}px`
+          }}
+        >
+          {titleKr}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className={cn(isSticky && "sticky top-24", className)}>
       <div 
@@ -272,7 +334,50 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
           {/* Dynamic Style injection for custom fonts */}
           <style dangerouslySetInnerHTML={{
             __html: (() => {
-              const defaultGoogleFonts = `@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&family=Cinzel:wght@400..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@200..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&display=swap');`;
+              // Only load active fonts to minimize network bandwidth and prevent FOUC
+              const fonts = new Set<string>()
+              if (fontKr) fonts.add(fontKr)
+              if (fontEn) fonts.add(fontEn)
+              if (themeStyles.heroSubtitleFont) fonts.add(themeStyles.heroSubtitleFont)
+
+              const googleFontsMap: Record<string, string[]> = {
+                'Cormorant': ['Cormorant:ital,wght@0,300..700;1,300..700'],
+                'Cinzel': ['Cinzel:wght@400..900'],
+                'DM Sans': ['DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000'],
+                'Inter': ['Inter:wght@100..900'],
+                'Libre Baskerville': ['Libre+Baskerville:ital,wght@0,400;0,700;1,400'],
+                'Lora': ['Lora:ital,wght@0,400..700;1,400..700'],
+                'Montserrat': ['Montserrat:ital,wght@0,100..900;1,100..900'],
+                'Nanum Myeongjo': ['Nanum+Myeongjo:wght@400;700;800'],
+                'Noto Serif KR': ['Noto+Serif+KR:wght@200..900'],
+                'Nunito': ['Nunito:ital,wght@0,200..1000;1,200..1000'],
+                'Playfair Display': ['Playfair+Display:ital,wght@0,400..900;1,400..900'],
+                'Quicksand': ['Quicksand:wght@300..700'],
+                'Kaushan Script': ['Kaushan+Script'],
+                'Radio Canada Big': ['Radio+Canada+Big:ital,wght@0,400..700;1,400..700'],
+                'Source Serif Pro': ['Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900'],
+                'font-serif': ['Noto+Serif+KR:wght@200..900', 'Nanum+Myeongjo:wght@400;700;800', 'Playfair+Display:ital,wght@0,400..900;1,400..900', 'Lora:ital,wght@0,400..700;1,400..700'],
+                'font-sans': ['Inter:wght@100..900', 'Montserrat:ital,wght@0,100..900;1,100..900']
+              }
+
+              const families: string[] = []
+              fonts.forEach(f => {
+                const mapped = googleFontsMap[f]
+                if (mapped) {
+                  families.push(...mapped)
+                } else {
+                  const matchingKey = Object.keys(googleFontsMap).find(k => k.toLowerCase() === f.toLowerCase())
+                  if (matchingKey && googleFontsMap[matchingKey]) {
+                    families.push(...googleFontsMap[matchingKey])
+                  }
+                }
+              })
+
+              const uniqueFamilies = Array.from(new Set(families))
+              const defaultGoogleFonts = uniqueFamilies.length > 0
+                ? `@import url('https://fonts.googleapis.com/css2?${uniqueFamilies.map(q => `family=${q}`).join('&')}&display=swap');`
+                : ''
+
               const imports = customFonts
                 .filter(f => f.type === 'embed')
                 .map(f => (f.embedCode || '').replace(/<\/?style>/gi, ''))
@@ -334,8 +439,78 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 return null
               }
 
-              switch (sectionId) {
+              const sectionImages: { url: string; caption?: string }[] = (currentInvitation?.customStyles?.sectionImages?.[sectionId] || [])
+
+              const sectionElement = (() => { switch (sectionId) {
                 case 'hero':
+                  if (isSereneBlue) {
+                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+                    let dateStr = '2026. 09. 19 (토) 오후 5시'
+                    if (currentInvitation?.weddingDate) {
+                      try {
+                        const d = new Date(currentInvitation.weddingDate + 'T00:00:00')
+                        dateStr = format(d, 'yyyy. MM. dd (EEEE)', { locale: ko })
+                      } catch (e) {}
+                    }
+
+                    const heroFont = themeStyles.heroSubtitleFont || 'Kaushan Script'
+                    
+                    return (
+                      <div 
+                        key="hero" 
+                        id="preview-section-hero" 
+                        className="relative h-[640px] flex flex-col justify-between text-center overflow-hidden pb-12"
+                        style={{ backgroundColor: '#9EB7CE', color: '#FFFFFF' }}
+                      >
+                        {/* Background Visual */}
+                        {currentInvitation?.mainImage ? (
+                          <img
+                            src={currentInvitation.mainImage}
+                            alt="Main Visual"
+                            className="absolute inset-0 w-full h-full object-cover z-0"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center bg-[#9EB7CE] z-0">
+                            <span className="text-[10px] opacity-40">사진을 등록해주세요</span>
+                          </div>
+                        )}
+                        {/* Gradient Overlay */}
+                        <div 
+                          className="absolute inset-0 z-10" 
+                          style={{ background: 'linear-gradient(to top, #9EB7CE 0%, rgba(158, 183, 206, 0) 70%, rgba(158, 183, 206, 0.3) 100%)' }} 
+                        />
+
+                        {/* Centered Main Text: SAVE the DATE */}
+                        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none -mt-4">
+                          <div className="relative w-[280px] h-[130px] select-none">
+                            <span className="absolute left-4 top-4 text-5xl tracking-widest leading-none font-normal" style={{ fontFamily: getFontFamily(fontKr, heroFont) }}>SAVE</span>
+                            <span className="absolute left-[105px] top-[72px] text-lg italic opacity-90" style={{ fontFamily: getFontFamily(fontKr, heroFont) }}>the</span>
+                            <span className="absolute left-[145px] top-[60px] text-5xl tracking-widest leading-none font-normal" style={{ fontFamily: getFontFamily(fontKr, heroFont) }}>DATE</span>
+                          </div>
+                        </div>
+
+                        {/* Top spacing placeholder to balance flex justify-between */}
+                        <div className="h-10" />
+
+                        {/* Bottom Information */}
+                        <div className="relative z-20 space-y-6 px-6">
+                          {/* Groom & Bride Name horizontally centered */}
+                          <div className="text-base font-medium tracking-widest flex items-center justify-center gap-3">
+                            <span>{currentInvitation?.groomName || '김혁'}</span>
+                            <span className="opacity-60 text-xs italic font-serif">&amp;</span>
+                            <span>{currentInvitation?.brideName || '김민주'}</span>
+                          </div>
+                          
+                          {/* Date and Venue */}
+                          <div className="text-[11px] leading-relaxed tracking-wider opacity-90" style={{ fontFamily: "'Source Serif Pro', serif" }}>
+                            <p>{dateStr}</p>
+                            <p className="mt-0.5">{currentInvitation?.weddingTime || '오후 5시'} | {currentInvitation?.venueName || '춘천 스카이컨벤션 4층 스카이홀'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
                   if (isDuotone) {
                     const subtitleText = themeStyles.heroSubtitleText || 'save the date'
                     const subtitleFont = themeStyles.heroSubtitleFont || fontEn
@@ -504,6 +679,46 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
                 
                 case 'greeting':
+                  if (isSereneBlue) {
+                    return (
+                      <section 
+                        key="greeting" 
+                        id="preview-section-greeting" 
+                        className="py-16 px-6 text-center" 
+                        style={{ backgroundColor: '#9EB7CE', color: '#FFFFFF' }}
+                      >
+                        {/* Parent Names Spaced */}
+                        <div className="space-y-4 text-xs font-light max-w-[280px] mx-auto py-6 mb-8">
+                          <div className="flex justify-between items-center">
+                            <div className="text-left">
+                              <span className="text-[9px] opacity-60 block tracking-widest font-mono">GROOM</span>
+                              <span className="tracking-wide">
+                                {currentInvitation?.groomParentRelation || '김태진 · 정혜선 의 아들'}
+                              </span>
+                            </div>
+                            <span className="text-base font-semibold tracking-wider ml-4">{currentInvitation?.groomName || '혁'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="text-left">
+                              <span className="text-[9px] opacity-60 block tracking-widest font-mono">BRIDE</span>
+                              <span className="tracking-wide">
+                                {currentInvitation?.brideParentRelation || '김필래 · 이수윤 의 딸'}
+                              </span>
+                            </div>
+                            <span className="text-base font-semibold tracking-wider ml-4">{currentInvitation?.brideName || '민주'}</span>
+                          </div>
+                        </div>
+
+                        {/* Greeting Message */}
+                        <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95">
+                          {currentInvitation?.invitationMessage || (
+                            "여보, 우리는 등불 하나 켜서 삽시다.\n바람에 흔들리는 심지 등불이라도 켜서\n기름 졸이듯 마음을 다하여\n사랑하며 삽시다. 오래도록."
+                          )}
+                        </div>
+                      </section>
+                    )
+                  }
+
                   const greetingIconShape = currentInvitation?.customStyles?.greetingIconShape || 'heart'
                   const greetingIconColor = currentInvitation?.customStyles?.greetingIconColor || sectColors.accent
                   const greetingIconCustomUrl = currentInvitation?.customStyles?.greetingIconCustomUrl
@@ -515,17 +730,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         return (
                           <div 
                             className="w-5 h-5 mx-auto mb-4 opacity-60 pointer-events-none"
-                            style={{
-                              backgroundColor: greetingIconColor,
-                              WebkitMaskImage: `url(${greetingIconCustomUrl})`,
-                              maskImage: `url(${greetingIconCustomUrl})`,
-                              WebkitMaskSize: 'contain',
-                              maskSize: 'contain',
-                              WebkitMaskRepeat: 'no-repeat',
-                              maskRepeat: 'no-repeat',
-                              WebkitMaskPosition: 'center',
-                              maskPosition: 'center',
-                            }}
+                            style={getSvgMaskStyle(greetingIconCustomUrl, greetingIconColor)}
                           />
                         )
                       } else {
@@ -572,10 +777,39 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                     { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
                   ]
 
+                  if (isSereneBlue) {
+                    return (
+                      <section 
+                        key="sequence" 
+                        id="preview-section-sequence" 
+                        className="py-16 px-6 bg-white" 
+                        style={{ color: '#000000' }}
+                      >
+                        {renderSectionHeader('sequence', sequenceSubtitle, sequenceTitle, 'mb-8')}
+                        
+                        <div className="max-w-[280px] mx-auto border-t border-b border-black">
+                          {sequenceEvents.map((event: any, i: number) => (
+                            <div 
+                              key={event.id} 
+                              className={cn(
+                                "flex items-center text-xs py-3.5 px-2", 
+                                i < sequenceEvents.length - 1 && "border-b border-black"
+                              )}
+                            >
+                              <div className="w-[60px] text-left tracking-wider font-semibold font-mono">{event.time}</div>
+                              <div className="w-[1px] h-4 bg-black mx-4" />
+                              <div className="flex-1 text-left tracking-wide font-medium">{event.title}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  }
+
                   return (
                     <section key="sequence" id="preview-section-sequence" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-2">{sequenceTitle}</h2>
+                      {renderSectionHeader('sequence', sequenceTitle, '식순', 'mb-2')}
                       <p className="text-center text-[10px] opacity-40 mb-6">{sequenceSubtitle}</p>
                       
                       <div className="relative border-l border-current/15 ml-4 pl-6 space-y-4 text-left max-w-[200px] mx-auto">
@@ -600,7 +834,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   return (
                     <section key="gallery" id="preview-section-gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6 px-6">GALLERY</h2>
+                      {renderSectionHeader('gallery', 'Gallery', '사진첩', 'mb-6', 'px-6')}
                       {isSlide ? (
                         <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-6">
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
@@ -624,10 +858,128 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'calendar':
                   if (!currentInvitation?.weddingDate) return null
                   const ddayEnabled = currentInvitation.customStyles?.ddayEnabled ?? false
+
+                  if (isSereneBlue) {
+                    return (
+                      <section 
+                        key="calendar" 
+                        id="preview-section-calendar" 
+                        className="py-16 px-6" 
+                        style={{ backgroundColor: '#E8E8E8', color: '#000000' }}
+                      >
+                        {renderSectionHeader('calendar', 'Calendar', '소중한 날', 'mb-6')}
+                        
+                        <Card className="border-0 shadow-none bg-white rounded-none text-black">
+                          <CardContent className="p-6">
+                            <div className="text-center mb-6">
+                              <p className="text-lg font-semibold text-[#62798E] font-mono tracking-widest uppercase">
+                                {new Date(currentInvitation.weddingDate).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-7 gap-y-3 text-center text-xs">
+                              {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                                <div key={day} className="py-1 opacity-40 font-semibold">{day}</div>
+                              ))}
+                              {calDays.map((day, i) => {
+                                if (day === null) return <div key={`empty-${i}`} />
+                                const isWeddingDay = day === calDay
+                                
+                                if (isWeddingDay) {
+                                  const shapeType = currentInvitation.customStyles?.calendarDayShape || 'circle'
+                                  const customShapeUrl = currentInvitation.customStyles?.calendarDayCustomShapeUrl
+                                  const highlightTextColor = currentInvitation.customStyles?.calendarDayTextColor || '#ffffff'
+                                  
+                                  if (shapeType === 'custom' && customShapeUrl) {
+                                    const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
+                                    return (
+                                      <div
+                                        key={i}
+                                        className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
+                                        style={{ color: highlightTextColor }}
+                                      >
+                                        {isSvg ? (
+                                          <div 
+                                            className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+                                            style={getSvgMaskStyle(customShapeUrl, currentInvitation.customStyles?.calendarDaySvgColor || '#526678')}
+                                          />
+                                        ) : (
+                                          <img 
+                                            src={customShapeUrl} 
+                                            alt="wedding day mark" 
+                                            className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
+                                          />
+                                        )}
+                                        <span className="relative z-10">{day}</span>
+                                      </div>
+                                    )
+                                  }
+                                  
+                                  if (shapeType === 'heart') {
+                                    return (
+                                      <div
+                                        key={i}
+                                        className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
+                                        style={{ color: highlightTextColor }}
+                                      >
+                                        <Heart className="absolute inset-0 w-full h-full text-red-400 fill-red-400 opacity-90 z-0 scale-110" style={{ color: '#526678', fill: '#526678' }} />
+                                        <span className="relative z-10 text-[10px] -mt-0.5">{day}</span>
+                                      </div>
+                                    )
+                                  }
+                                  
+                                  // Default circle
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10"
+                                      style={{ backgroundColor: '#526678' }}
+                                    >
+                                      {day}
+                                    </div>
+                                  )
+                                }
+                                
+                                return (
+                                  <div
+                                    key={i}
+                                    className="py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto text-center opacity-70"
+                                  >
+                                    {day}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Serene Blue Countdown Timer */}
+                        {ddayEnabled && (
+                          <div className="mt-8 text-center space-y-4">
+                            <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 font-semibold text-[#62798E]">Days left</p>
+                            <div className="flex justify-center items-center gap-6 max-w-[280px] mx-auto text-[#62798E] font-mono">
+                              <div className="flex flex-col items-center">
+                                <p className="text-[9px] uppercase tracking-wider opacity-60">DAYS</p>
+                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.days}</p>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <p className="text-[9px] uppercase tracking-wider opacity-60">HOURS</p>
+                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.hours}</p>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <p className="text-[9px] uppercase tracking-wider opacity-60">MINUTES</p>
+                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.minutes}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </section>
+                    )
+                  }
+
                   return (
                     <section key="calendar" id="preview-section-calendar" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className={cn("text-center text-xs font-semibold tracking-wider", ddayEnabled ? "mb-1" : "mb-6")}>CALENDAR</h2>
+                      {renderSectionHeader('calendar', 'Calendar', '소중한 날', ddayEnabled ? 'mb-1' : 'mb-6')}
                       {ddayEnabled && (
                         <div 
                           className="text-center text-[11px] font-bold tracking-wider mb-4 animate-pulse" 
@@ -666,17 +1018,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                       {isSvg ? (
                                         <div 
                                           className="absolute inset-0 w-full h-full z-0 pointer-events-none"
-                                          style={{
-                                            backgroundColor: currentInvitation.customStyles?.calendarDaySvgColor || sectColors.accent,
-                                            WebkitMaskImage: `url(${customShapeUrl})`,
-                                            maskImage: `url(${customShapeUrl})`,
-                                            WebkitMaskSize: 'contain',
-                                            maskSize: 'contain',
-                                            WebkitMaskRepeat: 'no-repeat',
-                                            maskRepeat: 'no-repeat',
-                                            WebkitMaskPosition: 'center',
-                                            maskPosition: 'center',
-                                          }}
+                                          style={getSvgMaskStyle(customShapeUrl, currentInvitation.customStyles?.calendarDaySvgColor || sectColors.accent)}
                                         />
                                       ) : (
                                         <img 
@@ -760,10 +1102,48 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'location':
+                  if (isSereneBlue) {
+                    return (
+                      <section 
+                        key="location" 
+                        id="preview-section-location" 
+                        className="py-16 px-6" 
+                        style={{ backgroundColor: '#F2F2F2', color: '#000000' }}
+                      >
+                        {renderSectionHeader('location', 'Location', '식장 위치', 'mb-6')}
+                        
+                        {/* White Address Card */}
+                        <div className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6">
+                          <h3 className="font-semibold text-lg tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                          {currentInvitation?.venueHall && (
+                            <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
+                          )}
+                          <p className="text-xs opacity-75 mt-1">{currentInvitation?.venueAddress || '강남구 학동로 1212'}</p>
+                        </div>
+
+                        {/* Traffic & Parking guides */}
+                        <div className="space-y-4 text-xs font-light text-left max-w-[280px] mx-auto">
+                          {currentInvitation?.parkingInfo && (
+                            <div className="space-y-1">
+                              <span className="font-semibold block text-[#62798E]">주차안내</span>
+                              <p className="opacity-80 leading-relaxed">{currentInvitation.parkingInfo}</p>
+                            </div>
+                          )}
+                          {currentInvitation?.trafficInfo && (
+                            <div className="space-y-1">
+                              <span className="font-semibold block text-[#62798E]">대중교통</span>
+                              <p className="opacity-80 leading-relaxed">{currentInvitation.trafficInfo}</p>
+                            </div>
+                          )}
+                        </div>
+                      </section>
+                    )
+                  }
+
                   return (
                     <section key="location" id="preview-section-location" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6">LOCATION</h2>
+                      {renderSectionHeader('location', 'Location', '오시는 길', 'mb-6')}
                       <Card 
                         className={cn("border-0", effectiveCardBg, shadowClass)} 
                         style={isDuotone ? { backgroundColor: color2, color: color1, borderRadius: borderStyle.borderRadius } : borderStyle}
@@ -859,7 +1239,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   return (
                     <section key="contact" id="preview-section-contact" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6">CONTACT</h2>
+                      {renderSectionHeader('contact', 'Contact', '연락처', 'mb-6')}
                       <div className="grid grid-cols-2 gap-2">
                         {currentInvitation.contacts.map((contact: any) => (
                           <Card key={contact.id} className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
@@ -889,11 +1269,87 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   const groomAccounts = accountsList.filter((acc: any) => acc.relation === 'groom' || acc.relation === 'groomParent')
                   const brideAccounts = accountsList.filter((acc: any) => acc.relation === 'bride' || acc.relation === 'brideParent')
 
+                  if (isSereneBlue) {
+                    return (
+                      <section 
+                        key="account" 
+                        id="preview-section-account" 
+                        className="py-16 px-6 bg-white" 
+                        style={{ color: '#000000' }}
+                      >
+                        {renderSectionHeader('account', 'Account', '마음 전하실 곳', 'mb-8')}
+                        
+                        <div className="max-w-[280px] mx-auto space-y-8">
+                          {/* Groom Side Accounts */}
+                          {groomAccounts.length > 0 && (
+                            <div className="space-y-3">
+                              <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
+                              <div className="border-t border-black divide-y divide-black/10">
+                                {groomAccounts.map((account: any) => (
+                                  <div 
+                                    key={account.id} 
+                                    className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                    onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                                  >
+                                    <div className="text-left space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-black">{account.accountHolder}</span>
+                                        <span className="text-[10px] opacity-60">
+                                          {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
+                                        </span>
+                                      </div>
+                                      <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                        {account.bank}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bride Side Accounts */}
+                          {brideAccounts.length > 0 && (
+                            <div className="space-y-3">
+                              <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
+                              <div className="border-t border-black divide-y divide-black/10">
+                                {brideAccounts.map((account: any) => (
+                                  <div 
+                                    key={account.id} 
+                                    className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                    onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                                  >
+                                    <div className="text-left space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-black">{account.accountHolder}</span>
+                                        <span className="text-[10px] opacity-60">
+                                          {account.relation === 'bride' ? '신부' : '신부 혼주'}
+                                        </span>
+                                      </div>
+                                      <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                        {account.bank}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </section>
+                    )
+                  }
+
                   return (
                     <section key="account" id="preview-section-account" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-2">ACCOUNT</h2>
-                      <p className="text-center text-[10px] opacity-40 mb-6">마음 전하실 곳</p>
+                      {renderSectionHeader('account', 'Account', '마음 전하실 곳', 'mb-6')}
                       
                       {accountLayout === '2col' ? (
                         <div className="grid grid-cols-2 gap-2 text-left items-start">
@@ -993,8 +1449,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   return (
                     <section key="rsvp" id="preview-section-rsvp" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-2">RSVP</h2>
-                      <p className="text-center text-[10px] opacity-40 mb-6">참석 여부를 알려주세요</p>
+                      {renderSectionHeader('rsvp', 'RSVP', '참석 여부 알리기', 'mb-6')}
                       <Button className="w-full text-xs text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
                         <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
                         참석 의사 전달하기
@@ -1007,7 +1462,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   return (
                     <section key="guestbook" id="preview-section-guestbook" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
-                      <h2 className="text-center text-xs font-semibold tracking-wider mb-6">GUESTBOOK</h2>
+                      {renderSectionHeader('guestbook', 'Guestbook', '방명록', 'mb-6')}
                       <div className="space-y-2 text-left">
                         <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-3">
@@ -1028,6 +1483,31 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 default:
                   return null
               }
+              })();
+
+              if (!sectionElement && sectionImages.length === 0) return null
+
+              return (
+                <React.Fragment key={sectionId}>
+                  {sectionElement}
+                  {sectionImages.length > 0 && (
+                    <div className="w-full">
+                      {sectionImages.map((img, imgIdx) => (
+                        <div key={imgIdx} className={cn("w-full overflow-hidden", imgIdx > 0 ? 'pt-3' : '')}>
+                          <img
+                            src={img.url}
+                            alt={img.caption || `section image ${imgIdx + 1}`}
+                            className="w-full h-auto object-cover block"
+                          />
+                          {img.caption && (
+                            <p className="text-center text-[9px] opacity-50 py-1 px-2">{img.caption}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
+              )
             })}
 
             {/* Share Section */}
@@ -1046,7 +1526,6 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
           </div>
         </ScrollArea>
       </div>
-      <p className="mt-4 text-center text-xs text-muted-foreground">실시간 미리보기</p>
       {activeImageModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 pointer-events-auto cursor-pointer" 

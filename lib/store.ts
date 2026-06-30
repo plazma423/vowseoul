@@ -523,6 +523,35 @@ export const sampleThemes: Theme[] = [
       { id: 'cozy', name: '코지', fonts: ['Pretendard', 'Quicksand'] },
     ],
   },
+  {
+    id: 'serene-blue',
+    name: 'Serene Blue',
+    thumbnail: '/themes/serene-blue.jpg',
+    tags: ['차분한', '블루', '내추럴', '피그마 시안'],
+    colorSets: [
+      { id: 'slate-blue', name: 'Slate Blue', colors: ['#FFFFFF', '#9EB7CE', '#000000'] }
+    ],
+    fontSets: [
+      { id: 'kaushan-radio', name: 'Kaushan & Radio Canada', fonts: ['Radio Canada Big', 'Kaushan Script'] }
+    ],
+    layout: 'classic',
+    styles: {
+      fontSizeBase: '14px',
+      fontSize: '14px',
+      letterSpacing: '-0.02em',
+      primaryColor: '#9EB7CE',
+      backgroundColor: '#FFFFFF',
+      textColor: '#000000',
+      secondaryColor: '#62798E',
+      secondaryTextColor: '#838383',
+      borderRadius: '0px',
+      sectionSpacing: 'py-16',
+      cardBg: 'bg-white',
+      cardShadow: 'shadow-none',
+      dividerType: 'line',
+      heroStyle: 'center'
+    }
+  },
 ]
 
 export const sampleBGMs: BGM[] = [

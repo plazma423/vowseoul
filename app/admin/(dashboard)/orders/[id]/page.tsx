@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Badge } from '@/components/ui/badge'
@@ -77,6 +78,7 @@ export default function OrderDetailPage() {
 
   // Audio Play States
   const [playingBgmUrl, setPlayingBgmUrl] = useState<string | null>(null)
+  const [activeHeaderSection, setActiveHeaderSection] = useState('gallery')
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Refs
@@ -545,9 +547,9 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-[calc(100vh-140px)] gap-6 -mt-2">
       {/* Header Panel */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/orders">
@@ -580,11 +582,11 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Editor Content Area */}
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden min-h-0">
         {/* Left Form Editor */}
-        <div className="flex-1 max-w-3xl space-y-6">
+        <div className="flex-1 max-w-3xl overflow-y-auto pr-4 space-y-6 min-h-0 scrollbar-hide">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-5 w-full bg-background border border-border rounded-lg p-1">
+            <TabsList className="flex overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-5 w-full bg-background border border-border rounded-lg p-1">
               <TabsTrigger value="order">주문 관리</TabsTrigger>
               <TabsTrigger value="basic">기본 정보</TabsTrigger>
               <TabsTrigger value="content">내용 & 사진</TabsTrigger>
@@ -1291,6 +1293,102 @@ export default function OrderDetailPage() {
                       </div>
                     </Field>
                   </FieldGroup>
+                </CardContent>
+              </Card>
+
+              {/* Section Insert Images Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">섹션 사이 사진 삽입</CardTitle>
+                  <CardDescription>각 섹션 아래에 원하는 사진을 추가합니다. 사진은 가로 꽉 차게 배치됩니다.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(() => {
+                    const sectionLabelsForImages: Record<string, string> = {
+                      hero: '메인 (Hero)', sequence: '식순 안내', gallery: '사진첩',
+                      calendar: '소중한 날 (달력)', location: '식장 위치', contact: '연락처',
+                      account: '마음 전하실 곳', rsvp: '참석 의사 알리기', guestbook: '방명록'
+                    }
+                    const sectionImages: Record<string, { url: string; caption?: string }[]> = currentInvitation?.customStyles?.sectionImages || {}
+                    const allSections = ['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]
+
+                    const updateSectionImages = (sectionId: string, images: { url: string; caption?: string }[]) => {
+                      updateCurrentInvitation({
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          sectionImages: {
+                            ...sectionImages,
+                            [sectionId]: images
+                          }
+                        }
+                      })
+                    }
+
+                    return allSections.map(sectionId => {
+                      const images = sectionImages[sectionId] || []
+                      return (
+                        <div key={sectionId} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold">{sectionLabelsForImages[sectionId] || sectionId} <span className="text-muted-foreground font-normal">아래에 삽입</span></p>
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]
+                                  if (!file) return
+                                  try {
+                                    const url = await uploadFile(file, 'section-images')
+                                    const updated = [...images, { url, caption: '' }]
+                                    updateSectionImages(sectionId, updated)
+                                    toast.success('사진이 추가되었습니다.')
+                                  } catch (err) {
+                                    toast.error('사진 업로드에 실패했습니다.')
+                                  }
+                                  e.target.value = ''
+                                }}
+                              />
+                              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-dashed border-muted-foreground/40 hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                                <Image className="h-3 w-3" />
+                                사진 추가
+                              </span>
+                            </label>
+                          </div>
+                          {images.length > 0 && (
+                            <div className="space-y-2">
+                              {images.map((img, imgIdx) => (
+                                <div key={imgIdx} className="flex items-center gap-2 bg-muted/30 rounded p-2">
+                                  <img src={img.url} alt={`preview ${imgIdx}`} className="w-12 h-12 object-cover rounded shrink-0 border" />
+                                  <Input
+                                    className="h-7 text-xs flex-1"
+                                    placeholder="캡션 (선택사항)"
+                                    value={img.caption || ''}
+                                    onChange={(e) => {
+                                      const updated = images.map((item, i) => i === imgIdx ? { ...item, caption: e.target.value } : item)
+                                      updateSectionImages(sectionId, updated)
+                                    }}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0"
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = images.filter((_, i) => i !== imgIdx)
+                                      updateSectionImages(sectionId, updated)
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -2471,14 +2569,182 @@ export default function OrderDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Section Header Customization */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">섹션 타이틀 상세 설정</CardTitle>
+                  <CardDescription>각 섹션별 영어/한국어 제목의 노출, 문구, 서체·크기·스타일을 변경합니다.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Field>
+                    <FieldLabel>편집할 섹션 선택</FieldLabel>
+                    <Select
+                      value={activeHeaderSection}
+                      onValueChange={(val) => setActiveHeaderSection(val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sequence">식순 안내 (Sequence)</SelectItem>
+                        <SelectItem value="gallery">사진첩 (Gallery)</SelectItem>
+                        <SelectItem value="calendar">소중한 날 (Calendar)</SelectItem>
+                        <SelectItem value="location">식장 위치 (Location)</SelectItem>
+                        <SelectItem value="contact">연락처 (Contact)</SelectItem>
+                        <SelectItem value="account">마음 전하실 곳 (Account)</SelectItem>
+                        <SelectItem value="rsvp">참석 의사 알리기 (RSVP)</SelectItem>
+                        <SelectItem value="guestbook">방명록 (Guestbook)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+
+                  {(() => {
+                    const sectionId = activeHeaderSection
+                    const headers = currentInvitation?.customStyles?.sectionHeaders || {}
+                    const settings = headers[sectionId] || {}
+
+                    const isShow = settings.show ?? true
+                    const titleEnDefault: Record<string, string> = {
+                      sequence: 'WEDDING ORDER', gallery: 'Gallery', calendar: 'Calendar',
+                      location: 'Location', contact: 'Contact', account: 'Account',
+                      rsvp: 'RSVP', guestbook: 'Guestbook'
+                    }
+                    const titleKrDefault: Record<string, string> = {
+                      sequence: '식순 안내', gallery: '사진첩', calendar: '소중한 날',
+                      location: '식장 위치', contact: '연락처', account: '마음 전하실 곳',
+                      rsvp: '참석 의사 알리기', guestbook: '방명록'
+                    }
+                    const titleEn = settings.titleEn ?? (titleEnDefault[sectionId] || '')
+                    const titleKr = settings.titleKr ?? (titleKrDefault[sectionId] || '')
+                    const fontEnVal = settings.fontEn || 'font-serif'
+                    const fontKrVal = settings.fontKr || 'font-serif'
+                    const sizeEn = settings.sizeEn ?? 20
+                    const sizeKr = settings.sizeKr ?? 9
+                    const italicEn = settings.italicEn ?? true
+                    const italicKr = settings.italicKr ?? false
+                    const boldEn = settings.boldEn ?? false
+                    const boldKr = settings.boldKr ?? true
+
+                    const updateHeaderSetting = (key: string, value: any) => {
+                      updateCurrentInvitation({
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          sectionHeaders: {
+                            ...headers,
+                            [sectionId]: { ...settings, [key]: value }
+                          }
+                        }
+                      })
+                    }
+
+                    return (
+                      <div className="space-y-4 pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">섹션 타이틀 노출</Label>
+                          <Switch
+                            checked={isShow}
+                            onCheckedChange={(v) => updateHeaderSetting('show', v)}
+                          />
+                        </div>
+
+                        {isShow && (
+                          <div className="space-y-4">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <Field>
+                                <FieldLabel>영문 제목</FieldLabel>
+                                <Input value={titleEn} onChange={(e) => updateHeaderSetting('titleEn', e.target.value)} />
+                              </Field>
+                              <Field>
+                                <FieldLabel>국문 제목</FieldLabel>
+                                <Input value={titleKr} onChange={(e) => updateHeaderSetting('titleKr', e.target.value)} />
+                              </Field>
+                            </div>
+
+                            <div className="border rounded-lg p-4 space-y-4 bg-muted/5">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">영문 타이틀 스타일</p>
+                              <div className="grid gap-3 sm:grid-cols-3 items-end">
+                                <Field>
+                                  <FieldLabel>서체</FieldLabel>
+                                  <Select value={fontEnVal} onValueChange={(v) => updateHeaderSetting('fontEn', v)}>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="font-serif">명조체 (Playfair)</SelectItem>
+                                      <SelectItem value="font-sans">고딕체 (Inter)</SelectItem>
+                                      {customFonts.map((f: any) => (
+                                        <SelectItem key={f.id} value={f.family}>{f.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </Field>
+                                <Field>
+                                  <FieldLabel>크기 (px)</FieldLabel>
+                                  <Input type="number" className="h-8 text-xs" value={sizeEn}
+                                    onChange={(e) => updateHeaderSetting('sizeEn', parseInt(e.target.value) || 20)} />
+                                </Field>
+                                <div className="flex gap-4 pb-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <Checkbox id="admin-italic-en" checked={italicEn}
+                                      onCheckedChange={(v) => updateHeaderSetting('italicEn', !!v)} />
+                                    <Label htmlFor="admin-italic-en" className="text-xs">이탤릭</Label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Checkbox id="admin-bold-en" checked={boldEn}
+                                      onCheckedChange={(v) => updateHeaderSetting('boldEn', !!v)} />
+                                    <Label htmlFor="admin-bold-en" className="text-xs">굵게</Label>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2 border-t">국문 타이틀 스타일</p>
+                              <div className="grid gap-3 sm:grid-cols-3 items-end">
+                                <Field>
+                                  <FieldLabel>서체</FieldLabel>
+                                  <Select value={fontKrVal} onValueChange={(v) => updateHeaderSetting('fontKr', v)}>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="font-serif">명조체 (Noto Serif)</SelectItem>
+                                      <SelectItem value="font-sans">고딕체 (Pretendard)</SelectItem>
+                                      {customFonts.map((f: any) => (
+                                        <SelectItem key={f.id} value={f.family}>{f.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </Field>
+                                <Field>
+                                  <FieldLabel>크기 (px)</FieldLabel>
+                                  <Input type="number" className="h-8 text-xs" value={sizeKr}
+                                    onChange={(e) => updateHeaderSetting('sizeKr', parseInt(e.target.value) || 9)} />
+                                </Field>
+                                <div className="flex gap-4 pb-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <Checkbox id="admin-italic-kr" checked={italicKr}
+                                      onCheckedChange={(v) => updateHeaderSetting('italicKr', !!v)} />
+                                    <Label htmlFor="admin-italic-kr" className="text-xs">이탤릭</Label>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Checkbox id="admin-bold-kr" checked={boldKr}
+                                      onCheckedChange={(v) => updateHeaderSetting('boldKr', !!v)} />
+                                    <Label htmlFor="admin-bold-kr" className="text-xs">굵게</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
 
-        {/* Right Mobile Preview Sticky */}
-        <div className="w-full lg:w-[360px] flex justify-center items-start shrink-0">
-          <div className="sticky top-20 w-full flex flex-col items-center">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">실시간 프리뷰</p>
+        {/* Right Panel: Mobile Preview */}
+        <div className="w-full lg:w-[400px] flex-shrink-0 bg-muted/20 border rounded-lg p-6 flex flex-col items-center justify-start shadow-inner overflow-hidden min-h-0">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 flex-shrink-0">실시간 모바일 미리보기</p>
+          <div className="flex-1 w-full flex items-center justify-center min-h-0">
             <MobilePreview className="w-full" isSticky={false} />
           </div>
         </div>

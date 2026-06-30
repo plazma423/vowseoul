@@ -483,6 +483,7 @@ export default function TemplatePreviewPage() {
 
             case 'gallery':
               const isSlide = theme?.galleryViewType === 'slide' || theme?.styles?.galleryViewType === 'slide'
+              const galleryAlign = theme?.styles?.galleryAlign || 'center'
               const mockImages = [
                 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
                 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
@@ -496,7 +497,7 @@ export default function TemplatePreviewPage() {
                   {isSlide ? (
                     <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-8">
                       {mockImages.map((img: string, index: number) => (
-                        <div key={index} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex items-center justify-center", shadowClass)} style={borderStyle}>
+                        <div key={index} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
                           <img src={img} alt={`Gallery ${index + 1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" />
                         </div>
                       ))}
