@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAppStore, sampleThemes } from '@/lib/store'
+import { NaverMap } from '@/components/naver-map'
 import { supabase } from '@/lib/supabase'
 import { cn, getLegibleColor } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -1250,7 +1251,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         
                         {/* White Address Card */}
                         <div 
-                          className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                          className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
                           onClick={() => {
                             if (currentInvitation?.venueAddress) {
                               copyToClipboard(currentInvitation.venueAddress)
@@ -1262,6 +1263,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
                           )}
                           <p className="text-xs opacity-75 mt-1">{currentInvitation?.venueAddress || '강남구 학동로 1212'}</p>
+                        </div>
+
+                        {/* Interactive Map & Navigation App Buttons */}
+                        <div className="mb-6 px-6">
+                          <NaverMap 
+                            address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                            venueName={currentInvitation?.venueName || '웨딩홀'} 
+                          />
                         </div>
 
                         {/* Traffic & Parking guides */}
@@ -1376,15 +1385,11 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             </div>
                           )}
 
-                          <div className="flex gap-1.5 pt-1">
-                            <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
-                              <Navigation className="w-3 h-3 mr-1" />
-                              네이버지도
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
-                              <Navigation className="w-3 h-3 mr-1" />
-                              카카오맵
-                            </Button>
+                          <div className="pt-2">
+                            <NaverMap 
+                              address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                              venueName={currentInvitation?.venueName || '웨딩홀'} 
+                            />
                           </div>
                         </CardContent>
                       </Card>

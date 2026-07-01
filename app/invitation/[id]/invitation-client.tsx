@@ -32,6 +32,7 @@ import {
   Image
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { NaverMap } from "@/components/naver-map"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
@@ -1517,7 +1518,7 @@ export default function InvitationClient({
                     
                     {/* White Address Card */}
                     <div 
-                      className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-4 cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => {
                         if (invitation?.venueAddress) {
                           copyToClipboard(invitation.venueAddress)
@@ -1529,6 +1530,14 @@ export default function InvitationClient({
                         <p className="text-sm text-[#526678] font-medium">{invitation.venueHall}</p>
                       )}
                       <p className="text-sm opacity-75 mt-1">{invitation?.venueAddress || '강남구 학동로 1212'}</p>
+                    </div>
+
+                    {/* Interactive Map & Navigation App Buttons */}
+                    <div className="mb-6 max-w-[280px] mx-auto">
+                      <NaverMap 
+                        address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                        venueName={invitation?.venueName || '웨딩홀'} 
+                      />
                     </div>
 
                     {/* Traffic & Parking guides */}
@@ -1642,19 +1651,11 @@ export default function InvitationClient({
                         </div>
                       )}
 
-                      <div className="flex gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="flex-1" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
-                          <a href={`https://map.naver.com/v5/search/${encodeURIComponent(invitation.venueAddress)}`} target="_blank" rel="noopener noreferrer">
-                            <Navigation className="w-4 h-4 mr-2" />
-                            네이버지도
-                          </a>
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
-                          <a href={`https://map.kakao.com/?q=${encodeURIComponent(invitation.venueAddress)}`} target="_blank" rel="noopener noreferrer">
-                            <Navigation className="w-4 h-4 mr-2" />
-                            카카오맵
-                          </a>
-                        </Button>
+                      <div className="pt-2">
+                        <NaverMap 
+                          address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                          venueName={invitation?.venueName || '웨딩홀'} 
+                        />
                       </div>
                       <Button
                         variant="ghost"

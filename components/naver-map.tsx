@@ -1,0 +1,137 @@
+'use client'
+
+import React, { useEffect, useRef, useState } from 'react'
+
+interface NaverMapProps {
+  address: string;
+  venueName: string;
+}
+
+export function NaverMap({ address, venueName }: NaverMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [scriptLoaded, setScriptLoaded] = useState(false)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    // 1. Load Naver Map Script if not loaded
+    const windowAny = window as any;
+    if (windowAny.naver && windowAny.naver.maps) {
+      setScriptLoaded(true);
+      return;
+    }
+
+    const existingScript = document.getElementById('naver-maps-script');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => setScriptLoaded(true));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'naver-maps-script';
+    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=od370yq3ix&submodules=geocoder`;
+    script.async = true;
+    script.onload = () => setScriptLoaded(true);
+    document.head.appendChild(script);
+  }, [])
+
+  useEffect(() => {
+    if (!scriptLoaded || !mapRef.current || !address) return
+
+    const windowAny = window as any;
+    const naver = windowAny.naver;
+    if (!naver || !naver.maps || !naver.maps.Service) return;
+
+    // 2. Geocode the address
+    naver.maps.Service.geocode({ query: address }, (status: any, response: any) => {
+      if (status !== naver.maps.Service.Status.OK || !response.v2.addresses.length) {
+        console.error('Geocoding failed for address:', address);
+        return;
+      }
+
+      const item = response.v2.addresses[0];
+      const lat = parseFloat(item.y);
+      const lng = parseFloat(item.x);
+      const location = new naver.maps.LatLng(lat, lng);
+      setCoords({ lat, lng });
+
+      // 3. Create Map
+      const map = new naver.maps.Map(mapRef.current, {
+        center: location,
+        zoom: 16,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: naver.maps.Position.RIGHT_CENTER
+        }
+      });
+
+      // 4. Create Marker
+      new naver.maps.Marker({
+        position: location,
+        map: map,
+        title: venueName
+      });
+    });
+  }, [scriptLoaded, address, venueName])
+
+  const handleTmapClick = () => {
+    if (!coords) return;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = `tmap://route?goalx=${coords.lng}&goaly=${coords.lat}&goalname=${encodeURIComponent(venueName)}`;
+      setTimeout(() => {
+        window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank');
+      }, 1500);
+    } else {
+      window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank');
+    }
+  }
+
+  return (
+    <div className="w-full space-y-3">
+      {/* Naver Map container */}
+      <div 
+        ref={mapRef} 
+        className="w-full h-48 rounded-lg overflow-hidden border border-black/5 shadow-inner" 
+        style={{ minHeight: '192px' }}
+      />
+
+      {/* Navigation App buttons */}
+      <div className="flex gap-2">
+        {/* Naver Map */}
+        <a 
+          href={`https://map.naver.com/v5/search/${encodeURIComponent(address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 h-9 rounded-lg border border-black/10 bg-white flex items-center justify-center gap-1.5 text-xs font-medium text-black hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+        >
+          <div className="w-4 h-4 rounded bg-[#03C75A] flex items-center justify-center text-white text-[8px] font-extrabold font-sans leading-none">N</div>
+          <span>네이버</span>
+        </a>
+
+        {/* Kakao Map */}
+        <a 
+          href={coords ? `https://map.kakao.com/link/to/${encodeURIComponent(venueName)},${coords.lat},${coords.lng}` : `https://map.kakao.com/?q=${encodeURIComponent(address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 h-9 rounded-lg border border-black/10 bg-white flex items-center justify-center gap-1.5 text-xs font-medium text-black hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+        >
+          <div className="w-4 h-4 rounded bg-[#FFE600] flex items-center justify-center">
+            <svg className="w-3 h-3 text-[#2C7BFA]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </div>
+          <span>카카오</span>
+        </a>
+
+        {/* T-Map */}
+        <button 
+          onClick={handleTmapClick}
+          className="flex-1 h-9 rounded-lg border border-black/10 bg-white flex items-center justify-center gap-1.5 text-xs font-medium text-black hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+        >
+          <div className="w-4 h-4 rounded bg-gradient-to-tr from-[#1E5AF3] to-[#8A3DF2] flex items-center justify-center text-white text-[9px] font-extrabold leading-none">T</div>
+          <span>티맵</span>
+        </button>
+      </div>
+    </div>
+  )
+}
