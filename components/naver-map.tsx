@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { MapPin } from 'lucide-react'
 
 interface NaverMapProps {
   address: string;
@@ -11,6 +12,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [mapError, setMapError] = useState(false)
 
   useEffect(() => {
     // 1. Load Naver Map Script if not loaded
@@ -61,6 +63,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
           if (!isMounted) return;
           if (!data.addresses || data.addresses.length === 0) {
             console.error('No coordinates found for address:', address);
+            setMapError(true);
             return;
           }
 
@@ -69,6 +72,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
           const lng = parseFloat(item.x);
           const location = new naver.maps.LatLng(lat, lng);
           setCoords({ lat, lng });
+          setMapError(false);
 
           // 3. Create Map
           if (mapRef.current) {
@@ -91,6 +95,9 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
         })
         .catch(err => {
           console.error('Server geocoding fetch failed:', err);
+          if (isMounted) {
+            setMapError(true);
+          }
         });
     };
 
@@ -118,11 +125,22 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
   return (
     <div className="w-full space-y-3">
       {/* Naver Map container */}
-      <div 
-        ref={mapRef} 
-        className="w-full h-48 rounded-lg overflow-hidden border border-black/5 shadow-inner" 
-        style={{ minHeight: '192px' }}
-      />
+      {mapError ? (
+        <div 
+          className="w-full h-48 rounded-lg border border-black/10 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col items-center justify-center p-4 text-center space-y-1.5"
+          style={{ minHeight: '192px' }}
+        >
+          <MapPin className="w-5 h-5 opacity-40 text-muted-foreground" />
+          <p className="text-xs font-semibold opacity-75">지도를 불러올 수 없습니다</p>
+          <p className="text-[10px] opacity-50 max-w-[240px] truncate">{address}</p>
+        </div>
+      ) : (
+        <div 
+          ref={mapRef} 
+          className="w-full h-48 rounded-lg overflow-hidden border border-black/5 shadow-inner" 
+          style={{ minHeight: '192px' }}
+        />
+      )}
 
       {/* Navigation App buttons */}
       <div className="flex gap-2">

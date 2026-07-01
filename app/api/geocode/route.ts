@@ -22,6 +22,11 @@ export async function GET(request: Request) {
 
     if (!res.ok) {
       const errorText = await res.text();
+      console.error('NCP Maps Geocoding API raw error response:', {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorText
+      });
       return NextResponse.json({ error: `NCP API error: ${res.statusText}`, details: errorText }, { status: res.status });
     }
 
