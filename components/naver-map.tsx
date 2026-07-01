@@ -56,13 +56,15 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
       // 서버의 geocode API route 호출
       fetch(`/api/geocode?query=${encodeURIComponent(address)}`)
         .then(res => {
-          if (!res.ok) throw new Error('Geocoding server error');
+          if (!res.ok) {
+            setMapError(true);
+            return null;
+          }
           return res.json();
         })
         .then(data => {
-          if (!isMounted) return;
+          if (!data || !isMounted) return;
           if (!data.addresses || data.addresses.length === 0) {
-            console.error('No coordinates found for address:', address);
             setMapError(true);
             return;
           }
