@@ -1516,7 +1516,14 @@ export default function InvitationClient({
                     {renderSectionHeader('location', 'Location', '식장 위치', 'mb-6')}
                     
                     {/* White Address Card */}
-                    <div className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6">
+                    <div 
+                      className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => {
+                        if (invitation?.venueAddress) {
+                          copyToClipboard(invitation.venueAddress)
+                        }
+                      }}
+                    >
                       <h3 className="font-semibold text-xl tracking-wide">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                       {invitation?.venueHall && (
                         <p className="text-sm text-[#526678] font-medium">{invitation.venueHall}</p>

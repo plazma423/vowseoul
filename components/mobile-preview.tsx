@@ -1249,7 +1249,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         {renderSectionHeader('location', 'Location', '식장 위치', 'mb-6')}
                         
                         {/* White Address Card */}
-                        <div className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6">
+                        <div 
+                          className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                          onClick={() => {
+                            if (currentInvitation?.venueAddress) {
+                              copyToClipboard(currentInvitation.venueAddress)
+                            }
+                          }}
+                        >
                           <h3 className="font-semibold text-lg tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           {currentInvitation?.venueHall && (
                             <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
