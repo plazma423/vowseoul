@@ -432,7 +432,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             })()
           }} />
 
-          <div className={cn("text-center select-none", fontClass, isDuotone ? "" : "pb-12")} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
+          <div className={cn("text-center select-none w-[304px] max-w-full overflow-x-hidden", fontClass, isDuotone ? "" : "pb-12")} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
             
             {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
               // Layout-specific styling rules
@@ -972,7 +972,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       {showDivider && renderDivider()}
                       {renderSectionHeader('gallery', 'Gallery', '사진첩', 'mb-6', 'px-6')}
                       {isSlide ? (
-                        <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-6">
+                        <div className="w-full overflow-x-auto flex gap-2 snap-x scrollbar-hide pb-2 px-6">
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
                             <div key={idx} className={cn("w-[240px] h-[300px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
                               <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain" />
