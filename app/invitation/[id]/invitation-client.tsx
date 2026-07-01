@@ -297,9 +297,13 @@ export default function InvitationClient({
     }
   }, [bgmUrl, isPlaying])
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'address' | 'account' = 'account') => {
     navigator.clipboard.writeText(text)
-    toast.success("클립보드에 주소/계좌번호가 복사되었습니다.")
+    if (type === 'address') {
+      toast.success("주소가 복사되었습니다.")
+    } else {
+      toast.success("계좌번호가 복사되었습니다.")
+    }
   }
 
   const handleRsvpSubmit = async () => {
@@ -1521,7 +1525,7 @@ export default function InvitationClient({
                       className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-4 cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => {
                         if (invitation?.venueAddress) {
-                          copyToClipboard(invitation.venueAddress)
+                          copyToClipboard(invitation.venueAddress, 'address')
                         }
                       }}
                     >
@@ -1534,7 +1538,7 @@ export default function InvitationClient({
 
                     {/* Interactive Map & Navigation App Buttons */}
                     {invitation?.customStyles?.mapEnabled !== false && (
-                      <div className="mb-6 max-w-[280px] mx-auto">
+                      <div className="mb-6 px-4">
                         <NaverMap 
                           address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
                           venueName={invitation?.venueName || '웨딩홀'} 
@@ -1653,26 +1657,27 @@ export default function InvitationClient({
                         </div>
                       )}
 
-                      {invitation?.customStyles?.mapEnabled !== false && (
-                        <div className="pt-2">
-                          <NaverMap 
-                            address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                            venueName={invitation?.venueName || '웨딩홀'} 
-                          />
-                        </div>
-                      )}
                       <Button
                         variant="ghost"
                         size="sm"
                         className="w-full text-xs opacity-60 hover:opacity-90"
                         style={isDuotone ? { color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}
-                        onClick={() => copyToClipboard(invitation.venueAddress)}
+                        onClick={() => copyToClipboard(invitation.venueAddress, 'address')}
                       >
                         <Copy className="w-4 h-4 mr-2" />
                         주소 복사
                       </Button>
                     </CardContent>
                   </Card>
+
+                  {invitation?.customStyles?.mapEnabled !== false && (
+                    <div className="mb-4 px-2">
+                      <NaverMap 
+                        address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                        venueName={invitation?.venueName || '웨딩홀'} 
+                      />
+                    </div>
+                  )}
                 </section>
               )
 

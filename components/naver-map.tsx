@@ -30,7 +30,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
 
     const script = document.createElement('script');
     script.id = 'naver-maps-script';
-    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=od370yq3ix`;
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=od370yq3ix`;
     script.async = true;
     script.onload = () => setScriptLoaded(true);
     document.head.appendChild(script);
@@ -81,10 +81,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
             const map = new naver.maps.Map(mapRef.current, {
               center: location,
               zoom: 16,
-              zoomControl: true,
-              zoomControlOptions: {
-                position: naver.maps.Position.RIGHT_CENTER
-              }
+              zoomControl: false
             });
 
             // 4. Create Marker
@@ -129,8 +126,8 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
       {/* Naver Map container */}
       {mapError ? (
         <div 
-          className="w-full h-48 rounded-lg border border-black/10 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col items-center justify-center p-4 text-center space-y-1.5"
-          style={{ minHeight: '192px' }}
+          className="w-full h-60 rounded-lg border border-black/10 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col items-center justify-center p-4 text-center space-y-1.5"
+          style={{ minHeight: '240px' }}
         >
           <MapPin className="w-5 h-5 opacity-40 text-muted-foreground" />
           <p className="text-xs font-semibold opacity-75">지도를 불러올 수 없습니다</p>
@@ -139,8 +136,8 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
       ) : (
         <div 
           ref={mapRef} 
-          className="w-full h-48 rounded-lg overflow-hidden border border-black/5 shadow-inner" 
-          style={{ minHeight: '192px' }}
+          className="w-full h-60 rounded-lg overflow-hidden border border-black/5 shadow-inner" 
+          style={{ minHeight: '240px' }}
         />
       )}
 

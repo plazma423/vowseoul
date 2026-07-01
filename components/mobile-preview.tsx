@@ -235,9 +235,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
     return `${enFamily}, ${krFamily}, ${genericFallback}`;
   }
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'address' | 'account' = 'account') => {
     navigator.clipboard.writeText(text)
-    toast.success("클립보드에 계좌번호가 복사되었습니다.")
+    if (type === 'address') {
+      toast.success("주소가 복사되었습니다.")
+    } else {
+      toast.success("계좌번호가 복사되었습니다.")
+    }
   }
 
   const getDDayString = (dateStr: string) => {
@@ -1254,7 +1258,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
                           onClick={() => {
                             if (currentInvitation?.venueAddress) {
-                              copyToClipboard(currentInvitation.venueAddress)
+                              copyToClipboard(currentInvitation.venueAddress, 'address')
                             }
                           }}
                         >
@@ -1267,7 +1271,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
                         {/* Interactive Map & Navigation App Buttons */}
                         {currentInvitation?.customStyles?.mapEnabled !== false && (
-                          <div className="mb-6 px-6">
+                          <div className="mb-6 px-4">
                             <NaverMap 
                               address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
                               venueName={currentInvitation?.venueName || '웨딩홀'} 
@@ -1387,16 +1391,17 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             </div>
                           )}
 
-                          {currentInvitation?.customStyles?.mapEnabled !== false && (
-                            <div className="pt-2">
-                              <NaverMap 
-                                address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                                venueName={currentInvitation?.venueName || '웨딩홀'} 
-                              />
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
+
+                      {currentInvitation?.customStyles?.mapEnabled !== false && (
+                        <div className="mb-4 px-2">
+                          <NaverMap 
+                            address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                            venueName={currentInvitation?.venueName || '웨딩홀'} 
+                          />
+                        </div>
+                      )}
                     </section>
                   )
 
