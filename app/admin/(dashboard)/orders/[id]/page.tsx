@@ -1397,6 +1397,17 @@ export default function OrderDetailPage() {
 
                     <div className="flex items-center justify-between border-t pt-4 mt-2">
                       <div className="space-y-0.5">
+                        <span className="text-sm font-medium block">오시는 길 지도 노출</span>
+                        <p className="text-xs text-muted-foreground">약도 지도 및 국내 지도 앱 연결 버튼을 노출합니다.</p>
+                      </div>
+                      <Switch 
+                        checked={currentInvitation?.customStyles?.mapEnabled !== false}
+                        onCheckedChange={(checked) => updateCustomStyle('mapEnabled', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-4 mt-2">
+                      <div className="space-y-0.5">
                         <span className="text-sm font-medium block">셔틀버스 안내 추가</span>
                         <p className="text-xs text-muted-foreground">셔틀버스 운행 정보가 있는 경우 활성화해주세요.</p>
                       </div>
@@ -1436,7 +1447,7 @@ export default function OrderDetailPage() {
                       account: '마음 전하실 곳', rsvp: '참석 의사 알리기', guestbook: '방명록'
                     }
                     const sectionImages: Record<string, { url: string; caption?: string }[]> = currentInvitation?.customStyles?.sectionImages || {}
-                    const allSections = ['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]
+                    const allSections = Array.from(new Set(['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]))
 
                     const updateSectionImages = (sectionId: string, images: { url: string; caption?: string }[]) => {
                       updateCurrentInvitation({

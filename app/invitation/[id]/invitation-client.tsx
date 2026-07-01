@@ -1533,12 +1533,14 @@ export default function InvitationClient({
                     </div>
 
                     {/* Interactive Map & Navigation App Buttons */}
-                    <div className="mb-6 max-w-[280px] mx-auto">
-                      <NaverMap 
-                        address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                        venueName={invitation?.venueName || '웨딩홀'} 
-                      />
-                    </div>
+                    {invitation?.customStyles?.mapEnabled !== false && (
+                      <div className="mb-6 max-w-[280px] mx-auto">
+                        <NaverMap 
+                          address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                          venueName={invitation?.venueName || '웨딩홀'} 
+                        />
+                      </div>
+                    )}
 
                     {/* Traffic & Parking guides */}
                     <div className="space-y-4 text-sm font-light text-left max-w-[280px] mx-auto">
@@ -1651,12 +1653,14 @@ export default function InvitationClient({
                         </div>
                       )}
 
-                      <div className="pt-2">
-                        <NaverMap 
-                          address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                          venueName={invitation?.venueName || '웨딩홀'} 
-                        />
-                      </div>
+                      {invitation?.customStyles?.mapEnabled !== false && (
+                        <div className="pt-2">
+                          <NaverMap 
+                            address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                            venueName={invitation?.venueName || '웨딩홀'} 
+                          />
+                        </div>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

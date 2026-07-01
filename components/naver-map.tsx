@@ -37,40 +37,61 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
   useEffect(() => {
     if (!scriptLoaded || !mapRef.current || !address) return
 
-    const windowAny = window as any;
-    const naver = windowAny.naver;
-    if (!naver || !naver.maps || !naver.maps.Service) return;
+    let isMounted = true;
+    let timerId: NodeJS.Timeout | null = null;
 
-    // 2. Geocode the address
-    naver.maps.Service.geocode({ query: address }, (status: any, response: any) => {
-      if (status !== naver.maps.Service.Status.OK || !response.v2.addresses.length) {
-        console.error('Geocoding failed for address:', address);
+    const initMap = () => {
+      const windowAny = window as any;
+      const naver = windowAny.naver;
+
+      if (!naver || !naver.maps || !naver.maps.Service || !naver.maps.Service.Status) {
+        if (isMounted) {
+          timerId = setTimeout(initMap, 200); // 200ms 간격으로 네이버 지도 서비스 로드 폴링
+        }
         return;
       }
 
-      const item = response.v2.addresses[0];
-      const lat = parseFloat(item.y);
-      const lng = parseFloat(item.x);
-      const location = new naver.maps.LatLng(lat, lng);
-      setCoords({ lat, lng });
+      // 2. Geocode the address
+      naver.maps.Service.geocode({ query: address }, (status: any, response: any) => {
+        if (!isMounted) return;
+        if (status !== naver.maps.Service.Status.OK || !response.v2.addresses.length) {
+          console.error('Geocoding failed for address:', address);
+          return;
+        }
 
-      // 3. Create Map
-      const map = new naver.maps.Map(mapRef.current, {
-        center: location,
-        zoom: 16,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: naver.maps.Position.RIGHT_CENTER
+        const item = response.v2.addresses[0];
+        const lat = parseFloat(item.y);
+        const lng = parseFloat(item.x);
+        const location = new naver.maps.LatLng(lat, lng);
+        setCoords({ lat, lng });
+
+        // 3. Create Map
+        if (mapRef.current) {
+          const map = new naver.maps.Map(mapRef.current, {
+            center: location,
+            zoom: 16,
+            zoomControl: true,
+            zoomControlOptions: {
+              position: naver.maps.Position.RIGHT_CENTER
+            }
+          });
+
+          // 4. Create Marker
+          new naver.maps.Marker({
+            position: location,
+            map: map,
+            title: venueName
+          });
         }
       });
+    };
 
-      // 4. Create Marker
-      new naver.maps.Marker({
-        position: location,
-        map: map,
-        title: venueName
-      });
-    });
+    initMap();
+
+    return () => {
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [scriptLoaded, address, venueName])
 
   const handleTmapClick = () => {

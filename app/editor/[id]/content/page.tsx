@@ -851,6 +851,17 @@ export default function ContentPage() {
 
               <div className="flex items-center justify-between border-t pt-4 mt-2">
                 <div className="space-y-0.5">
+                  <span className="text-sm font-medium block">오시는 길 지도 노출</span>
+                  <p className="text-xs text-muted-foreground">약도 지도 및 국내 지도 앱 연결 버튼을 노출합니다.</p>
+                </div>
+                <Switch 
+                  checked={currentInvitation?.customStyles?.mapEnabled !== false}
+                  onCheckedChange={(checked) => updateCustomStyle('mapEnabled', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-4 mt-2">
+                <div className="space-y-0.5">
                   <span className="text-sm font-medium block">셔틀버스 안내 추가</span>
                   <p className="text-xs text-muted-foreground">셔틀버스 운행 정보가 있는 경우 활성화해주세요.</p>
                 </div>

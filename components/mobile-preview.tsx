@@ -1266,12 +1266,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         </div>
 
                         {/* Interactive Map & Navigation App Buttons */}
-                        <div className="mb-6 px-6">
-                          <NaverMap 
-                            address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                            venueName={currentInvitation?.venueName || '웨딩홀'} 
-                          />
-                        </div>
+                        {currentInvitation?.customStyles?.mapEnabled !== false && (
+                          <div className="mb-6 px-6">
+                            <NaverMap 
+                              address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                              venueName={currentInvitation?.venueName || '웨딩홀'} 
+                            />
+                          </div>
+                        )}
 
                         {/* Traffic & Parking guides */}
                         <div className="space-y-4 text-xs font-light text-left max-w-[280px] mx-auto">
@@ -1385,12 +1387,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             </div>
                           )}
 
-                          <div className="pt-2">
-                            <NaverMap 
-                              address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
-                              venueName={currentInvitation?.venueName || '웨딩홀'} 
-                            />
-                          </div>
+                          {currentInvitation?.customStyles?.mapEnabled !== false && (
+                            <div className="pt-2">
+                              <NaverMap 
+                                address={currentInvitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                                venueName={currentInvitation?.venueName || '웨딩홀'} 
+                              />
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </section>
