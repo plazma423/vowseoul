@@ -87,7 +87,7 @@ export default function InvitationClient({
   const [themes, setThemes] = useState<any[]>(initialThemes || [])
   const [customFonts, setCustomFonts] = useState<any[]>(initialFonts || [])
   const [loading, setLoading] = useState(!initialInvitation)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(true)
   const [showRsvp, setShowRsvp] = useState(false)
   const [attendance, setAttendance] = useState("yes")
   const [guestCount, setGuestCount] = useState("2")
@@ -249,6 +249,8 @@ export default function InvitationClient({
   }, [id])
 
   useEffect(() => {
+    let playOnInteraction: (() => void) | null = null;
+
     if (bgmUrl && isPlaying) {
       if (!audioRef.current) {
         audioRef.current = new Audio(bgmUrl)
@@ -258,10 +260,25 @@ export default function InvitationClient({
         audioRef.current = new Audio(bgmUrl)
         audioRef.current.loop = true
       }
-      audioRef.current.play().catch(e => {
-        console.error("Audio playback blocked by browser autocomplete policy:", e)
-        setIsPlaying(false)
-      })
+      
+      const playAudio = () => {
+        audioRef.current?.play().catch(e => {
+          console.log("Audio play postponed until user interaction:", e)
+          
+          playOnInteraction = () => {
+            audioRef.current?.play().then(() => {
+              if (playOnInteraction) {
+                document.removeEventListener('click', playOnInteraction)
+                document.removeEventListener('touchstart', playOnInteraction)
+              }
+            }).catch(err => console.log('Autoplay retry failed:', err))
+          }
+          document.addEventListener('click', playOnInteraction)
+          document.addEventListener('touchstart', playOnInteraction)
+        })
+      }
+
+      playAudio()
     } else {
       if (audioRef.current) {
         audioRef.current.pause()
@@ -271,6 +288,10 @@ export default function InvitationClient({
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
+      }
+      if (playOnInteraction) {
+        document.removeEventListener('click', playOnInteraction)
+        document.removeEventListener('touchstart', playOnInteraction)
       }
     }
   }, [bgmUrl, isPlaying])
@@ -1216,7 +1237,7 @@ export default function InvitationClient({
               const isSlide = invitation?.galleryViewType === 'slide'
               const galleryAlign = invitation?.customStyles?.galleryAlign || 'center'
               return (
-                <section key="gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
+                <section key="gallery" className={cn("w-full overflow-hidden", spacingClass, isSlide ? "px-0" : "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                   {showDivider && renderDivider()}
                   {renderSectionHeader('gallery', 'Gallery', '사진첩', 'mb-8', 'px-8')}
                   {isSlide ? (
@@ -1508,13 +1529,19 @@ export default function InvitationClient({
                       {invitation?.parkingInfo && (
                         <div className="space-y-1">
                           <span className="font-semibold block text-[#62798E]">주차안내</span>
-                          <p className="opacity-80 leading-relaxed">{invitation.parkingInfo}</p>
+                          <p className="opacity-80 leading-relaxed whitespace-pre-line">{invitation.parkingInfo}</p>
                         </div>
                       )}
                       {invitation?.trafficInfo && (
                         <div className="space-y-1">
                           <span className="font-semibold block text-[#62798E]">대중교통</span>
-                          <p className="opacity-80 leading-relaxed">{invitation.trafficInfo}</p>
+                          <p className="opacity-80 leading-relaxed whitespace-pre-line">{invitation.trafficInfo}</p>
+                        </div>
+                      )}
+                      {invitation?.customStyles?.shuttleEnabled && invitation?.customStyles?.shuttleInfo && (
+                        <div className="space-y-1">
+                          <span className="font-semibold block text-[#62798E]">셔틀버스</span>
+                          <p className="opacity-80 leading-relaxed whitespace-pre-line">{invitation.customStyles.shuttleInfo}</p>
                         </div>
                       )}
                     </div>
@@ -1595,6 +1622,14 @@ export default function InvitationClient({
                                   </button>
                                 )
                               )}
+                            </div>
+                          )}
+                          {invitation?.customStyles?.shuttleEnabled && invitation?.customStyles?.shuttleInfo && (
+                            <div className="pt-2">
+                              <p className="font-semibold text-sm">셔틀버스 안내</p>
+                              <p className="whitespace-pre-line mt-1 leading-relaxed text-sm" style={{ color: isDuotone ? `${color1}b3` : sectColors.secondaryTextColorVal }}>
+                                {invitation.customStyles.shuttleInfo}
+                              </p>
                             </div>
                           )}
                         </div>

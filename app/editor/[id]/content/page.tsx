@@ -848,6 +848,31 @@ export default function ContentPage() {
                   )}
                 </div>
               </Field>
+
+              <div className="flex items-center justify-between border-t pt-4 mt-2">
+                <div className="space-y-0.5">
+                  <span className="text-sm font-medium block">셔틀버스 안내 추가</span>
+                  <p className="text-xs text-muted-foreground">셔틀버스 운행 정보가 있는 경우 활성화해주세요.</p>
+                </div>
+                <Switch 
+                  checked={currentInvitation?.customStyles?.shuttleEnabled || false}
+                  onCheckedChange={(checked) => updateCustomStyle('shuttleEnabled', checked)}
+                />
+              </div>
+
+              {currentInvitation?.customStyles?.shuttleEnabled && (
+                <Field>
+                  <FieldLabel htmlFor="shuttleInfo">셔틀버스 안내</FieldLabel>
+                  <Textarea
+                    id="shuttleInfo"
+                    placeholder="셔틀버스 탑승 위치, 시간 등을 안내해주세요"
+                    rows={3}
+                    value={currentInvitation?.customStyles?.shuttleInfo || ''}
+                    onChange={(e) => updateCustomStyle('shuttleInfo', e.target.value)}
+                    onFocus={() => setActiveSection('location')}
+                  />
+                </Field>
+              )}
             </FieldGroup>
           </AccordionContent>
         </AccordionItem>

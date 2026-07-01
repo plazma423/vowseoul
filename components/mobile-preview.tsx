@@ -968,7 +968,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   const isSlide = currentInvitation?.galleryViewType === 'slide'
                   const galleryAlign = currentInvitation?.customStyles?.galleryAlign || 'center'
                   return (
-                    <section key="gallery" id="preview-section-gallery" className={cn(spacingClass, isSlide ? "px-0" : "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
+                    <section key="gallery" id="preview-section-gallery" className={cn("w-full overflow-hidden", spacingClass, isSlide ? "px-0" : "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
                       {renderSectionHeader('gallery', 'Gallery', '사진첩', 'mb-6', 'px-6')}
                       {isSlide ? (
@@ -1262,13 +1262,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {currentInvitation?.parkingInfo && (
                             <div className="space-y-1">
                               <span className="font-semibold block text-[#62798E]">주차안내</span>
-                              <p className="opacity-80 leading-relaxed">{currentInvitation.parkingInfo}</p>
+                              <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.parkingInfo}</p>
                             </div>
                           )}
                           {currentInvitation?.trafficInfo && (
                             <div className="space-y-1">
                               <span className="font-semibold block text-[#62798E]">대중교통</span>
-                              <p className="opacity-80 leading-relaxed">{currentInvitation.trafficInfo}</p>
+                              <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.trafficInfo}</p>
+                            </div>
+                          )}
+                          {currentInvitation?.customStyles?.shuttleEnabled && currentInvitation?.customStyles?.shuttleInfo && (
+                            <div className="space-y-1">
+                              <span className="font-semibold block text-[#62798E]">셔틀버스</span>
+                              <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.customStyles.shuttleInfo}</p>
                             </div>
                           )}
                         </div>
@@ -1350,6 +1356,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                       </button>
                                     )
                                   )}
+                                </div>
+                              )}
+                              {currentInvitation?.customStyles?.shuttleEnabled && currentInvitation?.customStyles?.shuttleInfo && (
+                                <div>
+                                  <p className="font-semibold">셔틀버스 안내</p>
+                                  <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: isDuotone ? `${color1}b3` : sectColors.secondaryTextColorVal }}>
+                                    {currentInvitation.customStyles.shuttleInfo}
+                                  </p>
                                 </div>
                               )}
                             </div>
