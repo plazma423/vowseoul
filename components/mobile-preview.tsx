@@ -37,9 +37,16 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
-const formatParentRelation = (relationStr: string, isBold: boolean) => {
+const formatParentRelation = (relationStr: string, parentNames?: string, relationText?: string) => {
+  if (parentNames !== undefined && relationText !== undefined) {
+    return (
+      <span>
+        <strong className="font-semibold">{parentNames}</strong>
+        {relationText ? ` ${relationText}` : ''}
+      </span>
+    );
+  }
   if (!relationStr) return '';
-  if (!isBold) return relationStr;
   const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
   if (match) {
     return (
@@ -48,7 +55,7 @@ const formatParentRelation = (relationStr: string, isBold: boolean) => {
       </span>
     );
   }
-  return relationStr;
+  return <strong className="font-semibold">{relationStr}</strong>;
 };
 
 export function MobilePreview({ className, isSticky = true }: { className?: string; isSticky?: boolean }) {
@@ -663,7 +670,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div className="space-y-4 text-left px-4 w-full">
                             <div className="space-y-1">
                               {currentInvitation?.groomParentRelation && (
-                                <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
+                                <p className="text-[10px] opacity-75">
+                                  {formatParentRelation(
+                                    currentInvitation.groomParentRelation,
+                                    currentInvitation.customStyles?.groomParentNames,
+                                    currentInvitation.customStyles?.groomParentRelationText
+                                  )}
+                                </p>
                               )}
                               <h1 
                                 className="text-2xl font-light tracking-wide"
@@ -678,7 +691,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: sectColors.accent }}>{heroConnector}</div>}
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
-                                <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
+                                <p className="text-[10px] opacity-75">
+                                  {formatParentRelation(
+                                    currentInvitation.brideParentRelation,
+                                    currentInvitation.customStyles?.brideParentNames,
+                                    currentInvitation.customStyles?.brideParentRelationText
+                                  )}
+                                </p>
                               )}
                               <h1 
                                 className="text-2xl font-light tracking-wide"
@@ -720,7 +739,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div className="space-y-4">
                             <div className="space-y-1">
                               {currentInvitation?.groomParentRelation && (
-                                <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
+                                <p className="text-[10px] opacity-75">
+                                  {formatParentRelation(
+                                    currentInvitation.groomParentRelation,
+                                    currentInvitation.customStyles?.groomParentNames,
+                                    currentInvitation.customStyles?.groomParentRelationText
+                                  )}
+                                </p>
                               )}
                               <h1 
                                 className="text-2xl font-light tracking-wide"
@@ -735,7 +760,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             {heroConnector !== 'none' && <div className="text-lg opacity-60 font-light" style={{ color: sectColors.accent }}>{heroConnector}</div>}
                             <div className="space-y-1">
                               {currentInvitation?.brideParentRelation && (
-                                <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
+                                <p className="text-[10px] opacity-75">
+                                  {formatParentRelation(
+                                    currentInvitation.brideParentRelation,
+                                    currentInvitation.customStyles?.brideParentNames,
+                                    currentInvitation.customStyles?.brideParentRelationText
+                                  )}
+                                </p>
                               )}
                               <h1 
                                 className="text-2xl font-light tracking-wide"
@@ -774,7 +805,6 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 
                 case 'greeting':
                   if (isSereneBlue) {
-                    const boldParents = currentInvitation?.customStyles?.boldParentNames || false
                     return (
                       <section 
                         key="greeting" 
@@ -788,7 +818,11 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             <div className="text-left">
                               <span className="text-[9px] opacity-60 block tracking-widest font-mono">GROOM</span>
                               <span className="tracking-wide">
-                                {formatParentRelation(currentInvitation?.groomParentRelation || '김태진 · 정혜선 의 아들', boldParents)}
+                                {formatParentRelation(
+                                  currentInvitation?.groomParentRelation || '김태진 · 정혜선 의 아들',
+                                  currentInvitation?.customStyles?.groomParentNames,
+                                  currentInvitation?.customStyles?.groomParentRelationText
+                                )}
                               </span>
                             </div>
                             <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{currentInvitation?.groomName || '혁'}</span>
@@ -797,7 +831,11 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             <div className="text-left">
                               <span className="text-[9px] opacity-60 block tracking-widest font-mono">BRIDE</span>
                               <span className="tracking-wide">
-                                {formatParentRelation(currentInvitation?.brideParentRelation || '김필래 · 이수윤 의 딸', boldParents)}
+                                {formatParentRelation(
+                                  currentInvitation?.brideParentRelation || '김필래 · 이수윤 의 딸',
+                                  currentInvitation?.customStyles?.brideParentNames,
+                                  currentInvitation?.customStyles?.brideParentRelationText
+                                )}
                               </span>
                             </div>
                             <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{currentInvitation?.brideName || '민주'}</span>

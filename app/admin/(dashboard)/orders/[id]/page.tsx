@@ -25,6 +25,18 @@ import { ChevronLeft, Save, Upload, Loader2, Plus, Trash2, Play, Pause, FileText
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
+const parseParentNames = (fullRelation: string) => {
+  if (!fullRelation) return ''
+  const match = fullRelation.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/)
+  return match ? match[1].trim() : fullRelation
+}
+
+const parseRelationText = (fullRelation: string) => {
+  if (!fullRelation) return ''
+  const match = fullRelation.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/)
+  return match ? match[2].trim() : ''
+}
+
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -686,15 +698,60 @@ export default function OrderDetailPage() {
                         />
                       </Field>
                     </div>
-                    <Field>
-                      <FieldLabel htmlFor="gr-relation">혼주 및 관계 표기</FieldLabel>
-                      <Input
-                        id="gr-relation"
-                        placeholder="예: 아버지 홍길동, 어머니 김영희의 장남"
-                        value={currentInvitation.groomParentRelation || ''}
-                        onChange={(e) => updateCurrentInvitation({ groomParentRelation: e.target.value })}
-                      />
-                    </Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field>
+                        <FieldLabel htmlFor="gr-parent-names">혼주 이름</FieldLabel>
+                        <Input
+                          id="gr-parent-names"
+                          placeholder="예: 아버지 홍길동 · 어머니 김영희"
+                          value={currentInvitation?.customStyles?.groomParentNames !== undefined 
+                            ? currentInvitation.customStyles.groomParentNames 
+                            : parseParentNames(currentInvitation?.groomParentRelation || '')}
+                          onChange={(e) => {
+                            const newNames = e.target.value;
+                            const curRelation = currentInvitation?.customStyles?.groomParentRelationText !== undefined
+                              ? currentInvitation.customStyles.groomParentRelationText
+                              : parseRelationText(currentInvitation?.groomParentRelation || '');
+                            
+                            const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
+                            updateCurrentInvitation({
+                              groomParentRelation: combined,
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                groomParentNames: newNames,
+                                groomParentRelationText: curRelation
+                              }
+                            });
+                          }}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="gr-relation-text">관계 표기</FieldLabel>
+                        <Input
+                          id="gr-relation-text"
+                          placeholder="예: 의 아들"
+                          value={currentInvitation?.customStyles?.groomParentRelationText !== undefined 
+                            ? currentInvitation.customStyles.groomParentRelationText 
+                            : parseRelationText(currentInvitation?.groomParentRelation || '')}
+                          onChange={(e) => {
+                            const newRelation = e.target.value;
+                            const curNames = currentInvitation?.customStyles?.groomParentNames !== undefined
+                              ? currentInvitation.customStyles.groomParentNames
+                              : parseParentNames(currentInvitation?.groomParentRelation || '');
+                            
+                            const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                            updateCurrentInvitation({
+                              groomParentRelation: combined,
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                groomParentNames: curNames,
+                                groomParentRelationText: newRelation
+                              }
+                            });
+                          }}
+                        />
+                      </Field>
+                    </div>
                   </div>
 
                   {/* Bride */}
@@ -718,15 +775,60 @@ export default function OrderDetailPage() {
                         />
                       </Field>
                     </div>
-                    <Field>
-                      <FieldLabel htmlFor="br-relation">혼주 및 관계 표기</FieldLabel>
-                      <Input
-                        id="br-relation"
-                        placeholder="예: 아버지 이철수, 어머니 박미경의 장녀"
-                        value={currentInvitation.brideParentRelation || ''}
-                        onChange={(e) => updateCurrentInvitation({ brideParentRelation: e.target.value })}
-                      />
-                    </Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field>
+                        <FieldLabel htmlFor="br-parent-names">혼주 이름</FieldLabel>
+                        <Input
+                          id="br-parent-names"
+                          placeholder="예: 아버지 이철수 · 어머니 박미경"
+                          value={currentInvitation?.customStyles?.brideParentNames !== undefined 
+                            ? currentInvitation.customStyles.brideParentNames 
+                            : parseParentNames(currentInvitation?.brideParentRelation || '')}
+                          onChange={(e) => {
+                            const newNames = e.target.value;
+                            const curRelation = currentInvitation?.customStyles?.brideParentRelationText !== undefined
+                              ? currentInvitation.customStyles.brideParentRelationText
+                              : parseRelationText(currentInvitation?.brideParentRelation || '');
+                            
+                            const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
+                            updateCurrentInvitation({
+                              brideParentRelation: combined,
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                brideParentNames: newNames,
+                                brideParentRelationText: curRelation
+                              }
+                            });
+                          }}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="br-relation-text">관계 표기</FieldLabel>
+                        <Input
+                          id="br-relation-text"
+                          placeholder="예: 의 장녀"
+                          value={currentInvitation?.customStyles?.brideParentRelationText !== undefined 
+                            ? currentInvitation.customStyles.brideParentRelationText 
+                            : parseRelationText(currentInvitation?.brideParentRelation || '')}
+                          onChange={(e) => {
+                            const newRelation = e.target.value;
+                            const curNames = currentInvitation?.customStyles?.brideParentNames !== undefined
+                              ? currentInvitation.customStyles.brideParentNames
+                              : parseParentNames(currentInvitation?.brideParentRelation || '');
+                            
+                            const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                            updateCurrentInvitation({
+                              brideParentRelation: combined,
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                brideParentNames: curNames,
+                                brideParentRelationText: newRelation
+                              }
+                            });
+                          }}
+                        />
+                      </Field>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -2646,25 +2748,7 @@ export default function OrderDetailPage() {
                     </div>
                   </div>
 
-                  <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm font-medium">인사말 혼주 이름 굵게 표시</Label>
-                      <p className="text-xs text-muted-foreground">Serene Blue 테마의 인사말 섹션 내에서 혼주의 이름만 굵은 글씨로 강조합니다.</p>
-                    </div>
-                    <Switch 
-                      checked={currentInvitation?.customStyles?.boldParentNames || false}
-                      onCheckedChange={(checked) => {
-                        updateCurrentInvitation({
-                          customStyles: {
-                            ...(currentInvitation?.customStyles || {}),
-                            boldParentNames: checked
-                          }
-                        })
-                      }}
-                    />
-                  </div>
                 </CardContent>
               </Card>
 

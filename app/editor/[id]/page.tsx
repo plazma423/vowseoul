@@ -22,6 +22,18 @@ const timeOptions = [
   '16:00', '16:30', '17:00', '17:30', '18:00'
 ]
 
+const parseParentNames = (fullRelation: string) => {
+  if (!fullRelation) return ''
+  const match = fullRelation.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/)
+  return match ? match[1].trim() : fullRelation
+}
+
+const parseRelationText = (fullRelation: string) => {
+  if (!fullRelation) return ''
+  const match = fullRelation.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/)
+  return match ? match[2].trim() : ''
+}
+
 export default function BasicInfoPage() {
   const router = useRouter()
   const params = useParams()
@@ -73,18 +85,64 @@ export default function BasicInfoPage() {
                 />
               </Field>
             </div>
-            <Field>
-              <FieldLabel htmlFor="groomParentRelation">혼주 관계</FieldLabel>
-              <Textarea
-                id="groomParentRelation"
-                placeholder="아버지 홍아버지, 어머니 김어머니의 장남"
-                rows={2}
-                value={currentInvitation?.groomParentRelation || ''}
-                onChange={(e) => updateCurrentInvitation({ groomParentRelation: e.target.value })}
-                onFocus={() => setActiveSection('hero')}
-              />
-              <FieldDescription>청첩장에 표시될 혼주 관계를 입력해주세요.</FieldDescription>
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="groomParentNames">혼주 이름</FieldLabel>
+                <Input
+                  id="groomParentNames"
+                  placeholder="아버지 홍길동 · 어머니 김순희"
+                  value={currentInvitation?.customStyles?.groomParentNames !== undefined 
+                    ? currentInvitation.customStyles.groomParentNames 
+                    : parseParentNames(currentInvitation?.groomParentRelation || '')}
+                  onChange={(e) => {
+                    const newNames = e.target.value;
+                    const curRelation = currentInvitation?.customStyles?.groomParentRelationText !== undefined
+                      ? currentInvitation.customStyles.groomParentRelationText
+                      : parseRelationText(currentInvitation?.groomParentRelation || '');
+                    
+                    const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
+                    updateCurrentInvitation({
+                      groomParentRelation: combined,
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        groomParentNames: newNames,
+                        groomParentRelationText: curRelation
+                      }
+                    });
+                  }}
+                  onFocus={() => setActiveSection('hero')}
+                />
+                <FieldDescription>혼주의 이름을 입력해주세요. (예: 아버지 홍길동 · 어머니 김순희)</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="groomParentRelationText">관계 표기</FieldLabel>
+                <Input
+                  id="groomParentRelationText"
+                  placeholder="의 아들"
+                  value={currentInvitation?.customStyles?.groomParentRelationText !== undefined 
+                    ? currentInvitation.customStyles.groomParentRelationText 
+                    : parseRelationText(currentInvitation?.groomParentRelation || '')}
+                  onChange={(e) => {
+                    const newRelation = e.target.value;
+                    const curNames = currentInvitation?.customStyles?.groomParentNames !== undefined
+                      ? currentInvitation.customStyles.groomParentNames
+                      : parseParentNames(currentInvitation?.groomParentRelation || '');
+                    
+                    const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                    updateCurrentInvitation({
+                      groomParentRelation: combined,
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        groomParentNames: curNames,
+                        groomParentRelationText: newRelation
+                      }
+                    });
+                  }}
+                  onFocus={() => setActiveSection('hero')}
+                />
+                <FieldDescription>신랑과의 관계를 입력해주세요. (예: 의 아들, 의 장남)</FieldDescription>
+              </Field>
+            </div>
           </FieldGroup>
         </CardContent>
       </Card>
@@ -119,18 +177,64 @@ export default function BasicInfoPage() {
                 />
               </Field>
             </div>
-            <Field>
-              <FieldLabel htmlFor="brideParentRelation">혼주 관계</FieldLabel>
-              <Textarea
-                id="brideParentRelation"
-                placeholder="아버지 김아버지, 어머니 박어머니의 차녀"
-                rows={2}
-                value={currentInvitation?.brideParentRelation || ''}
-                onChange={(e) => updateCurrentInvitation({ brideParentRelation: e.target.value })}
-                onFocus={() => setActiveSection('hero')}
-              />
-              <FieldDescription>청첩장에 표시될 혼주 관계를 입력해주세요.</FieldDescription>
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="brideParentNames">혼주 이름</FieldLabel>
+                <Input
+                  id="brideParentNames"
+                  placeholder="아버지 김철수 · 어머니 박미경"
+                  value={currentInvitation?.customStyles?.brideParentNames !== undefined 
+                    ? currentInvitation.customStyles.brideParentNames 
+                    : parseParentNames(currentInvitation?.brideParentRelation || '')}
+                  onChange={(e) => {
+                    const newNames = e.target.value;
+                    const curRelation = currentInvitation?.customStyles?.brideParentRelationText !== undefined
+                      ? currentInvitation.customStyles.brideParentRelationText
+                      : parseRelationText(currentInvitation?.brideParentRelation || '');
+                    
+                    const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
+                    updateCurrentInvitation({
+                      brideParentRelation: combined,
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        brideParentNames: newNames,
+                        brideParentRelationText: curRelation
+                      }
+                    });
+                  }}
+                  onFocus={() => setActiveSection('hero')}
+                />
+                <FieldDescription>혼주의 이름을 입력해주세요. (예: 아버지 김철수 · 어머니 박미경)</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="brideParentRelationText">관계 표기</FieldLabel>
+                <Input
+                  id="brideParentRelationText"
+                  placeholder="의 딸"
+                  value={currentInvitation?.customStyles?.brideParentRelationText !== undefined 
+                    ? currentInvitation.customStyles.brideParentRelationText 
+                    : parseRelationText(currentInvitation?.brideParentRelation || '')}
+                  onChange={(e) => {
+                    const newRelation = e.target.value;
+                    const curNames = currentInvitation?.customStyles?.brideParentNames !== undefined
+                      ? currentInvitation.customStyles.brideParentNames
+                      : parseParentNames(currentInvitation?.brideParentRelation || '');
+                    
+                    const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                    updateCurrentInvitation({
+                      brideParentRelation: combined,
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        brideParentNames: curNames,
+                        brideParentRelationText: newRelation
+                      }
+                    });
+                  }}
+                  onFocus={() => setActiveSection('hero')}
+                />
+                <FieldDescription>신부와의 관계를 입력해주세요. (예: 의 딸, 의 차녀)</FieldDescription>
+              </Field>
+            </div>
           </FieldGroup>
         </CardContent>
       </Card>

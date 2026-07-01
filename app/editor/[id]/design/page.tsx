@@ -588,25 +588,7 @@ export default function DesignPage() {
 
           <hr className="border-muted/50" />
 
-          {/* 인사말 혼주 이름 볼드 처리 */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="bold-parents-toggle" className="text-sm font-medium">인사말 혼주 이름 굵게 표시</Label>
-              <p className="text-xs text-muted-foreground">Serene Blue 테마의 인사말 섹션 내에서 혼주의 이름만 굵은 글씨로 강조합니다.</p>
-            </div>
-            <Switch 
-              id="bold-parents-toggle"
-              checked={currentInvitation?.customStyles?.boldParentNames || false}
-              onCheckedChange={(checked) => {
-                updateCurrentInvitation({
-                  customStyles: {
-                    ...(currentInvitation?.customStyles || {}),
-                    boldParentNames: checked
-                  }
-                })
-              }}
-            />
-          </div>
+
         </CardContent>
       </Card>
 

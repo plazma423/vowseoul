@@ -51,9 +51,16 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
-const formatParentRelation = (relationStr: string, isBold: boolean) => {
+const formatParentRelation = (relationStr: string, parentNames?: string, relationText?: string) => {
+  if (parentNames !== undefined && relationText !== undefined) {
+    return (
+      <span>
+        <strong className="font-semibold">{parentNames}</strong>
+        {relationText ? ` ${relationText}` : ''}
+      </span>
+    );
+  }
   if (!relationStr) return '';
-  if (!isBold) return relationStr;
   const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
   if (match) {
     return (
@@ -62,7 +69,7 @@ const formatParentRelation = (relationStr: string, isBold: boolean) => {
       </span>
     );
   }
-  return relationStr;
+  return <strong className="font-semibold">{relationStr}</strong>;
 };
 
 export default function InvitationClient({ 
@@ -915,7 +922,13 @@ export default function InvitationClient({
                       <div className="space-y-4 text-left px-4 w-full">
                         <div className="space-y-1">
                           {invitation.groomParentRelation && (
-                            <p className="text-xs opacity-75">{invitation.groomParentRelation}</p>
+                            <p className="text-xs opacity-75">
+                              {formatParentRelation(
+                                invitation.groomParentRelation,
+                                invitation.customStyles?.groomParentNames,
+                                invitation.customStyles?.groomParentRelationText
+                              )}
+                            </p>
                           )}
                           <h1 
                             className="text-3xl font-light tracking-wide"
@@ -930,7 +943,13 @@ export default function InvitationClient({
                         {heroConnector !== 'none' && <div className="text-xl font-light opacity-60" style={{ color: accentColor }}>{heroConnector}</div>}
                         <div className="space-y-1">
                           {invitation.brideParentRelation && (
-                            <p className="text-xs opacity-75">{invitation.brideParentRelation}</p>
+                            <p className="text-xs opacity-75">
+                              {formatParentRelation(
+                                invitation.brideParentRelation,
+                                invitation.customStyles?.brideParentNames,
+                                invitation.customStyles?.brideParentRelationText
+                              )}
+                            </p>
                           )}
                           <h1 
                             className="text-3xl font-light tracking-wide"
@@ -971,7 +990,13 @@ export default function InvitationClient({
                       <div className="space-y-4">
                         <div className="space-y-1">
                           {invitation.groomParentRelation && (
-                            <p className="text-xs opacity-75">{invitation.groomParentRelation}</p>
+                            <p className="text-xs opacity-75">
+                              {formatParentRelation(
+                                invitation.groomParentRelation,
+                                invitation.customStyles?.groomParentNames,
+                                invitation.customStyles?.groomParentRelationText
+                              )}
+                            </p>
                           )}
                           <h1 
                             className="text-3xl font-light tracking-wide"
@@ -986,7 +1011,13 @@ export default function InvitationClient({
                         {heroConnector !== 'none' && <div className="text-xl font-light opacity-60 font-light" style={{ color: accentColor }}>{heroConnector}</div>}
                         <div className="space-y-1">
                           {invitation.brideParentRelation && (
-                            <p className="text-xs opacity-75">{invitation.brideParentRelation}</p>
+                            <p className="text-xs opacity-75">
+                              {formatParentRelation(
+                                invitation.brideParentRelation,
+                                invitation.customStyles?.brideParentNames,
+                                invitation.customStyles?.brideParentRelationText
+                              )}
+                            </p>
                           )}
                           <h1 
                             className="text-3xl font-light tracking-wide"
@@ -1025,7 +1056,6 @@ export default function InvitationClient({
 
             case 'greeting':
               if (isSereneBlue) {
-                const boldParents = invitation?.customStyles?.boldParentNames || false
                 return (
                   <section 
                     key="greeting" 
@@ -1038,7 +1068,11 @@ export default function InvitationClient({
                         <div className="text-left">
                           <span className="text-[9px] opacity-60 block tracking-widest font-mono">GROOM</span>
                           <span className="tracking-wide">
-                            {formatParentRelation(invitation?.groomParentRelation || '김태진 · 정혜선 의 아들', boldParents)}
+                            {formatParentRelation(
+                              invitation?.groomParentRelation || '김태진 · 정혜선 의 아들',
+                              invitation?.customStyles?.groomParentNames,
+                              invitation?.customStyles?.groomParentRelationText
+                            )}
                           </span>
                         </div>
                         <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{invitation?.groomName || '혁'}</span>
@@ -1047,7 +1081,11 @@ export default function InvitationClient({
                         <div className="text-left">
                           <span className="text-[9px] opacity-60 block tracking-widest font-mono">BRIDE</span>
                           <span className="tracking-wide">
-                            {formatParentRelation(invitation?.brideParentRelation || '김필래 · 이수윤 의 딸', boldParents)}
+                            {formatParentRelation(
+                              invitation?.brideParentRelation || '김필래 · 이수윤 의 딸',
+                              invitation?.customStyles?.brideParentNames,
+                              invitation?.customStyles?.brideParentRelationText
+                            )}
                           </span>
                         </div>
                         <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{invitation?.brideName || '민주'}</span>
