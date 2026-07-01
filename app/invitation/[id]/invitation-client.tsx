@@ -458,6 +458,7 @@ export default function InvitationClient({
 
   const isDuotone = theme?.id === 'duotone-contrast' || themeStyles.duotoneEnabled === true
   const isSereneBlue = theme?.id === 'serene-blue'
+  const isConcept5 = theme?.id === 'concept5'
   
   let color1 = '#CCECFF'
   let color2 = '#361623'
@@ -758,6 +759,69 @@ export default function InvitationClient({
               const heroInfoFont = themeStyles.heroInfoFont || fontEn
               const heroInfoGroomBrideSize = parseInt(themeStyles.heroInfoGroomBrideSize?.toString() || '16')
               const heroInfoDetailsSize = parseInt(themeStyles.heroInfoDetailsSize?.toString() || '11')
+              if (isConcept5) {
+                let formattedDate = 'MAY 7, 2028'
+                if (invitation?.weddingDate) {
+                  try {
+                    const d = new Date(invitation.weddingDate + 'T00:00:00')
+                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+                    formattedDate = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+                  } catch (e) {}
+                }
+
+                const timeStr = invitation?.weddingTime || '11:00 AM'
+                const venueStr = invitation?.venueName || 'VOW SEOUL GRAND HALL'
+                const groomEn = invitation?.groomNameEn || 'Sunghoon'
+                const brideEn = invitation?.brideNameEn || 'Jihye'
+
+                return (
+                  <div 
+                    key="hero" 
+                    id="preview-section-hero" 
+                    className="relative min-h-[640px] flex flex-col items-center justify-between text-center overflow-hidden pb-12 pt-16 bg-[#EFD0D0] text-black"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    {/* Semi-circle Top Decorative Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-12 bg-white rounded-b-full z-10" />
+
+                    {/* Title: You're Invited To Our Wedding! */}
+                    <div className="z-10 mt-6 px-4">
+                      <h1 className="text-[25px] font-normal leading-[1.2] text-[#1a1a1a]" style={{ fontFamily: "'Goudy Bookletter 1911', serif", textTransform: 'capitalize' }}>
+                        You&apos;re Invited<br />To Our Wedding!
+                      </h1>
+                    </div>
+
+                    {/* Polaroid Photo Card */}
+                    <div className="z-10 my-6 bg-white p-4 pb-5 shadow-[5px_5px_15px_rgba(0,0,0,0.15)] flex flex-col items-center w-[250px] transition-transform hover:scale-[1.02] duration-300">
+                      <div className="w-[218px] h-[260px] overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {invitation?.mainImage ? (
+                          <img
+                            src={invitation.mainImage}
+                            alt="Polaroid Main Visual"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center opacity-40 text-xs gap-1">
+                            <span className="font-serif">VOW SEOUL</span>
+                            <span>사진을 등록해주세요</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Signature Names */}
+                      <div className="mt-4 text-2xl font-normal text-black italic lowercase" style={{ fontFamily: "'Nothing You Could Do', cursive" }}>
+                        {groomEn} &amp; {brideEn}
+                      </div>
+                    </div>
+
+                    {/* Bottom Information */}
+                    <div className="z-10 text-center space-y-1.5 px-4 font-serif text-[#686868] text-xs tracking-wider" style={{ fontFamily: "'Goudy Bookletter 1911', serif" }}>
+                      <p className="uppercase text-sm font-semibold tracking-widest text-black">{venueStr}</p>
+                      <p className="uppercase text-[11px]">{formattedDate}. {timeStr}</p>
+                    </div>
+                  </div>
+                )
+              }
+
               if (isSereneBlue) {
                 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                 let dateStr = '2026. 09. 19 (토) 오후 5시'
@@ -1081,6 +1145,87 @@ export default function InvitationClient({
               )
 
             case 'greeting':
+              if (isConcept5) {
+                const groomFather = invitation?.customStyles?.groomFatherName || '박태수'
+                const groomMother = invitation?.customStyles?.groomMotherName || '선우명희'
+                const brideFather = invitation?.customStyles?.brideFatherName || '이훈'
+                const brideMother = invitation?.customStyles?.brideMotherName || '최현숙'
+
+                return (
+                  <section 
+                    key="greeting" 
+                    className="relative pb-16 pt-0 text-center overflow-hidden bg-[#EFD0D0] text-white animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    {/* Diagonal Slanted White Bar */}
+                    <div className="w-[120%] h-12 bg-white -rotate-[7.63deg] -translate-x-[10%] mb-12 shadow-sm" />
+
+                    {/* Invitation Text */}
+                    <div className="px-6 max-w-[340px] mx-auto text-sm leading-[2.0] font-medium whitespace-pre-line text-white/90">
+                      {invitation?.invitationMessage || 
+                       '사랑으로 하나 된 두 사람이\n서로를 이해하며 한 길을 걸어가려 합니다.\n귀한 발걸음으로 저희의 출발을\n함께 축복해 주시기 바랍니다.'}
+                    </div>
+
+                    {/* Profile Photos */}
+                    <div className="flex gap-4 justify-center items-center my-10 px-4">
+                      <div className="w-[110px] h-[110px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
+                        {invitation?.customStyles?.groomImage ? (
+                          <img
+                            src={invitation.customStyles.groomImage}
+                            alt="Groom Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">신랑 사진</div>
+                        )}
+                      </div>
+                      <div className="w-[110px] h-[110px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
+                        {invitation?.customStyles?.brideImage ? (
+                          <img
+                            src={invitation.customStyles.brideImage}
+                            alt="Bride Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">신부 사진</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Spouses & Parents Info */}
+                    <div className="grid grid-cols-2 gap-8 text-center text-white max-w-[300px] mx-auto mt-6">
+                      {/* Groom side */}
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <span className="text-[12px] opacity-60 block">신랑</span>
+                          <h3 className="text-[20px] font-medium">{invitation?.groomName || '박성훈'}</h3>
+                        </div>
+                        <div className="h-px bg-white/20 w-8 mx-auto" />
+                        <div className="space-y-1.5 text-[13px] opacity-90">
+                          <span className="text-[10px] opacity-60 block">신랑 측 혼주</span>
+                          <p><span className="text-[10px] opacity-50 mr-1">아버지</span>{groomFather}</p>
+                          <p><span className="text-[10px] opacity-50 mr-1">어머니</span>{groomMother}</p>
+                        </div>
+                      </div>
+
+                      {/* Bride side */}
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <span className="text-[12px] opacity-60 block">신부</span>
+                          <h3 className="text-[20px] font-medium">{invitation?.brideName || '이지혜'}</h3>
+                        </div>
+                        <div className="h-px bg-white/20 w-8 mx-auto" />
+                        <div className="space-y-1.5 text-[13px] opacity-90">
+                          <span className="text-[10px] opacity-60 block">신부 측 혼주</span>
+                          <p><span className="text-[10px] opacity-50 mr-1">아버지</span>{brideFather}</p>
+                          <p><span className="text-[10px] opacity-50 mr-1">어머니</span>{brideMother}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )
+              }
+
               if (isSereneBlue) {
                 return (
                   <section 
@@ -1189,6 +1334,37 @@ export default function InvitationClient({
                 { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
               ]
 
+              if (isConcept5) {
+                return (
+                  <section 
+                    key="sequence" 
+                    className="py-16 px-6 bg-[#EFD0D0] text-white text-center animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    <h4 className="text-[14px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>WEDDING ORDER</h4>
+                    <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>식순 안내</h3>
+
+                    <div className="max-w-[320px] mx-auto border-t border-b border-white/80">
+                      {sequenceEvents.map((event: any, i: number) => (
+                        <div 
+                          key={event.id} 
+                          className="flex border-b border-white/40 last:border-b-0 items-stretch"
+                        >
+                          {/* Time Column */}
+                          <div className="w-[90px] py-3 text-center text-sm font-light text-white/90 border-r border-white/40 flex items-center justify-center font-mono">
+                            {event.time}
+                          </div>
+                          {/* Event Title Column */}
+                          <div className="flex-1 py-3 px-4 text-left text-sm text-white flex items-center">
+                            {event.title}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )
+              }
+
               if (isSereneBlue) {
                 return (
                   <section 
@@ -1238,6 +1414,30 @@ export default function InvitationClient({
               )
 
             case 'gallery':
+              if (isConcept5) {
+                return (
+                  <section 
+                    key="gallery" 
+                    className="py-16 px-0 bg-[#EFD0D0] text-white text-center overflow-hidden animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    <h4 className="text-[18px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>GALLERY</h4>
+                    <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>갤러리</h3>
+
+                    <div className="w-full overflow-x-auto flex gap-4 snap-x scrollbar-hide pb-2 px-6">
+                      {invitation.galleryImages.map((img: string, idx: number) => (
+                        <div 
+                          key={idx} 
+                          className="w-[164px] h-[218px] flex-shrink-0 snap-center overflow-hidden bg-white/20 border border-white/10 shadow-[5px_5px_15px_rgba(0,0,0,0.1)] rounded-sm"
+                        >
+                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )
+              }
+
               if (!invitation.galleryImages || invitation.galleryImages.length === 0) return null
               const isSlide = invitation?.galleryViewType === 'slide'
               const galleryAlign = invitation?.customStyles?.galleryAlign || 'center'
@@ -1268,6 +1468,83 @@ export default function InvitationClient({
             case 'calendar':
               if (!invitation.weddingDate) return null
               const ddayEnabled = invitation.customStyles?.ddayEnabled ?? false
+
+              if (isConcept5) {
+                const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+                const d = invitation?.weddingDate ? new Date(invitation.weddingDate + 'T00:00:00') : new Date()
+                const monthName = months[d.getMonth()]
+
+                return (
+                  <section 
+                    key="calendar" 
+                    className="py-16 px-6 bg-white text-[#D59B9B] text-center animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    <h4 className="text-[14px] uppercase tracking-widest text-[#D59B9B]/60 mb-2" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>Calendar</h4>
+                    
+                    <div className="max-w-[320px] mx-auto bg-white p-4">
+                      {/* Month Heading */}
+                      <div className="text-center mb-6">
+                        <p className="text-xl font-medium tracking-widest text-[#D59B9B] uppercase font-serif">
+                          {monthName}
+                        </p>
+                      </div>
+                      
+                      {/* Calendar Grid */}
+                      <div className="grid grid-cols-7 gap-y-3 text-center text-xs font-medium text-[#D59B9B]/80">
+                        {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                          <div key={day} className="py-1 opacity-50 font-semibold">{day}</div>
+                        ))}
+                        {calDays.map((day, i) => {
+                          if (day === null) return <div key={`empty-${i}`} />
+                          const isWeddingDay = day === calDay
+                          
+                          if (isWeddingDay) {
+                            return (
+                              <div
+                                key={i}
+                                className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10 bg-[#D76C6C]"
+                              >
+                                {day}
+                              </div>
+                            )
+                          }
+                          
+                          return (
+                            <div
+                              key={i}
+                              className="py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto text-center"
+                            >
+                              {day}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Concept 5 D-day Timer */}
+                    {ddayEnabled && (
+                      <div className="mt-12 pt-8 border-t border-[#EFD0D0] text-center space-y-5">
+                        <p className="text-[14px] uppercase tracking-[0.1em] font-semibold text-[#D59B9B]">Days left</p>
+                        <div className="flex justify-center items-center gap-10 max-w-[280px] mx-auto text-[#D59B9B]">
+                          <div className="flex flex-col items-center">
+                            <p className="text-[14px] tracking-wider opacity-60">DAYS</p>
+                            <p className="text-[36px] font-normal mt-1 leading-none">{timeLeft.days}</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <p className="text-[14px] tracking-wider opacity-60">HOURS</p>
+                            <p className="text-[36px] font-normal mt-1 leading-none">{timeLeft.hours}</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <p className="text-[14px] tracking-wider opacity-60">MINUTES</p>
+                            <p className="text-[36px] font-normal mt-1 leading-none">{timeLeft.minutes}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )
+              }
 
               if (isSereneBlue) {
                 return (
@@ -1511,6 +1788,60 @@ export default function InvitationClient({
               )
 
             case 'location':
+              if (isConcept5) {
+                return (
+                  <section 
+                    key="location" 
+                    className="py-16 px-6 bg-[#EFD0D0] text-white animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    <h4 className="text-[18px] uppercase tracking-widest text-center text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>LOCATION</h4>
+                    <h3 className="text-lg font-bold text-center mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>식장 위치</h3>
+
+                    {/* White Address Card */}
+                    <div 
+                      className="bg-white p-6 text-center space-y-2 border border-white/10 shadow-[5px_5px_15px_rgba(0,0,0,0.05)] mb-6 cursor-pointer hover:bg-white/95 transition-colors"
+                      onClick={() => {
+                        if (invitation?.venueAddress) {
+                          copyToClipboard(invitation.venueAddress, 'address')
+                        }
+                      }}
+                    >
+                      <h3 className="font-semibold text-lg tracking-wide text-[#D76C6C]">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                      <p className="text-xs text-[#D76C6C]/80">{invitation?.venueHall || '그랜드홀'}</p>
+                      <p className="text-sm font-medium text-[#D76C6C] mt-2">{invitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
+                      <p className="text-[10px] text-[#D76C6C]/60 mt-1">터치하여 주소 복사</p>
+                    </div>
+
+                    {/* Map View */}
+                    {invitation?.customStyles?.mapEnabled !== false && (
+                      <div className="mb-6 px-0">
+                        <NaverMap 
+                          address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
+                          venueName={invitation?.venueName || '웨딩홀'} 
+                        />
+                      </div>
+                    )}
+
+                    {/* Traffic & Parking Info */}
+                    <div className="space-y-4 text-xs text-left text-white/90 leading-relaxed">
+                      {invitation?.trafficInfo && (
+                        <div>
+                          <p className="font-semibold text-white">대중교통 안내</p>
+                          <p className="whitespace-pre-line mt-1">{invitation.trafficInfo}</p>
+                        </div>
+                      )}
+                      {invitation?.parkingInfo && (
+                        <div>
+                          <p className="font-semibold text-white">주차 안내</p>
+                          <p className="whitespace-pre-line mt-1">{invitation.parkingInfo}</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )
+              }
+
               if (isSereneBlue) {
                 return (
                   <section 
@@ -1716,6 +2047,46 @@ export default function InvitationClient({
               const accountsList = invitation.bankAccounts || []
               const groomAccounts = accountsList.filter((acc: any) => acc.relation === 'groom' || acc.relation === 'groomParent')
               const brideAccounts = accountsList.filter((acc: any) => acc.relation === 'bride' || acc.relation === 'brideParent')
+
+              if (isConcept5) {
+                return (
+                  <section 
+                    key="account" 
+                    className="py-16 px-6 bg-[#EFD0D0] text-white text-center animate-fade-in"
+                    style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                  >
+                    <h4 className="text-[18px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>ACCOUNT</h4>
+                    <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>마음 전하실 곳</h3>
+
+                    <div className="max-w-[320px] mx-auto border-t border-white/60 divide-y divide-white/40 text-left">
+                      {accountsList.map((account: any) => {
+                        const relationLabel = 
+                          account.relation === 'groom' ? '신랑' :
+                          account.relation === 'bride' ? '신부' :
+                          account.relation === 'groomParent' ? '신랑 혼주' :
+                          account.relation === 'brideParent' ? '신부 혼주' : '계좌';
+                        
+                        return (
+                          <div 
+                            key={account.id} 
+                            className="py-4 px-2 flex justify-between items-start cursor-pointer hover:bg-white/10 transition-colors"
+                            onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`, 'account')}
+                          >
+                            <div className="space-y-1">
+                              <span className="text-[10px] uppercase tracking-wider text-white/70 block">{relationLabel}</span>
+                              <p className="text-sm font-semibold tracking-wide">{account.bank} {account.accountNumber}</p>
+                              <p className="text-[10px] text-white/50">터치하여 계좌번호 복사</p>
+                            </div>
+                            <div className="text-right flex flex-col justify-between h-full pt-1.5">
+                              <span className="text-sm font-bold">{account.accountHolder}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              }
 
               if (isSereneBlue) {
                 return (

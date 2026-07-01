@@ -552,6 +552,35 @@ export const sampleThemes: Theme[] = [
       heroStyle: 'center'
     }
   },
+  {
+    id: 'concept5',
+    name: 'Concept 5',
+    thumbnail: '/themes/concept5.jpg',
+    tags: ['핑크', '감성', '피그마 시안'],
+    colorSets: [
+      { id: 'warm-pink', name: 'Warm Pink', colors: ['#EFD0D0', '#D76C6C', '#FFFFFF'] }
+    ],
+    fontSets: [
+      { id: 'goudy-radio', name: 'Goudy & Radio Canada', fonts: ['Radio Canada Big', 'Goudy Bookletter 1911', 'Nothing You Could Do'] }
+    ],
+    layout: 'classic',
+    styles: {
+      fontSizeBase: '14px',
+      fontSize: '14px',
+      letterSpacing: '-0.02em',
+      primaryColor: '#D76C6C',
+      backgroundColor: '#EFD0D0',
+      textColor: '#FFFFFF',
+      secondaryColor: '#EFD0D0',
+      secondaryTextColor: '#FFFFFF',
+      borderRadius: '0px',
+      sectionSpacing: 'py-16',
+      cardBg: 'bg-white',
+      cardShadow: 'shadow-none',
+      dividerType: 'none',
+      heroStyle: 'center'
+    }
+  },
 ]
 
 export const sampleBGMs: BGM[] = [
