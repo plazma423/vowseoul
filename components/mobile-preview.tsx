@@ -37,6 +37,20 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
+const formatParentRelation = (relationStr: string, isBold: boolean) => {
+  if (!relationStr) return '';
+  if (!isBold) return relationStr;
+  const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
+  if (match) {
+    return (
+      <span>
+        <strong className="font-semibold">{match[1]}</strong>{match[2]}
+      </span>
+    );
+  }
+  return relationStr;
+};
+
 export function MobilePreview({ className, isSticky = true }: { className?: string; isSticky?: boolean }) {
   const { currentInvitation, themes, activeSection } = useAppStore()
   const [customFonts, setCustomFonts] = useState<any[]>([])
@@ -104,7 +118,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const fontSet = theme?.fontSets?.find(f => f.id === currentInvitation?.fontSet) || theme?.fontSets?.[0]
   
   // Styles with fallbacks
-  const themeStyles = {
+  const themeStyles: any = {
     ...theme?.styles,
     ...(currentInvitation?.customStyles || {})
   }
@@ -146,8 +160,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const heroConnector = themeStyles.heroConnector === 'none_clear' ? '&' : (themeStyles.heroConnector || '&')
   const accountLayout = themeStyles.accountLayout || '1col'
 
-  const fontKr = currentInvitation?.customStyles?.fontKr || fontSet?.fonts?.[0] || theme?.styles?.fontKr || 'font-serif'
-  const fontEn = currentInvitation?.customStyles?.fontEn || fontSet?.fonts?.[1] || theme?.styles?.fontEn || 'font-serif'
+  const fontKr = currentInvitation?.customStyles?.fontKr || fontSet?.fonts?.[0] || (theme?.styles as any)?.fontKr || 'font-serif'
+  const fontEn = currentInvitation?.customStyles?.fontEn || fontSet?.fonts?.[1] || (theme?.styles as any)?.fontEn || 'font-serif'
 
   const getSectionColors = (sectionId: string, index: number) => {
     if (!isDuotone) {
@@ -286,6 +300,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
     const italicKr = headerSettings.italicKr ?? false
     const boldEn = headerSettings.boldEn ?? false
     const boldKr = headerSettings.boldKr ?? true
+    const colorEn = headerSettings.colorEn || undefined
+    const colorKr = headerSettings.colorKr || undefined
 
     return (
       <div className={cn("text-center", extraMb, px)}>
@@ -297,7 +313,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
           )}
           style={{ 
             fontFamily: getFontFamily(fontKrVal, fontEnVal),
-            fontSize: `${sizeEn}px`
+            fontSize: `${sizeEn}px`,
+            color: colorEn
           }}
         >
           {titleEn}
@@ -306,12 +323,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
           className={cn(
             "tracking-[0.2em] uppercase mt-1.5 font-sans",
             italicKr && "italic",
-            boldKr ? "font-semibold" : "font-medium",
-            "opacity-55"
+            boldKr ? "font-semibold" : "font-medium"
           )}
           style={{ 
             fontFamily: getFontFamily(fontKrVal, fontEnVal),
-            fontSize: `${sizeKr}px`
+            fontSize: `${sizeKr}px`,
+            color: colorKr,
+            opacity: colorKr ? 1 : 0.55
           }}
         >
           {titleKr}
@@ -339,6 +357,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
               if (fontKr) fonts.add(fontKr)
               if (fontEn) fonts.add(fontEn)
               if (themeStyles.heroSubtitleFont) fonts.add(themeStyles.heroSubtitleFont)
+              if (themeStyles.heroInfoFont) fonts.add(themeStyles.heroInfoFont)
+              if (themeStyles.sectionHeaders) {
+                Object.values(themeStyles.sectionHeaders).forEach((s: any) => {
+                  if (s.fontEn) fonts.add(s.fontEn)
+                  if (s.fontKr) fonts.add(s.fontKr)
+                })
+              }
 
               const googleFontsMap: Record<string, string[]> = {
                 'Cormorant': ['Cormorant:ital,wght@0,300..700;1,300..700'],
@@ -402,7 +427,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
           <div className={cn("text-center select-none", fontClass, isDuotone ? "" : "pb-12")} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
             
-            {sectionOrder.map((sectionId, idx) => {
+            {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
               // Layout-specific styling rules
               const isMinimal = theme.layout === 'minimal'
               const isGrid = theme.layout === 'grid'
@@ -443,6 +468,9 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
               const sectionElement = (() => { switch (sectionId) {
                 case 'hero':
+                  const heroInfoFont = themeStyles.heroInfoFont || fontEn
+                  const heroInfoGroomBrideSize = themeStyles.heroInfoGroomBrideSize ?? 16
+                  const heroInfoDetailsSize = themeStyles.heroInfoDetailsSize ?? 11
                   if (isSereneBlue) {
                     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                     let dateStr = '2026. 09. 19 (토) 오후 5시'
@@ -495,14 +523,26 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         {/* Bottom Information */}
                         <div className="relative z-20 space-y-6 px-6">
                           {/* Groom & Bride Name horizontally centered */}
-                          <div className="text-base font-medium tracking-widest flex items-center justify-center gap-3">
+                          <div 
+                            className="text-base font-medium tracking-widest flex items-center justify-center gap-3"
+                            style={{
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoGroomBrideSize}px`
+                            }}
+                          >
                             <span>{currentInvitation?.groomName || '김혁'}</span>
                             <span className="opacity-60 text-xs italic font-serif">&amp;</span>
                             <span>{currentInvitation?.brideName || '김민주'}</span>
                           </div>
                           
                           {/* Date and Venue */}
-                          <div className="text-[11px] leading-relaxed tracking-wider opacity-90" style={{ fontFamily: "'Source Serif Pro', serif" }}>
+                          <div 
+                            className="text-[11px] leading-relaxed tracking-wider opacity-90" 
+                            style={{ 
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoDetailsSize}px`
+                            }}
+                          >
                             <p>{dateStr}</p>
                             <p className="mt-0.5">{currentInvitation?.weddingTime || '오후 5시'} | {currentInvitation?.venueName || '춘천 스카이컨벤션 4층 스카이홀'}</p>
                           </div>
@@ -569,14 +609,26 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         )}
                         
                         {/* Groom & Bride names */}
-                        <div className="flex items-center justify-center gap-4 text-sm font-light tracking-wide mt-1">
+                        <div 
+                          className="flex items-center justify-center gap-4 text-sm font-light tracking-wide mt-1"
+                          style={{
+                            fontFamily: getFontFamily(fontKr, heroInfoFont),
+                            fontSize: `${heroInfoGroomBrideSize}px`
+                          }}
+                        >
                           <span>{currentInvitation?.groomName || '신랑'}</span>
                           <span className="opacity-60 text-xs font-serif">&amp;</span>
                           <span>{currentInvitation?.brideName || '신부'}</span>
                         </div>
                         
                         {/* Details */}
-                        <div className="space-y-1 opacity-85 text-[10px] tracking-wide pt-3 border-t border-current/10 w-full max-w-[200px] mx-auto mb-2">
+                        <div 
+                          className="space-y-1 opacity-85 text-[10px] tracking-wide pt-3 border-t border-current/10 w-full max-w-[200px] mx-auto mb-2"
+                          style={{
+                            fontFamily: getFontFamily(fontKr, heroInfoFont),
+                            fontSize: `${heroInfoDetailsSize}px`
+                          }}
+                        >
                           <p className="uppercase truncate">
                             {currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}
                           </p>
@@ -613,7 +665,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               {currentInvitation?.groomParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-light tracking-wide">
+                              <h1 
+                                className="text-2xl font-light tracking-wide"
+                                style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize}px`
+                                }}
+                              >
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
@@ -622,20 +680,38 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               {currentInvitation?.brideParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-light tracking-wide">
+                              <h1 
+                                className="text-2xl font-light tracking-wide"
+                                style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize}px`
+                                }}
+                              >
                                 {currentInvitation?.brideName || '신부'}
                               </h1>
                             </div>
                           </div>
                         ) : heroStyle === 'classic' ? (
                           <div className="space-y-4 text-center w-full">
-                            <h1 className="text-3xl font-light tracking-widest uppercase">
+                            <h1 
+                              className="text-3xl font-light tracking-widest uppercase"
+                              style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize * 1.2}px`
+                              }}
+                            >
                               {currentInvitation?.groomNameEn || 'GROOM'}
                               {heroConnector !== 'none' && <span className="block text-sm opacity-55 my-1" style={{ color: sectColors.accent }}>{heroConnector}</span>}
                               {currentInvitation?.brideNameEn || 'BRIDE'}
                             </h1>
                             <div className="w-8 h-px bg-current opacity-30 mx-auto" />
-                            <p className="text-sm tracking-wide">
+                            <p 
+                              className="text-sm tracking-wide"
+                              style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize}px`
+                              }}
+                            >
                               {currentInvitation?.groomName || '신랑'} · {currentInvitation?.brideName || '신부'}
                             </p>
                           </div>
@@ -646,7 +722,13 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               {currentInvitation?.groomParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.groomParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-light tracking-wide">
+                              <h1 
+                                className="text-2xl font-light tracking-wide"
+                                style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize}px`
+                                }}
+                              >
                                 {currentInvitation?.groomName || '신랑'}
                               </h1>
                             </div>
@@ -655,14 +737,26 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               {currentInvitation?.brideParentRelation && (
                                 <p className="text-[10px] opacity-75">{currentInvitation.brideParentRelation}</p>
                               )}
-                              <h1 className="text-2xl font-light tracking-wide">
+                              <h1 
+                                className="text-2xl font-light tracking-wide"
+                                style={{
+                                  fontFamily: getFontFamily(fontKr, heroInfoFont),
+                                  fontSize: `${heroInfoGroomBrideSize}px`
+                                }}
+                              >
                                 {currentInvitation?.brideName || '신부'}
                               </h1>
                             </div>
                           </div>
                         )}
 
-                        <div className="space-y-1 opacity-80 text-xs pt-4 border-t border-current/10 max-w-[180px] mx-auto">
+                        <div 
+                          className="space-y-1 opacity-80 text-xs pt-4 border-t border-current/10 max-w-[180px] mx-auto"
+                          style={{
+                            fontFamily: getFontFamily(fontKr, heroInfoFont),
+                            fontSize: `${heroInfoDetailsSize}px`
+                          }}
+                        >
                           <p>
                             {currentInvitation?.weddingDate ? (
                               format(new Date(currentInvitation.weddingDate + 'T00:00:00'), 'yyyy년 MM월 dd일 (EEEE)', { locale: ko })
@@ -680,6 +774,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 
                 case 'greeting':
                   if (isSereneBlue) {
+                    const boldParents = currentInvitation?.customStyles?.boldParentNames || false
                     return (
                       <section 
                         key="greeting" 
@@ -693,24 +788,27 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             <div className="text-left">
                               <span className="text-[9px] opacity-60 block tracking-widest font-mono">GROOM</span>
                               <span className="tracking-wide">
-                                {currentInvitation?.groomParentRelation || '김태진 · 정혜선 의 아들'}
+                                {formatParentRelation(currentInvitation?.groomParentRelation || '김태진 · 정혜선 의 아들', boldParents)}
                               </span>
                             </div>
-                            <span className="text-base font-semibold tracking-wider ml-4">{currentInvitation?.groomName || '혁'}</span>
+                            <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{currentInvitation?.groomName || '혁'}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <div className="text-left">
                               <span className="text-[9px] opacity-60 block tracking-widest font-mono">BRIDE</span>
                               <span className="tracking-wide">
-                                {currentInvitation?.brideParentRelation || '김필래 · 이수윤 의 딸'}
+                                {formatParentRelation(currentInvitation?.brideParentRelation || '김필래 · 이수윤 의 딸', boldParents)}
                               </span>
                             </div>
-                            <span className="text-base font-semibold tracking-wider ml-4">{currentInvitation?.brideName || '민주'}</span>
+                            <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{currentInvitation?.brideName || '민주'}</span>
                           </div>
                         </div>
 
+                        {/* Divider */}
+                        {renderDivider()}
+
                         {/* Greeting Message */}
-                        <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95">
+                        <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
                           {currentInvitation?.invitationMessage || (
                             "여보, 우리는 등불 하나 켜서 삽시다.\n바람에 흔들리는 심지 등불이라도 켜서\n기름 졸이듯 마음을 다하여\n사랑하며 삽시다. 오래도록."
                           )}
@@ -1158,25 +1256,25 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {/* Traffic Info & Parking Info */}
                           {(currentInvitation?.trafficInfo || currentInvitation?.parkingInfo || currentInvitation?.customStyles?.subwayImage || currentInvitation?.customStyles?.parkingImage) && (
                             <div className="space-y-3 pt-3 border-t border-gray-100/10 text-[10px]">
-                              {(currentInvitation.trafficInfo || currentInvitation.customStyles?.subwayImage) && (
+                              {(currentInvitation?.trafficInfo || currentInvitation?.customStyles?.subwayImage) && (
                                 <div>
                                   <p className="font-semibold">교통 안내</p>
-                                  {currentInvitation.trafficInfo && (
+                                  {currentInvitation?.trafficInfo && (
                                     <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: isDuotone ? `${color1}b3` : sectColors.secondaryTextColorVal }}>{currentInvitation.trafficInfo}</p>
                                   )}
-                                  {currentInvitation.customStyles?.subwayImage && (
-                                    currentInvitation.customStyles.subwayDisplayType === 'direct' ? (
+                                  {currentInvitation?.customStyles?.subwayImage && (
+                                    currentInvitation?.customStyles?.subwayDisplayType === 'direct' ? (
                                       <div className="mt-1.5 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                         <img 
                                           src={currentInvitation.customStyles.subwayImage} 
                                           className="w-full h-auto cursor-pointer" 
-                                          onClick={() => setActiveImageModal(currentInvitation.customStyles.subwayImage)}
+                                          onClick={() => setActiveImageModal(currentInvitation?.customStyles?.subwayImage!)}
                                         />
                                       </div>
                                     ) : (
                                       <button 
                                         type="button"
-                                        onClick={() => setActiveImageModal(currentInvitation.customStyles.subwayImage)}
+                                        onClick={() => setActiveImageModal(currentInvitation?.customStyles?.subwayImage!)}
                                         className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-black/5 dark:bg-white/5 border border-border/30 rounded-[4px] text-[8px] font-medium hover:bg-black/10 transition-colors"
                                         style={{ color: isDuotone ? color1 : sectColors.accent }}
                                       >
@@ -1187,25 +1285,25 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   )}
                                 </div>
                               )}
-                              {(currentInvitation.parkingInfo || currentInvitation.customStyles?.parkingImage) && (
+                              {(currentInvitation?.parkingInfo || currentInvitation?.customStyles?.parkingImage) && (
                                 <div>
                                   <p className="font-semibold">주차 안내</p>
-                                  {currentInvitation.parkingInfo && (
+                                  {currentInvitation?.parkingInfo && (
                                     <p className="whitespace-pre-line mt-0.5 leading-relaxed" style={{ color: isDuotone ? `${color1}b3` : sectColors.secondaryTextColorVal }}>{currentInvitation.parkingInfo}</p>
                                   )}
-                                  {currentInvitation.customStyles?.parkingImage && (
-                                    currentInvitation.customStyles.parkingDisplayType === 'direct' ? (
+                                  {currentInvitation?.customStyles?.parkingImage && (
+                                    currentInvitation?.customStyles?.parkingDisplayType === 'direct' ? (
                                       <div className="mt-1.5 rounded overflow-hidden bg-black/5 dark:bg-white/5 border border-border/50">
                                         <img 
                                           src={currentInvitation.customStyles.parkingImage} 
                                           className="w-full h-auto cursor-pointer" 
-                                          onClick={() => setActiveImageModal(currentInvitation.customStyles.parkingImage)}
+                                          onClick={() => setActiveImageModal(currentInvitation?.customStyles?.parkingImage!)}
                                         />
                                       </div>
                                     ) : (
                                       <button 
                                         type="button"
-                                        onClick={() => setActiveImageModal(currentInvitation.customStyles.parkingImage)}
+                                        onClick={() => setActiveImageModal(currentInvitation?.customStyles?.parkingImage!)}
                                         className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-black/5 dark:bg-white/5 border border-border/30 rounded-[4px] text-[8px] font-medium hover:bg-black/10 transition-colors"
                                         style={{ color: isDuotone ? color1 : sectColors.accent }}
                                       >
@@ -1244,15 +1342,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         {currentInvitation.contacts.map((contact: any) => (
                           <Card key={contact.id} className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                             <CardContent className="p-3 text-center">
-                              <p className="text-[10px] mb-0.5" style={{ color: sectColors.secondaryTextColorVal }}>
+                              <p className="text-xs mb-0.5" style={{ color: sectColors.secondaryTextColorVal }}>
                                 {contact.relation === 'groom' ? '신랑' :
                                  contact.relation === 'bride' ? '신부' :
                                  contact.relation === 'groomParent' ? '신랑 혼주' :
                                  contact.relation === 'brideParent' ? '신부 혼주' :
                                  contact.relation}
                               </p>
-                              <p className="font-semibold text-xs mb-2 truncate">{contact.name}</p>
-                              <Button variant="outline" size="sm" className="w-full text-[10px] h-7 px-0" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                              <p className="font-semibold text-sm mb-2 truncate">{contact.name}</p>
+                              <Button variant="outline" size="sm" className="w-full text-xs h-7 px-0" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 <Phone className="w-3 h-3 mr-1" />
                                 전화
                               </Button>
@@ -1283,25 +1381,25 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {/* Groom Side Accounts */}
                           {groomAccounts.length > 0 && (
                             <div className="space-y-3">
-                              <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
+                              <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
                               <div className="border-t border-black divide-y divide-black/10">
                                 {groomAccounts.map((account: any) => (
                                   <div 
                                     key={account.id} 
-                                    className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                    className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
                                     onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                                   >
                                     <div className="text-left space-y-1">
                                       <div className="flex items-center gap-2">
                                         <span className="font-semibold text-black">{account.accountHolder}</span>
-                                        <span className="text-[10px] opacity-60">
+                                        <span className="text-xs opacity-60">
                                           {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
                                         </span>
                                       </div>
-                                      <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                      <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
                                     </div>
                                     <div className="text-right">
-                                      <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                      <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
                                         {account.bank}
                                       </span>
                                     </div>
@@ -1314,25 +1412,25 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {/* Bride Side Accounts */}
                           {brideAccounts.length > 0 && (
                             <div className="space-y-3">
-                              <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
+                              <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
                               <div className="border-t border-black divide-y divide-black/10">
                                 {brideAccounts.map((account: any) => (
                                   <div 
                                     key={account.id} 
-                                    className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                    className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
                                     onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                                   >
                                     <div className="text-left space-y-1">
                                       <div className="flex items-center gap-2">
                                         <span className="font-semibold text-black">{account.accountHolder}</span>
-                                        <span className="text-[10px] opacity-60">
+                                        <span className="text-xs opacity-60">
                                           {account.relation === 'bride' ? '신부' : '신부 혼주'}
                                         </span>
                                       </div>
-                                      <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                      <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
                                     </div>
                                     <div className="text-right">
-                                      <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                      <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
                                         {account.bank}
                                       </span>
                                     </div>
@@ -1355,7 +1453,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <div className="grid grid-cols-2 gap-2 text-left items-start">
                           {/* 신랑측 */}
                           <div className="space-y-1.5">
-                            <div className="text-center text-[9px] font-semibold pb-1 border-b opacity-80" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신랑측</div>
+                            <div className="text-center text-[11px] font-semibold pb-1 border-b opacity-80" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신랑측</div>
                             {groomAccounts.map((account: any) => (
                               <Card 
                                 key={account.id} 
@@ -1364,26 +1462,26 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                               >
                                 <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
-                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                  <div className="flex justify-between items-center w-full text-[10px] leading-tight">
                                     <span style={{ color: sectColors.secondaryTextColorVal }}>
                                       {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
                                     </span>
                                     <span className="font-semibold truncate max-w-[55px]">{account.accountHolder}</span>
                                   </div>
-                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[10px] leading-none">
                                     <span className="font-mono truncate max-w-[85px]">{account.accountNumber}</span>
-                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[9.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
                                   </div>
                                 </CardContent>
                               </Card>
                             ))}
                             {groomAccounts.length === 0 && (
-                              <p className="text-center text-[8px] opacity-30 py-3">등록 계좌 없음</p>
+                              <p className="text-center text-[10px] opacity-30 py-3">등록 계좌 없음</p>
                             )}
                           </div>
                           {/* 신부측 */}
                           <div className="space-y-1.5">
-                            <div className="text-center text-[9px] font-semibold pb-1 border-b opacity-80" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신부측</div>
+                            <div className="text-center text-[11px] font-semibold pb-1 border-b opacity-80" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신부측</div>
                             {brideAccounts.map((account: any) => (
                               <Card 
                                 key={account.id} 
@@ -1392,21 +1490,21 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                               >
                                 <CardContent className="p-1.5 px-2 text-left flex flex-col justify-center min-h-[38px] space-y-0">
-                                  <div className="flex justify-between items-center w-full text-[8px] leading-tight">
+                                  <div className="flex justify-between items-center w-full text-[10px] leading-tight">
                                     <span style={{ color: sectColors.secondaryTextColorVal }}>
                                       {account.relation === 'bride' ? '신부' : '신부 혼주'}
                                     </span>
                                     <span className="font-semibold truncate max-w-[55px]">{account.accountHolder}</span>
                                   </div>
-                                  <div className="flex justify-between items-center w-full mt-0.5 text-[8px] leading-none">
+                                  <div className="flex justify-between items-center w-full mt-0.5 text-[10px] leading-none">
                                     <span className="font-mono truncate max-w-[85px]">{account.accountNumber}</span>
-                                    <span className="opacity-80 truncate max-w-[45px] text-[7.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
+                                    <span className="opacity-80 truncate max-w-[45px] text-[9.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
                                   </div>
                                 </CardContent>
                               </Card>
                             ))}
                             {brideAccounts.length === 0 && (
-                              <p className="text-center text-[8px] opacity-30 py-3">등록 계좌 없음</p>
+                              <p className="text-center text-[10px] opacity-30 py-3">등록 계좌 없음</p>
                             )}
                           </div>
                         </div>
@@ -1423,16 +1521,16 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               <CardContent className="p-3 text-left">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="text-[10px]" style={{ color: sectColors.secondaryTextColorVal }}>
+                                    <p className="text-xs" style={{ color: sectColors.secondaryTextColorVal }}>
                                       {account.relation === 'groom' && '신랑'}
                                       {account.relation === 'bride' && '신부'}
                                       {account.relation === 'groomParent' && '신랑 혼주'}
                                       {account.relation === 'brideParent' && '신부 혼주'}
                                     </p>
-                                    <p className="font-semibold text-xs mt-0.5">{account.bank} {account.accountNumber}</p>
-                                    <p className="text-[10px] mt-0.5" style={{ color: sectColors.secondaryTextColorVal }}>예금주: {account.accountHolder}</p>
+                                    <p className="font-semibold text-sm mt-0.5">{account.bank} {account.accountNumber}</p>
+                                    <p className="text-xs mt-0.5" style={{ color: sectColors.secondaryTextColorVal }}>예금주: {account.accountHolder}</p>
                                   </div>
-                                  <div className="text-[9px] opacity-40 flex items-center justify-center">
+                                  <div className="text-[11px] opacity-40 flex items-center justify-center">
                                     <Copy className="w-3.5 h-3.5 opacity-70" />
                                   </div>
                                 </div>
@@ -1450,7 +1548,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                     <section key="rsvp" id="preview-section-rsvp" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
                       {renderSectionHeader('rsvp', 'RSVP', '참석 여부 알리기', 'mb-6')}
-                      <Button className="w-full text-xs text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
+                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
                         <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
                         참석 의사 전달하기
                       </Button>
@@ -1467,14 +1565,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <Card className={cn("border-0", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-3">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-[10px]">하객 성함</span>
-                              <span className="text-[9px] opacity-40">2026.06.03</span>
+                              <span className="font-semibold text-xs">하객 성함</span>
+                              <span className="text-[11px] opacity-40">2026.06.03</span>
                             </div>
-                            <p className="text-[10px] opacity-70">결혼을 진심으로 축하드립니다!</p>
+                            <p className="text-xs opacity-70">결혼을 진심으로 축하드립니다!</p>
                           </CardContent>
                         </Card>
                       </div>
-                      <Button variant="outline" className="w-full mt-3 text-[10px] h-8 border-current/30" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                      <Button variant="outline" className="w-full mt-3 text-xs h-8 border-current/30" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                         축하 메시지 남기기
                       </Button>
                     </section>

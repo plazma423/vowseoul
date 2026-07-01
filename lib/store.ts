@@ -26,7 +26,7 @@ export interface WeddingInvitation {
   rsvpEnabled: boolean
   rsvpMealEnabled?: boolean
   rsvpCommentEnabled?: boolean
-  guestbookType: 'text' | 'audio'
+  guestbookType: 'text' | 'audio' | 'none'
   bgmId: string | null
   kakaoThumbnail: string | null
   kakaoTitle: string
@@ -178,7 +178,7 @@ interface AppState {
   loadUserInvitations: () => Promise<void>
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   fetchData: async () => {
     try {
       const [
@@ -252,8 +252,8 @@ export const useAppStore = create<AppState>((set) => ({
       console.error('Error loading invitation from Supabase:', e)
     }
   },
-  saveInvitation: async () => {
-    const state = useAppStore.getState()
+  saveInvitation: async (): Promise<string | null> => {
+    const state = get()
     const current = state.currentInvitation
     if (!current) return null
 
@@ -297,7 +297,7 @@ export const useAppStore = create<AppState>((set) => ({
         }
       })
 
-      return id
+      return id || null
     } catch (e) {
       console.error('Error saving invitation to Supabase:', e)
       return null
@@ -402,7 +402,7 @@ export const useAppStore = create<AppState>((set) => ({
   user: null as any | null,
   setUser: (user) => set({ user }),
   loadUserInvitations: async () => {
-    const state = useAppStore.getState()
+    const state = get()
     const userId = state.user?.id
     if (!userId) return
 

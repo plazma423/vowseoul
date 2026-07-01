@@ -103,7 +103,7 @@ export function HeroSection() {
           />
         </div>
         <h1 className={`mb-6 font-light leading-tight tracking-wide text-white ${heroContent.fontFamily} ${heroContent.titleFontSize}`}>
-          {heroContent.title.split('\n').map((line, i) => (
+          {heroContent.title.split('\n').map((line: string, i: number) => (
             <span key={i}>
               {line}
               {i !== heroContent.title.split('\n').length - 1 && <br />}
@@ -111,7 +111,7 @@ export function HeroSection() {
           ))}
         </h1>
         <p className={`mb-10 max-w-lg leading-relaxed text-white/80 ${heroContent.descFontSize} ${heroContent.layout === 'text-center' ? 'mx-auto' : heroContent.layout === 'text-right' ? 'ml-auto' : ''}`}>
-          {heroContent.description.split('\n').map((line, i) => (
+          {heroContent.description.split('\n').map((line: string, i: number) => (
             <span key={i}>
               {line}
               {i !== heroContent.description.split('\n').length - 1 && <br />}

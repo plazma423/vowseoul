@@ -206,11 +206,11 @@ export default function ThemeEditorPage() {
           heroConnector: '&',
           accountLayout: '1col',
           sectionOrder: ['hero', 'greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'],
-          recommendedBgms: sample.recommendedBgms || [],
-          duotoneEnabled: sample.id === 'duotone-contrast' || sample.styles?.duotoneEnabled === true,
-          heroSubtitleText: sample.styles?.heroSubtitleText || 'save the date',
-          heroSubtitleFont: sample.styles?.heroSubtitleFont || 'font-serif',
-          heroSubtitleSize: sample.styles?.heroSubtitleSize?.toString() || '20'
+          recommendedBgms: (sample as any).recommendedBgms || [],
+          duotoneEnabled: sample.id === 'duotone-contrast' || (sample.styles as any)?.duotoneEnabled === true,
+          heroSubtitleText: (sample.styles as any)?.heroSubtitleText || 'save the date',
+          heroSubtitleFont: (sample.styles as any)?.heroSubtitleFont || 'font-serif',
+          heroSubtitleSize: (sample.styles as any)?.heroSubtitleSize?.toString() || '20'
         })
         setColorSets(sample.colorSets || [])
         setFontSets(sample.fontSets || [])
@@ -645,7 +645,7 @@ export default function ThemeEditorPage() {
                   <div key={set.id} className="flex items-center justify-between p-2.5 bg-background border rounded-md text-sm">
                     <div className="flex items-center gap-3">
                       <div className="flex -space-x-1.5">
-                        {set.colors.map((c, i) => (
+                        {set.colors.map((c: string, i: number) => (
                           <div 
                             key={i} 
                             className="w-5 h-5 rounded-full border border-background shadow-sm" 

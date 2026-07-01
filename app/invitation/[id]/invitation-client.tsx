@@ -51,6 +51,20 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
+const formatParentRelation = (relationStr: string, isBold: boolean) => {
+  if (!relationStr) return '';
+  if (!isBold) return relationStr;
+  const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
+  if (match) {
+    return (
+      <span>
+        <strong className="font-semibold">{match[1]}</strong>{match[2]}
+      </span>
+    );
+  }
+  return relationStr;
+};
+
 export default function InvitationClient({ 
   id, 
   initialInvitation,
@@ -401,10 +415,10 @@ export default function InvitationClient({
 
   // Determine theme colors and fonts dynamically
   const theme = themes.find(t => t.id === invitation?.themeId) || sampleThemes.find(t => t.id === invitation?.themeId) || sampleThemes[0]
-  const colorSet = theme?.colorSets?.find(c => c.id === invitation?.colorSet) || theme?.colorSets?.[0]
-  const fontSet = theme?.fontSets?.find(f => f.id === invitation?.fontSet) || theme?.fontSets?.[0]
+  const colorSet = theme?.colorSets?.find((c: any) => c.id === invitation?.colorSet) || theme?.colorSets?.[0]
+  const fontSet = theme?.fontSets?.find((f: any) => f.id === invitation?.fontSet) || theme?.fontSets?.[0]
   
-  const themeStyles = {
+  const themeStyles: any = {
     ...theme?.styles,
     ...(invitation?.customStyles || {})
   }
@@ -420,7 +434,7 @@ export default function InvitationClient({
     color2 = themeStyles.customPrimaryColor || '#361623'
   } else {
     // Read from selected colorSet
-    const activeColorSet = theme?.colorSets?.find(c => c.id === invitation?.colorSet) || theme?.colorSets?.[0]
+    const activeColorSet = theme?.colorSets?.find((c: any) => c.id === invitation?.colorSet) || theme?.colorSets?.[0]
     if (activeColorSet && activeColorSet.colors && activeColorSet.colors.length >= 2) {
       color1 = activeColorSet.colors[0]
       color2 = activeColorSet.colors[1]
@@ -540,6 +554,8 @@ export default function InvitationClient({
     const italicKr = headerSettings.italicKr ?? false
     const boldEn = headerSettings.boldEn ?? false
     const boldKr = headerSettings.boldKr ?? true
+    const colorEn = headerSettings.colorEn || undefined
+    const colorKr = headerSettings.colorKr || undefined
 
     return (
       <div className={cn("text-center", extraMb, px)}>
@@ -551,7 +567,8 @@ export default function InvitationClient({
           )}
           style={{ 
             fontFamily: getFontFamily(fontKrVal, fontEnVal),
-            fontSize: `${sizeEn}px`
+            fontSize: `${sizeEn}px`,
+            color: colorEn
           }}
         >
           {titleEn}
@@ -560,12 +577,13 @@ export default function InvitationClient({
           className={cn(
             "tracking-[0.2em] uppercase mt-2 font-sans",
             italicKr && "italic",
-            boldKr ? "font-semibold" : "font-medium",
-            "opacity-55"
+            boldKr ? "font-semibold" : "font-medium"
           )}
           style={{ 
             fontFamily: getFontFamily(fontKrVal, fontEnVal),
-            fontSize: `${sizeKr}px`
+            fontSize: `${sizeKr}px`,
+            color: colorKr,
+            opacity: colorKr ? 1 : 0.55
           }}
         >
           {titleKr}
@@ -596,6 +614,13 @@ export default function InvitationClient({
             if (fontKr) fonts.add(fontKr)
             if (fontEn) fonts.add(fontEn)
             if (themeStyles.heroSubtitleFont) fonts.add(themeStyles.heroSubtitleFont)
+            if (themeStyles.heroInfoFont) fonts.add(themeStyles.heroInfoFont)
+            if (themeStyles.sectionHeaders) {
+              Object.values(themeStyles.sectionHeaders).forEach((s: any) => {
+                if (s.fontEn) fonts.add(s.fontEn)
+                if (s.fontKr) fonts.add(s.fontKr)
+              })
+            }
 
             const googleFontsMap: Record<string, string[]> = {
               'Cormorant': ['Cormorant:ital,wght@0,300..700;1,300..700'],
@@ -657,7 +682,7 @@ export default function InvitationClient({
           })()
         }} />
 
-        {sectionOrder.map((sectionId, idx) => {
+        {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
           const isMinimal = theme.layout === 'minimal'
           const isGrid = theme.layout === 'grid'
           const isTwoColumn = theme.layout === 'two-column'
@@ -697,6 +722,9 @@ export default function InvitationClient({
 
           const sectionElement = (() => { switch (sectionId) {
             case 'hero':
+              const heroInfoFont = themeStyles.heroInfoFont || fontEn
+              const heroInfoGroomBrideSize = themeStyles.heroInfoGroomBrideSize ?? 16
+              const heroInfoDetailsSize = themeStyles.heroInfoDetailsSize ?? 11
               if (isSereneBlue) {
                 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                 let dateStr = '2026. 09. 19 (토) 오후 5시'
@@ -748,14 +776,26 @@ export default function InvitationClient({
                     {/* Bottom Information */}
                     <div className="relative z-20 space-y-6 px-6">
                       {/* Groom & Bride Name horizontally centered */}
-                      <div className="text-base font-medium tracking-widest flex items-center justify-center gap-3">
+                      <div 
+                        className="text-base font-medium tracking-widest flex items-center justify-center gap-3"
+                        style={{
+                          fontFamily: getFontFamily(fontKr, heroInfoFont),
+                          fontSize: `${heroInfoGroomBrideSize}px`
+                        }}
+                      >
                         <span>{invitation?.groomName || '김혁'}</span>
                         <span className="opacity-60 text-xs italic font-serif">&amp;</span>
                         <span>{invitation?.brideName || '김민주'}</span>
                       </div>
                       
                       {/* Date and Venue */}
-                      <div className="text-[11px] leading-relaxed tracking-wider opacity-90" style={{ fontFamily: "'Source Serif Pro', serif" }}>
+                      <div 
+                        className="text-[11px] leading-relaxed tracking-wider opacity-90" 
+                        style={{ 
+                          fontFamily: getFontFamily(fontKr, heroInfoFont),
+                          fontSize: `${heroInfoDetailsSize}px`
+                        }}
+                      >
                         <p>{dateStr}</p>
                         <p className="mt-0.5">{invitation?.weddingTime || '오후 5시'} | {invitation?.venueName || '춘천 스카이컨벤션 4층 스카이홀'}</p>
                       </div>
@@ -821,14 +861,26 @@ export default function InvitationClient({
                     )}
                     
                     {/* Groom & Bride names */}
-                    <div className="flex items-center justify-center gap-6 text-lg font-light tracking-wide mt-2">
+                    <div 
+                      className="flex items-center justify-center gap-6 text-lg font-light tracking-wide mt-2"
+                      style={{
+                        fontFamily: getFontFamily(fontKr, heroInfoFont),
+                        fontSize: `${heroInfoGroomBrideSize}px`
+                      }}
+                    >
                       <span>{invitation?.groomName || '신랑'}</span>
                       <span className="opacity-60 text-sm font-serif">&amp;</span>
                       <span>{invitation?.brideName || '신부'}</span>
                     </div>
                     
                     {/* Details */}
-                    <div className="space-y-1 opacity-85 text-xs tracking-wide pt-4 border-t border-current/10 w-full max-w-[240px] mx-auto mb-4">
+                    <div 
+                      className="space-y-1 opacity-85 text-xs tracking-wide pt-4 border-t border-current/10 w-full max-w-[240px] mx-auto mb-4"
+                      style={{
+                        fontFamily: getFontFamily(fontKr, heroInfoFont),
+                        fontSize: `${heroInfoDetailsSize}px`
+                      }}
+                    >
                       <p className="uppercase truncate">
                         {invitation?.venueName || 'VOW SEOUL GRAND HALL'}
                       </p>
@@ -865,7 +917,13 @@ export default function InvitationClient({
                           {invitation.groomParentRelation && (
                             <p className="text-xs opacity-75">{invitation.groomParentRelation}</p>
                           )}
-                          <h1 className="text-3xl font-light tracking-wide">
+                          <h1 
+                            className="text-3xl font-light tracking-wide"
+                            style={{
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoGroomBrideSize}px`
+                            }}
+                          >
                             {invitation.groomName}
                           </h1>
                         </div>
@@ -874,20 +932,38 @@ export default function InvitationClient({
                           {invitation.brideParentRelation && (
                             <p className="text-xs opacity-75">{invitation.brideParentRelation}</p>
                           )}
-                          <h1 className="text-3xl font-light tracking-wide">
+                          <h1 
+                            className="text-3xl font-light tracking-wide"
+                            style={{
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoGroomBrideSize}px`
+                            }}
+                          >
                             {invitation.brideName}
                           </h1>
                         </div>
                       </div>
                     ) : heroStyle === 'classic' ? (
                       <div className="space-y-4 text-center w-full">
-                        <h1 className="text-4xl font-light tracking-widest uppercase">
+                        <h1 
+                          className="text-4xl font-light tracking-widest uppercase"
+                          style={{
+                            fontFamily: getFontFamily(fontKr, heroInfoFont),
+                            fontSize: `${heroInfoGroomBrideSize * 1.2}px`
+                          }}
+                        >
                           {invitation.groomNameEn || 'GROOM'}
                           {heroConnector !== 'none' && <span className="block text-base opacity-55 my-1" style={{ color: accentColor }}>{heroConnector}</span>}
                           {invitation.brideNameEn || 'BRIDE'}
                         </h1>
                         <div className="w-12 h-px bg-current opacity-30 mx-auto" />
-                        <p className="text-sm tracking-wide">
+                        <p 
+                          className="text-sm tracking-wide"
+                          style={{
+                            fontFamily: getFontFamily(fontKr, heroInfoFont),
+                            fontSize: `${heroInfoGroomBrideSize}px`
+                          }}
+                        >
                           {invitation.groomName} · {invitation.brideName}
                         </p>
                       </div>
@@ -897,7 +973,13 @@ export default function InvitationClient({
                           {invitation.groomParentRelation && (
                             <p className="text-xs opacity-75">{invitation.groomParentRelation}</p>
                           )}
-                          <h1 className="text-3xl font-light tracking-wide">
+                          <h1 
+                            className="text-3xl font-light tracking-wide"
+                            style={{
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoGroomBrideSize}px`
+                            }}
+                          >
                             {invitation.groomName}
                           </h1>
                         </div>
@@ -906,14 +988,26 @@ export default function InvitationClient({
                           {invitation.brideParentRelation && (
                             <p className="text-xs opacity-75">{invitation.brideParentRelation}</p>
                           )}
-                          <h1 className="text-3xl font-light tracking-wide">
+                          <h1 
+                            className="text-3xl font-light tracking-wide"
+                            style={{
+                              fontFamily: getFontFamily(fontKr, heroInfoFont),
+                              fontSize: `${heroInfoGroomBrideSize}px`
+                            }}
+                          >
                             {invitation.brideName}
                           </h1>
                         </div>
                       </div>
                     )}
 
-                    <div className="space-y-1 opacity-80 text-sm pt-4 border-t border-current/10">
+                    <div 
+                      className="space-y-1 opacity-80 text-sm pt-4 border-t border-current/10"
+                      style={{
+                        fontFamily: getFontFamily(fontKr, heroInfoFont),
+                        fontSize: `${heroInfoDetailsSize}px`
+                      }}
+                    >
                       <p>
                         {invitation.weddingDate ? (
                           format(new Date(invitation.weddingDate + 'T00:00:00'), 'yyyy년 MM월 dd일 (EEEE)', { locale: ko })
@@ -931,6 +1025,7 @@ export default function InvitationClient({
 
             case 'greeting':
               if (isSereneBlue) {
+                const boldParents = invitation?.customStyles?.boldParentNames || false
                 return (
                   <section 
                     key="greeting" 
@@ -943,24 +1038,27 @@ export default function InvitationClient({
                         <div className="text-left">
                           <span className="text-[9px] opacity-60 block tracking-widest font-mono">GROOM</span>
                           <span className="tracking-wide">
-                            {invitation?.groomParentRelation || '김태진 · 정혜선 의 아들'}
+                            {formatParentRelation(invitation?.groomParentRelation || '김태진 · 정혜선 의 아들', boldParents)}
                           </span>
                         </div>
-                        <span className="text-base font-semibold tracking-wider ml-4">{invitation?.groomName || '혁'}</span>
+                        <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{invitation?.groomName || '혁'}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="text-left">
                           <span className="text-[9px] opacity-60 block tracking-widest font-mono">BRIDE</span>
                           <span className="tracking-wide">
-                            {invitation?.brideParentRelation || '김필래 · 이수윤 의 딸'}
+                            {formatParentRelation(invitation?.brideParentRelation || '김필래 · 이수윤 의 딸', boldParents)}
                           </span>
                         </div>
-                        <span className="text-base font-semibold tracking-wider ml-4">{invitation?.brideName || '민주'}</span>
+                        <span className="text-base font-semibold tracking-wider w-16 text-left ml-4">{invitation?.brideName || '민주'}</span>
                       </div>
                     </div>
 
+                    {/* Divider */}
+                    {renderDivider()}
+
                     {/* Greeting Message */}
-                    <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95">
+                    <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
                       {invitation?.invitationMessage || (
                         "여보, 우리는 등불 하나 켜서 삽시다.\n바람에 흔들리는 심지 등불이라도 켜서\n기름 졸이듯 마음을 다하여\n사랑하며 삽시다. 오래도록."
                       )}
@@ -1041,7 +1139,7 @@ export default function InvitationClient({
                         <div 
                           key={event.id} 
                           className={cn(
-                            "flex items-center text-xs py-3.5 px-2", 
+                            "flex items-center text-sm py-3.5 px-2", 
                             i < sequenceEvents.length - 1 && "border-b border-black"
                           )}
                         >
@@ -1360,15 +1458,15 @@ export default function InvitationClient({
                     
                     {/* White Address Card */}
                     <div className="bg-white p-6 text-center space-y-2 border border-black/5 shadow-sm mb-6">
-                      <h3 className="font-semibold text-lg tracking-wide">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                      <h3 className="font-semibold text-xl tracking-wide">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                       {invitation?.venueHall && (
-                        <p className="text-xs text-[#526678] font-medium">{invitation.venueHall}</p>
+                        <p className="text-sm text-[#526678] font-medium">{invitation.venueHall}</p>
                       )}
-                      <p className="text-xs opacity-75 mt-1">{invitation?.venueAddress || '강남구 학동로 1212'}</p>
+                      <p className="text-sm opacity-75 mt-1">{invitation?.venueAddress || '강남구 학동로 1212'}</p>
                     </div>
 
                     {/* Traffic & Parking guides */}
-                    <div className="space-y-4 text-xs font-light text-left max-w-[280px] mx-auto">
+                    <div className="space-y-4 text-sm font-light text-left max-w-[280px] mx-auto">
                       {invitation?.parkingInfo && (
                         <div className="space-y-1">
                           <span className="font-semibold block text-[#62798E]">주차안내</span>
@@ -1396,13 +1494,13 @@ export default function InvitationClient({
                   >
                     <CardContent className="p-6 text-left space-y-4">
                       <div>
-                        <h3 className="font-semibold text-base">{invitation.venueName}</h3>
-                        {invitation.venueHall && <p className="text-sm" style={{ color: isDuotone ? color1 : sectColors.accent }}>{invitation.venueHall}</p>}
-                        <p className="text-xs mt-1" style={{ color: isDuotone ? `${color1}cc` : sectColors.secondaryTextColorVal }}>{invitation.venueAddress}</p>
+                        <h3 className="font-semibold text-lg">{invitation.venueName}</h3>
+                        {invitation.venueHall && <p className="text-base" style={{ color: isDuotone ? color1 : sectColors.accent }}>{invitation.venueHall}</p>}
+                        <p className="text-sm mt-1" style={{ color: isDuotone ? `${color1}cc` : sectColors.secondaryTextColorVal }}>{invitation.venueAddress}</p>
                       </div>
 
                       {(invitation.trafficInfo || invitation.parkingInfo || invitation.customStyles?.subwayImage || invitation.customStyles?.parkingImage) && (
-                        <div className="space-y-4 pt-4 border-t border-gray-100/10 text-xs">
+                        <div className="space-y-4 pt-4 border-t border-gray-100/10 text-sm">
                           {(invitation.trafficInfo || invitation.customStyles?.subwayImage) && (
                             <div>
                               <p className="font-semibold">교통 안내</p>
@@ -1422,7 +1520,7 @@ export default function InvitationClient({
                                   <button 
                                     type="button"
                                     onClick={() => setActiveImageModal(invitation.customStyles.subwayImage)}
-                                    className="inline-flex items-center gap-1 mt-1 px-2.5 py-1 bg-black/5 dark:bg-white/5 border border-border/30 rounded text-xs font-medium hover:bg-black/10 transition-colors"
+                                    className="inline-flex items-center gap-1 mt-1 px-2.5 py-1 bg-black/5 dark:bg-white/5 border border-border/30 rounded text-sm font-medium hover:bg-black/10 transition-colors"
                                     style={{ color: isDuotone ? color1 : sectColors.accent }}
                                   >
                                     <Image className="w-3.5 h-3.5" />
@@ -1511,7 +1609,7 @@ export default function InvitationClient({
                              contact.relation}
                           </p>
                           <p className="font-semibold mb-3 text-sm truncate">{contact.name}</p>
-                          <Button variant="outline" size="sm" className="w-full" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
+                          <Button variant="outline" size="sm" className="w-full text-sm h-9" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
                             <a href={`tel:${contact.phone}`}>
                               <Phone className="w-4 h-4 mr-2" />
                               전화
@@ -1542,25 +1640,25 @@ export default function InvitationClient({
                       {/* Groom Side Accounts */}
                       {groomAccounts.length > 0 && (
                         <div className="space-y-3">
-                          <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
+                          <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
                           <div className="border-t border-black divide-y divide-black/10">
                             {groomAccounts.map((account: any) => (
                               <div 
                                 key={account.id} 
-                                className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
                                 onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                               >
                                 <div className="text-left space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-semibold text-black">{account.accountHolder}</span>
-                                    <span className="text-[10px] opacity-60">
+                                    <span className="text-xs opacity-60">
                                       {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
                                     </span>
                                   </div>
-                                  <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                  <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                  <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
                                     {account.bank}
                                   </span>
                                 </div>
@@ -1573,25 +1671,25 @@ export default function InvitationClient({
                       {/* Bride Side Accounts */}
                       {brideAccounts.length > 0 && (
                         <div className="space-y-3">
-                          <span className="text-[10px] text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
+                          <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
                           <div className="border-t border-black divide-y divide-black/10">
                             {brideAccounts.map((account: any) => (
                               <div 
                                 key={account.id} 
-                                className="py-3 px-1 flex justify-between items-center text-xs cursor-pointer hover:bg-black/5"
+                                className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
                                 onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                               >
                                 <div className="text-left space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-semibold text-black">{account.accountHolder}</span>
-                                    <span className="text-[10px] opacity-60">
+                                    <span className="text-xs opacity-60">
                                       {account.relation === 'bride' ? '신부' : '신부 혼주'}
                                     </span>
                                   </div>
-                                  <div className="font-mono text-black/70">{account.accountNumber}</div>
+                                  <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-[10px] text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
+                                  <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
                                     {account.bank}
                                   </span>
                                 </div>
@@ -1613,7 +1711,7 @@ export default function InvitationClient({
                   {accountLayout === '2col' ? (
                     <div className="grid grid-cols-2 gap-3 text-left items-start">
                       <div className="space-y-2">
-                        <div className="text-center text-xs font-semibold pb-1.5 border-b opacity-85" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신랑측</div>
+                        <div className="text-center text-[11px] font-semibold pb-1.5 border-b opacity-85" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신랑측</div>
                         {groomAccounts.map((account: any) => (
                           <Card 
                             key={account.id} 
@@ -1622,25 +1720,25 @@ export default function InvitationClient({
                             onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                           >
                             <CardContent className="p-2 px-2.5 text-left flex flex-col justify-center min-h-[44px] space-y-0.5">
-                              <div className="flex justify-between items-center w-full text-[9px] leading-tight">
+                              <div className="flex justify-between items-center w-full text-[10px] leading-tight">
                                 <span style={{ color: sectColors.secondaryTextColorVal }}>
                                   {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
                                 </span>
                                 <span className="font-semibold truncate max-w-[65px]">{account.accountHolder}</span>
                               </div>
-                              <div className="flex justify-between items-center w-full mt-0.5 text-[9px] leading-none">
+                              <div className="flex justify-between items-center w-full mt-0.5 text-[10px] leading-none">
                                 <span className="font-mono truncate max-w-[95px]">{account.accountNumber}</span>
-                                <span className="opacity-80 truncate max-w-[50px] text-[8px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
+                                <span className="opacity-80 truncate max-w-[50px] text-[9.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
                               </div>
                             </CardContent>
                           </Card>
                         ))}
                         {groomAccounts.length === 0 && (
-                          <p className="text-center text-xs opacity-30 py-4">등록된 계좌 없음</p>
+                          <p className="text-center text-[10px] opacity-30 py-4">등록된 계좌 없음</p>
                         )}
                       </div>
                       <div className="space-y-2">
-                        <div className="text-center text-xs font-semibold pb-1.5 border-b opacity-85" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신부측</div>
+                        <div className="text-center text-[11px] font-semibold pb-1.5 border-b opacity-85" style={{ color: sectColors.accent, borderColor: `${sectColors.accent}20` }}>신부측</div>
                         {brideAccounts.map((account: any) => (
                           <Card 
                             key={account.id} 
@@ -1649,21 +1747,21 @@ export default function InvitationClient({
                             onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
                           >
                             <CardContent className="p-2 px-2.5 text-left flex flex-col justify-center min-h-[44px] space-y-0.5">
-                              <div className="flex justify-between items-center w-full text-[9px] leading-tight">
+                              <div className="flex justify-between items-center w-full text-[10px] leading-tight">
                                 <span style={{ color: sectColors.secondaryTextColorVal }}>
                                   {account.relation === 'bride' ? '신부' : '신부 혼주'}
                                 </span>
                                 <span className="font-semibold truncate max-w-[65px]">{account.accountHolder}</span>
                               </div>
-                              <div className="flex justify-between items-center w-full mt-0.5 text-[9px] leading-none">
+                              <div className="flex justify-between items-center w-full mt-0.5 text-[10px] leading-none">
                                 <span className="font-mono truncate max-w-[95px]">{account.accountNumber}</span>
-                                <span className="opacity-80 truncate max-w-[50px] text-[8px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
+                                <span className="opacity-80 truncate max-w-[50px] text-[9.5px]" style={{ color: sectColors.secondaryTextColorVal }}>{account.bank}</span>
                               </div>
                             </CardContent>
                           </Card>
                         ))}
                         {brideAccounts.length === 0 && (
-                          <p className="text-center text-xs opacity-30 py-4">등록된 계좌 없음</p>
+                          <p className="text-center text-[10px] opacity-30 py-4">등록된 계좌 없음</p>
                         )}
                       </div>
                     </div>
@@ -1688,7 +1786,7 @@ export default function InvitationClient({
                                 <p className="font-semibold text-sm mt-1">{account.bank} {account.accountNumber}</p>
                                 <p className="text-xs mt-0.5" style={{ color: sectColors.secondaryTextColorVal }}>예금주: {account.accountHolder}</p>
                               </div>
-                              <div className="text-xs opacity-40 flex items-center justify-center">
+                              <div className="text-[11px] opacity-40 flex items-center justify-center">
                                 <Copy className="w-4 h-4 opacity-70" />
                               </div>
                             </div>
@@ -1709,7 +1807,7 @@ export default function InvitationClient({
                   
                   <Dialog open={showRsvp} onOpenChange={setShowRsvp}>
                     <DialogTrigger asChild>
-                      <Button className="w-full text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
+                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
                         <CalendarIcon className="w-4 h-4 mr-2" />
                         참석 의사 전달하기
                       </Button>

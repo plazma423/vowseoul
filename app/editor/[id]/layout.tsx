@@ -57,7 +57,7 @@ export default function EditorLayout({
 
       if (invitationId === 'new') {
         // If there is no current invitation, or its id is not 'new' (excluding updated unsaved UUIDs)
-        if (!current || (current.id !== 'new' && !current.id.includes('__'))) {
+        if (!current || (current.id !== 'new' && !current.id?.includes('__'))) {
           const { themes } = useAppStore.getState()
           const defaultTheme = (themes && themes.length > 0) ? themes[0] : sampleThemes[0]
           

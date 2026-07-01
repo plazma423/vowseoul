@@ -534,7 +534,7 @@ export default function ContentPage() {
                                 value={hour}
                                 onValueChange={(newHour) => {
                                   const newTime = `${newHour}:${minute}`;
-                                  const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                  const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, time: newTime } : ev);
                                   updateCustomStyle('sequenceEvents', updated);
                                 }}
                               >
@@ -554,7 +554,7 @@ export default function ContentPage() {
                                 value={minute}
                                 onValueChange={(newMinute) => {
                                   const newTime = `${hour}:${newMinute}`;
-                                  const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                  const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, time: newTime } : ev);
                                   updateCustomStyle('sequenceEvents', updated);
                                 }}
                               >
@@ -575,7 +575,7 @@ export default function ContentPage() {
                               value={event.title || ''}
                               className="h-8 text-xs flex-1"
                               onChange={(e) => {
-                                const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, title: e.target.value } : ev);
+                                const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, title: e.target.value } : ev);
                                 updateCustomStyle('sequenceEvents', updated);
                               }}
                               onFocus={() => setActiveSection('sequence')}
@@ -587,7 +587,7 @@ export default function ContentPage() {
                               size="icon"
                               className="h-8 w-8 text-destructive"
                               onClick={() => {
-                                const updated = eventsList.filter(ev => ev.id !== event.id);
+                                const updated = eventsList.filter((ev: any) => ev.id !== event.id);
                                 updateCustomStyle('sequenceEvents', updated);
                               }}
                             >

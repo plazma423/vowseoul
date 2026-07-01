@@ -365,7 +365,7 @@ export default function TemplatePreviewPage() {
           })()
         }} />
 
-        {sectionOrder.map((sectionId, idx) => {
+        {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
           // Layout-specific styling rules
           const isMinimal = theme.layout === 'minimal'
           const isGrid = theme.layout === 'grid'

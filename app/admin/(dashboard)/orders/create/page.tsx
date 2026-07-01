@@ -95,7 +95,7 @@ export default function CreateOrderPage() {
         rsvpMealEnabled: true,
         rsvpCommentEnabled: true,
         guestbookType: 'text',
-        bgmId: themeObj.recommendedBgms?.[0] || 'bgm1',
+        bgmId: (themeObj as any).recommendedBgms?.[0] || 'bgm1',
         kakaoThumbnail: null,
         kakaoTitle: '신랑 ❤️ 신부 결혼합니다!',
         kakaoDescription: `${defaultDate.getFullYear()}년 ${defaultDate.getMonth() + 1}월 ${defaultDate.getDate()}일`,

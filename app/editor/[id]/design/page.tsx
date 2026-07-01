@@ -503,6 +503,113 @@ export default function DesignPage() {
         </CardContent>
       </Card>
 
+      {/* 대문 예식정보 및 인사말 세부 설정 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">대문 예식정보 & 인사말 스타일 설정</CardTitle>
+          <CardDescription>대문 이미지 하단의 예식 정보(이름, 시간, 장소) 서체와 크기를 조정하고, 인사말 섹션 내 혼주 이름 스타일을 변경합니다.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 대문 예식정보 서체 및 크기 */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold">대문 예식정보 스타일</h4>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="text-xs">서체 선택</Label>
+                <Select
+                  value={currentInvitation?.customStyles?.heroInfoFont || 'font-sans'}
+                  onValueChange={(val) => {
+                    updateCurrentInvitation({
+                      customStyles: {
+                        ...(currentInvitation?.customStyles || {}),
+                        heroInfoFont: val
+                      }
+                    })
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="font-serif">기본 명조체</SelectItem>
+                    <SelectItem value="font-sans">기본 고딕체</SelectItem>
+                    {customFonts.map((font) => (
+                      <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">신랑 신부 이름 크기</Label>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    type="number" 
+                    min="10" 
+                    max="40" 
+                    value={currentInvitation?.customStyles?.heroInfoGroomBrideSize ?? 14} 
+                    onChange={(e) => {
+                      updateCurrentInvitation({
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          heroInfoGroomBrideSize: parseInt(e.target.value) || 14
+                        }
+                      })
+                    }}
+                    className="h-9"
+                  />
+                  <span className="text-xs text-muted-foreground">px</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">예식 일시/장소 크기</Label>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    type="number" 
+                    min="8" 
+                    max="30" 
+                    value={currentInvitation?.customStyles?.heroInfoDetailsSize ?? 10} 
+                    onChange={(e) => {
+                      updateCurrentInvitation({
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          heroInfoDetailsSize: parseInt(e.target.value) || 10
+                        }
+                      })
+                    }}
+                    className="h-9"
+                  />
+                  <span className="text-xs text-muted-foreground">px</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-muted/50" />
+
+          {/* 인사말 혼주 이름 볼드 처리 */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="bold-parents-toggle" className="text-sm font-medium">인사말 혼주 이름 굵게 표시</Label>
+              <p className="text-xs text-muted-foreground">Serene Blue 테마의 인사말 섹션 내에서 혼주의 이름만 굵은 글씨로 강조합니다.</p>
+            </div>
+            <Switch 
+              id="bold-parents-toggle"
+              checked={currentInvitation?.customStyles?.boldParentNames || false}
+              onCheckedChange={(checked) => {
+                updateCurrentInvitation({
+                  customStyles: {
+                    ...(currentInvitation?.customStyles || {}),
+                    boldParentNames: checked
+                  }
+                })
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section Header Customization */}
       <Card>
         <CardHeader>
@@ -566,6 +673,8 @@ export default function DesignPage() {
             const italicKr = settings.italicKr ?? false
             const boldEn = settings.boldEn ?? false
             const boldKr = settings.boldKr ?? true
+            const colorEn = settings.colorEn || '#000000'
+            const colorKr = settings.colorKr || '#000000'
 
             const updateSetting = (key: string, value: any) => {
               updateCurrentInvitation({
@@ -617,7 +726,7 @@ export default function DesignPage() {
                     {/* 3. Typography Styles */}
                     <div className="border border-muted/30 p-4 rounded-lg space-y-4 bg-muted/5">
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">영문 타이틀 레이아웃</h4>
-                      <div className="grid gap-4 sm:grid-cols-3 items-end">
+                      <div className="grid gap-4 sm:grid-cols-4 items-end">
                         <div className="space-y-2">
                           <Label className="text-[11px]">서체 선택</Label>
                           <Select
@@ -648,6 +757,18 @@ export default function DesignPage() {
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">글씨 색상</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              type="color"
+                              className="h-8 w-12 p-0.5 border cursor-pointer"
+                              value={colorEn}
+                              onChange={(e) => updateSetting('colorEn', e.target.value)}
+                            />
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">{colorEn}</span>
+                          </div>
+                        </div>
                         <div className="flex gap-4 pb-2">
                           <div className="flex items-center space-x-1.5">
                             <Checkbox
@@ -669,7 +790,7 @@ export default function DesignPage() {
                       </div>
 
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2 border-t border-muted/20">국문 타이틀 레이아웃</h4>
-                      <div className="grid gap-4 sm:grid-cols-3 items-end">
+                      <div className="grid gap-4 sm:grid-cols-4 items-end">
                         <div className="space-y-2">
                           <Label className="text-[11px]">서체 선택</Label>
                           <Select
@@ -698,6 +819,18 @@ export default function DesignPage() {
                               onChange={(e) => updateSetting('sizeKr', parseInt(e.target.value) || 9)}
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px]">글씨 색상</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              type="color"
+                              className="h-8 w-12 p-0.5 border cursor-pointer"
+                              value={colorKr}
+                              onChange={(e) => updateSetting('colorKr', e.target.value)}
+                            />
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">{colorKr}</span>
                           </div>
                         </div>
                         <div className="flex gap-4 pb-2">

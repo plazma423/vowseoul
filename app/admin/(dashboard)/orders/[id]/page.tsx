@@ -346,10 +346,10 @@ export default function OrderDetailPage() {
     try {
       const url = await uploadFile(e.target.files[0], 'transport')
       const newStyles = {
-        ...(currentInvitation.customStyles || {}),
+        ...(currentInvitation?.customStyles || {}),
         [isSub ? 'subwayImage' : 'parkingImage']: url,
-        [isSub ? 'subwayDisplayType' : 'parkingDisplayType']: currentInvitation.customStyles?.[isSub ? 'subwayDisplayType' : 'parkingDisplayType'] || 'popup',
-        [isSub ? 'subwayButtonText' : 'parkingButtonText']: currentInvitation.customStyles?.[isSub ? 'subwayButtonText' : 'parkingButtonText'] || '이미지 보기'
+        [isSub ? 'subwayDisplayType' : 'parkingDisplayType']: currentInvitation?.customStyles?.[isSub ? 'subwayDisplayType' : 'parkingDisplayType'] || 'popup',
+        [isSub ? 'subwayButtonText' : 'parkingButtonText']: currentInvitation?.customStyles?.[isSub ? 'subwayButtonText' : 'parkingButtonText'] || '이미지 보기'
       }
       updateCurrentInvitation({ customStyles: newStyles })
       toast.success('교통 정보 이미지가 업로드되었습니다.')
@@ -1040,7 +1040,7 @@ export default function OrderDetailPage() {
                                   value={hour}
                                   onValueChange={(newHour) => {
                                     const newTime = `${newHour}:${minute}`;
-                                    const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                    const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, time: newTime } : ev);
                                     updateCustomStyle('sequenceEvents', updated);
                                   }}
                                 >
@@ -1060,7 +1060,7 @@ export default function OrderDetailPage() {
                                   value={minute}
                                   onValueChange={(newMinute) => {
                                     const newTime = `${hour}:${newMinute}`;
-                                    const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, time: newTime } : ev);
+                                    const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, time: newTime } : ev);
                                     updateCustomStyle('sequenceEvents', updated);
                                   }}
                                 >
@@ -1081,7 +1081,7 @@ export default function OrderDetailPage() {
                                 value={event.title || ''}
                                 className="h-8 text-xs flex-1"
                                 onChange={(e) => {
-                                  const updated = eventsList.map(ev => ev.id === event.id ? { ...ev, title: e.target.value } : ev);
+                                  const updated = eventsList.map((ev: any) => ev.id === event.id ? { ...ev, title: e.target.value } : ev);
                                   updateCustomStyle('sequenceEvents', updated);
                                 }}
                               />
@@ -1092,7 +1092,7 @@ export default function OrderDetailPage() {
                                 size="icon"
                                 className="h-8 w-8 text-destructive"
                                 onClick={() => {
-                                  const updated = eventsList.filter(ev => ev.id !== event.id);
+                                  const updated = eventsList.filter((ev: any) => ev.id !== event.id);
                                   updateCustomStyle('sequenceEvents', updated);
                                 }}
                               >
@@ -2537,7 +2537,7 @@ export default function OrderDetailPage() {
                               return newOrder
                             })()
                         
-                        return sectionOrder.map((section, idx) => (
+                        return (sectionOrder as string[]).map((section: string, idx: number) => (
                           <div key={section} className="flex justify-between items-center bg-background border rounded px-3 py-2 text-xs shadow-sm">
                             <span className="font-medium">{idx + 1}. {sectionLabels[section] || section}</span>
                             <div className="flex gap-1">
@@ -2566,6 +2566,104 @@ export default function OrderDetailPage() {
                         ))
                       })()}
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 대문 예식정보 및 인사말 세부 설정 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">대문 예식정보 & 인사말 스타일 설정</CardTitle>
+                  <CardDescription>대문 이미지 하단의 예식 정보(이름, 시간, 장소) 서체와 크기를 조정하고, 인사말 섹션 내 혼주 이름 스타일을 변경합니다.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">대문 예식정보 스타일</h4>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <Field>
+                        <FieldLabel>서체 선택</FieldLabel>
+                        <Select
+                          value={currentInvitation?.customStyles?.heroInfoFont || 'font-sans'}
+                          onValueChange={(val) => {
+                            updateCurrentInvitation({
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                heroInfoFont: val
+                              }
+                            })
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="font-serif">기본 명조체</SelectItem>
+                            <SelectItem value="font-sans">기본 고딕체</SelectItem>
+                            {customFonts.map((font: any) => (
+                              <SelectItem key={font.id} value={font.family}>{font.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+
+                      <Field>
+                        <FieldLabel>신랑 신부 이름 크기 (px)</FieldLabel>
+                        <Input 
+                          type="number" 
+                          min="10" 
+                          max="40" 
+                          value={currentInvitation?.customStyles?.heroInfoGroomBrideSize ?? 14} 
+                          onChange={(e) => {
+                            updateCurrentInvitation({
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                heroInfoGroomBrideSize: parseInt(e.target.value) || 14
+                              }
+                            })
+                          }}
+                          className="h-9"
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel>예식 일시/장소 크기 (px)</FieldLabel>
+                        <Input 
+                          type="number" 
+                          min="8" 
+                          max="30" 
+                          value={currentInvitation?.customStyles?.heroInfoDetailsSize ?? 10} 
+                          onChange={(e) => {
+                            updateCurrentInvitation({
+                              customStyles: {
+                                ...(currentInvitation?.customStyles || {}),
+                                heroInfoDetailsSize: parseInt(e.target.value) || 10
+                              }
+                            })
+                          }}
+                          className="h-9"
+                        />
+                      </Field>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">인사말 혼주 이름 굵게 표시</Label>
+                      <p className="text-xs text-muted-foreground">Serene Blue 테마의 인사말 섹션 내에서 혼주의 이름만 굵은 글씨로 강조합니다.</p>
+                    </div>
+                    <Switch 
+                      checked={currentInvitation?.customStyles?.boldParentNames || false}
+                      onCheckedChange={(checked) => {
+                        updateCurrentInvitation({
+                          customStyles: {
+                            ...(currentInvitation?.customStyles || {}),
+                            boldParentNames: checked
+                          }
+                        })
+                      }}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -2625,6 +2723,8 @@ export default function OrderDetailPage() {
                     const italicKr = settings.italicKr ?? false
                     const boldEn = settings.boldEn ?? false
                     const boldKr = settings.boldKr ?? true
+                    const colorEn = settings.colorEn || '#000000'
+                    const colorKr = settings.colorKr || '#000000'
 
                     const updateHeaderSetting = (key: string, value: any) => {
                       updateCurrentInvitation({
@@ -2663,7 +2763,7 @@ export default function OrderDetailPage() {
 
                             <div className="border rounded-lg p-4 space-y-4 bg-muted/5">
                               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">영문 타이틀 스타일</p>
-                              <div className="grid gap-3 sm:grid-cols-3 items-end">
+                              <div className="grid gap-3 sm:grid-cols-4 items-end">
                                 <Field>
                                   <FieldLabel>서체</FieldLabel>
                                   <Select value={fontEnVal} onValueChange={(v) => updateHeaderSetting('fontEn', v)}>
@@ -2682,6 +2782,18 @@ export default function OrderDetailPage() {
                                   <Input type="number" className="h-8 text-xs" value={sizeEn}
                                     onChange={(e) => updateHeaderSetting('sizeEn', parseInt(e.target.value) || 20)} />
                                 </Field>
+                                <Field>
+                                  <FieldLabel>글씨 색상</FieldLabel>
+                                  <div className="flex items-center gap-1.5 h-8">
+                                    <Input
+                                      type="color"
+                                      className="h-8 w-12 p-0.5 border cursor-pointer"
+                                      value={colorEn}
+                                      onChange={(e) => updateHeaderSetting('colorEn', e.target.value)}
+                                    />
+                                    <span className="text-[10px] font-mono text-muted-foreground uppercase">{colorEn}</span>
+                                  </div>
+                                </Field>
                                 <div className="flex gap-4 pb-1">
                                   <div className="flex items-center gap-1.5">
                                     <Checkbox id="admin-italic-en" checked={italicEn}
@@ -2697,7 +2809,7 @@ export default function OrderDetailPage() {
                               </div>
 
                               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2 border-t">국문 타이틀 스타일</p>
-                              <div className="grid gap-3 sm:grid-cols-3 items-end">
+                              <div className="grid gap-3 sm:grid-cols-4 items-end">
                                 <Field>
                                   <FieldLabel>서체</FieldLabel>
                                   <Select value={fontKrVal} onValueChange={(v) => updateHeaderSetting('fontKr', v)}>
@@ -2715,6 +2827,18 @@ export default function OrderDetailPage() {
                                   <FieldLabel>크기 (px)</FieldLabel>
                                   <Input type="number" className="h-8 text-xs" value={sizeKr}
                                     onChange={(e) => updateHeaderSetting('sizeKr', parseInt(e.target.value) || 9)} />
+                                </Field>
+                                <Field>
+                                  <FieldLabel>글씨 색상</FieldLabel>
+                                  <div className="flex items-center gap-1.5 h-8">
+                                    <Input
+                                      type="color"
+                                      className="h-8 w-12 p-0.5 border cursor-pointer"
+                                      value={colorKr}
+                                      onChange={(e) => updateHeaderSetting('colorKr', e.target.value)}
+                                    />
+                                    <span className="text-[10px] font-mono text-muted-foreground uppercase">{colorKr}</span>
+                                  </div>
                                 </Field>
                                 <div className="flex gap-4 pb-1">
                                   <div className="flex items-center gap-1.5">
