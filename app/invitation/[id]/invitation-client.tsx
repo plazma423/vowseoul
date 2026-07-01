@@ -730,8 +730,8 @@ export default function InvitationClient({
           const sectionElement = (() => { switch (sectionId) {
             case 'hero':
               const heroInfoFont = themeStyles.heroInfoFont || fontEn
-              const heroInfoGroomBrideSize = themeStyles.heroInfoGroomBrideSize ?? 16
-              const heroInfoDetailsSize = themeStyles.heroInfoDetailsSize ?? 11
+              const heroInfoGroomBrideSize = parseInt(themeStyles.heroInfoGroomBrideSize?.toString() || '16')
+              const heroInfoDetailsSize = parseInt(themeStyles.heroInfoDetailsSize?.toString() || '11')
               if (isSereneBlue) {
                 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                 let dateStr = '2026. 09. 19 (토) 오후 5시'
@@ -1096,7 +1096,7 @@ export default function InvitationClient({
                     {renderDivider()}
 
                     {/* Greeting Message */}
-                    <div className="leading-relaxed whitespace-pre-wrap text-xs tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
+                    <div className="leading-relaxed whitespace-pre-wrap text-sm tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
                       {invitation?.invitationMessage || (
                         "여보, 우리는 등불 하나 켜서 삽시다.\n바람에 흔들리는 심지 등불이라도 켜서\n기름 졸이듯 마음을 다하여\n사랑하며 삽시다. 오래도록."
                       )}

@@ -1,6 +1,12 @@
 import { supabase } from "@/lib/supabase"
 import InvitationClient from "./invitation-client"
-import { Metadata } from "next"
+import { Metadata, Viewport } from "next"
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
