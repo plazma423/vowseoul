@@ -28,7 +28,7 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
 
     const script = document.createElement('script');
     script.id = 'naver-maps-script';
-    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=od370yq3ix&submodules=geocoder`;
+    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=od370yq3ix`;
     script.async = true;
     script.onload = () => setScriptLoaded(true);
     document.head.appendChild(script);
@@ -44,46 +44,54 @@ export function NaverMap({ address, venueName }: NaverMapProps) {
       const windowAny = window as any;
       const naver = windowAny.naver;
 
-      if (!naver || !naver.maps || !naver.maps.Service || !naver.maps.Service.Status) {
+      if (!naver || !naver.maps || !naver.maps.LatLng) {
         if (isMounted) {
           timerId = setTimeout(initMap, 200); // 200ms 간격으로 네이버 지도 서비스 로드 폴링
         }
         return;
       }
 
-      // 2. Geocode the address
-      naver.maps.Service.geocode({ query: address }, (status: any, response: any) => {
-        if (!isMounted) return;
-        if (status !== naver.maps.Service.Status.OK || !response.v2.addresses.length) {
-          console.error('Geocoding failed for address:', address);
-          return;
-        }
+      // 서버의 geocode API route 호출
+      fetch(`/api/geocode?query=${encodeURIComponent(address)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Geocoding server error');
+          return res.json();
+        })
+        .then(data => {
+          if (!isMounted) return;
+          if (!data.addresses || data.addresses.length === 0) {
+            console.error('No coordinates found for address:', address);
+            return;
+          }
 
-        const item = response.v2.addresses[0];
-        const lat = parseFloat(item.y);
-        const lng = parseFloat(item.x);
-        const location = new naver.maps.LatLng(lat, lng);
-        setCoords({ lat, lng });
+          const item = data.addresses[0];
+          const lat = parseFloat(item.y);
+          const lng = parseFloat(item.x);
+          const location = new naver.maps.LatLng(lat, lng);
+          setCoords({ lat, lng });
 
-        // 3. Create Map
-        if (mapRef.current) {
-          const map = new naver.maps.Map(mapRef.current, {
-            center: location,
-            zoom: 16,
-            zoomControl: true,
-            zoomControlOptions: {
-              position: naver.maps.Position.RIGHT_CENTER
-            }
-          });
+          // 3. Create Map
+          if (mapRef.current) {
+            const map = new naver.maps.Map(mapRef.current, {
+              center: location,
+              zoom: 16,
+              zoomControl: true,
+              zoomControlOptions: {
+                position: naver.maps.Position.RIGHT_CENTER
+              }
+            });
 
-          // 4. Create Marker
-          new naver.maps.Marker({
-            position: location,
-            map: map,
-            title: venueName
-          });
-        }
-      });
+            // 4. Create Marker
+            new naver.maps.Marker({
+              position: location,
+              map: map,
+              title: venueName
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Server geocoding fetch failed:', err);
+        });
     };
 
     initMap();
