@@ -31,13 +31,13 @@ export default function ReadyPage() {
           </p>
         </div>
 
-        {/* Back Link */}
-        <div className="pt-4 font-sans text-xs">
+        {/* Admin Login Link */}
+        <div className="pt-4 font-sans text-[11px]">
           <Link 
-            href="/admin" 
-            className="inline-flex items-center gap-1.5 text-[#9E8B7E] hover:text-[#7D6B5F] transition-colors border-b border-[#D6CFC9] pb-0.5"
+            href="/admin/login" 
+            className="inline-flex items-center gap-1.5 text-[#A69C95] hover:text-[#7D6B5F] transition-colors opacity-70 hover:opacity-100"
           >
-            관리자 대시보드 바로가기 <ArrowRight className="w-3.5 h-3.5" />
+            관리자 로그인 <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       </div>

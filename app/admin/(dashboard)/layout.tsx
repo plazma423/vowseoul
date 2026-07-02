@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/logo'
 import { 
   LayoutDashboard, 
@@ -43,14 +44,48 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const { setAuth, fetchData } = useAppStore()
+  const [authChecking, setAuthChecking] = React.useState(true)
+  const [authorized, setAuthorized] = React.useState(false)
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
+  useEffect(() => {
+    async function checkAdminAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const isUserAdmin = session?.user?.email === 'admin@vowseoul.com'
+
+        if (!session || !isUserAdmin) {
+          window.location.href = '/admin/login'
+        } else {
+          setAuthorized(true)
+          setAuthChecking(false)
+        }
+      } catch (err) {
+        console.error('Admin authentication check error:', err)
+        window.location.href = '/admin/login'
+      }
+    }
+
+    checkAdminAuth()
+  }, [])
+
   const handleLogout = () => {
     setAuth(false, false)
     window.location.href = '/admin/login'
+  }
+
+  if (authChecking || !authorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center font-sans">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm font-light">관리자 권한을 확인하고 있습니다...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
