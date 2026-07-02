@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { useAppStore, sampleOrders, type Order, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
-import { Search, CalendarIcon, Eye, Plus, Settings, MoreVertical, Link2, Pencil, Copy, Trash2, Loader2 } from 'lucide-react'
+import { Search, CalendarIcon, Eye, Plus, Settings, MoreVertical, Link2, Pencil, Copy, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -38,6 +38,17 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({})
+  const [sortField, setSortField] = useState<'id' | 'createdAt' | 'groomName' | 'weddingDate' | 'amount' | 'status'>('createdAt')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
 
   // Action Loading & Edit Dialog States
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null)
@@ -62,6 +73,37 @@ export default function OrdersPage() {
     amount: 0,
     status: 'pending'
   })
+
+  const [invitationThemes, setInvitationThemes] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const fetchInvitationThemes = async () => {
+      if (!orders || orders.length === 0) return
+      
+      const invitationIds = orders.map(o => o.invitationId).filter(Boolean)
+      if (invitationIds.length === 0) return
+
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('id, themeId')
+        .in('id', invitationIds)
+
+      if (error) {
+        console.error('Error fetching invitation themes:', error)
+        return
+      }
+
+      if (data) {
+        const themeMap: Record<string, string> = {}
+        data.forEach(item => {
+          themeMap[item.id] = item.themeId
+        })
+        setInvitationThemes(themeMap)
+      }
+    }
+
+    fetchInvitationThemes()
+  }, [orders])
 
   // Action Handlers
   const handleCopyLink = async (invitationId: string) => {
@@ -304,6 +346,23 @@ export default function OrdersPage() {
     return true
   })
 
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    let aVal: any = a[sortField] || ''
+    let bVal: any = b[sortField] || ''
+
+    if (sortField === 'groomName') {
+      aVal = `${a.groomName} & ${a.brideName}`.toLowerCase()
+      bVal = `${b.groomName} & ${b.brideName}`.toLowerCase()
+    } else if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase()
+      bVal = bVal.toLowerCase()
+    }
+
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
   const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
     updateOrder(orderId, { status: newStatus })
   }
@@ -404,25 +463,97 @@ export default function OrdersPage() {
       {/* Orders Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">주문 목록 ({filteredOrders.length}건)</CardTitle>
+          <CardTitle className="text-lg">주문 목록 ({sortedOrders.length}건)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                  <th className="pb-3 pr-4">주문번호</th>
-                  <th className="pb-3 pr-4">주문일시</th>
-                  <th className="pb-3 pr-4">신랑신부</th>
-                  <th className="pb-3 pr-4">예식일</th>
+                <tr className="border-b border-border text-left text-sm text-muted-foreground select-none">
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>주문번호</span>
+                      {sortField === 'id' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>주문일시</span>
+                      {sortField === 'createdAt' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('groomName')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>신랑신부</span>
+                      {sortField === 'groomName' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('weddingDate')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>예식일</span>
+                      {sortField === 'weddingDate' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
                   <th className="pb-3 pr-4">테마</th>
-                  <th className="pb-3 pr-4">금액</th>
-                  <th className="pb-3 pr-4">상태</th>
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('amount')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>금액</span>
+                      {sortField === 'amount' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="pb-3 pr-4 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>상태</span>
+                      {sortField === 'status' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </th>
                   <th className="pb-3">관리</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order) => (
+                {sortedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-border last:border-0">
                     <td className="py-3 pr-4 text-sm font-medium">{order.id}</td>
                     <td className="py-3 pr-4 text-sm">{order.createdAt}</td>
@@ -430,7 +561,13 @@ export default function OrdersPage() {
                       {order.groomName} & {order.brideName}
                     </td>
                     <td className="py-3 pr-4 text-sm">{order.weddingDate}</td>
-                    <td className="py-3 pr-4 text-sm">{order.theme}</td>
+                    <td className="py-3 pr-4 text-sm">
+                      {(() => {
+                        const actualThemeId = invitationThemes[order.invitationId]
+                        const matchedTheme = actualThemeId ? (themes.find(t => t.id === actualThemeId) || sampleThemes.find(t => t.id === actualThemeId)) : null
+                        return matchedTheme ? matchedTheme.name : order.theme
+                      })()}
+                    </td>
                     <td className="py-3 pr-4 text-sm">{order.amount.toLocaleString()}원</td>
                     <td className="py-3 pr-4">
                       <Select

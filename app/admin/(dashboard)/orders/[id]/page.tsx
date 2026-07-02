@@ -259,6 +259,10 @@ export default function OrderDetailPage() {
     if (!order || !currentInvitation) return
     setIsSaving(true)
     try {
+      const matchedTheme = themes.find(t => t.id === currentInvitation.themeId) || 
+                           sampleThemes.find(t => t.id === currentInvitation.themeId)
+      const themeName = matchedTheme ? matchedTheme.name : (order.theme || 'Classic White')
+
       const updatedOrderData = {
         customerName: order.customerName,
         amount: order.amount,
@@ -266,7 +270,8 @@ export default function OrderDetailPage() {
         notes: order.notes,
         weddingDate: currentInvitation.weddingDate || order.weddingDate,
         groomName: currentInvitation.groomName || '신랑',
-        brideName: currentInvitation.brideName || '신부'
+        brideName: currentInvitation.brideName || '신부',
+        theme: themeName
       }
 
       // 1. Update Order in DB
