@@ -30,6 +30,9 @@ export default function AdminLoginPage() {
 
     // Check admin credentials
     if (username === 'vowseoul' && password === 'test1234') {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vow_seoul_admin_session', 'true')
+      }
       setAuth(true, true)
       router.push('/admin')
     } else {

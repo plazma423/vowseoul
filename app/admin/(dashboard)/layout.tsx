@@ -52,14 +52,16 @@ export default function AdminLayout({
   }, [fetchData])
 
   useEffect(() => {
-    async function checkAdminAuth() {
+    function checkAdminAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const isUserAdmin = session?.user?.email === 'admin@vowseoul.com'
+        const isAdminSession = typeof window !== 'undefined'
+          ? localStorage.getItem('vow_seoul_admin_session') === 'true'
+          : false
 
-        if (!session || !isUserAdmin) {
+        if (!isAdminSession) {
           window.location.href = '/admin/login'
         } else {
+          setAuth(true, true)
           setAuthorized(true)
           setAuthChecking(false)
         }
@@ -70,9 +72,12 @@ export default function AdminLayout({
     }
 
     checkAdminAuth()
-  }, [])
+  }, [setAuth])
 
   const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('vow_seoul_admin_session')
+    }
     setAuth(false, false)
     window.location.href = '/admin/login'
   }
