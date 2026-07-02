@@ -52,6 +52,42 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
+const parseIndividualParents = (fullRelation: string) => {
+  const result = { fatherName: '', motherName: '', relationText: '' }
+  if (!fullRelation) return result
+
+  // Pattern 1: "아버지 김철수, 어머니 이영희의 장남"
+  const pattern1 = /아버지\s*([^\s,··]+)[,\s·]*어머니\s*([^\s의]+)의\s*(.*)/
+  const match1 = fullRelation.match(pattern1)
+  if (match1) {
+    result.fatherName = match1[1].trim()
+    result.motherName = match1[2].trim()
+    result.relationText = `의 ${match1[3].trim()}`
+    return result
+  }
+
+  // Pattern 2: "김태진 · 정혜선 의 아들"
+  const pattern2 = /^([^\s의,·]+)[,\s·]+([^\s의,·]+)\s*의\s*(.*)/
+  const match2 = fullRelation.match(pattern2)
+  if (match2) {
+    result.fatherName = match2[1].trim()
+    result.motherName = match2[2].trim()
+    result.relationText = `의 ${match2[3].trim()}`
+    return result
+  }
+
+  // Pattern 3: "김태진 의 아들"
+  const pattern3 = /^([^\s의]+)\s*의\s*(.*)/
+  const match3 = fullRelation.match(pattern3)
+  if (match3) {
+    result.fatherName = match3[1].trim()
+    result.relationText = `의 ${match3[2].trim()}`
+    return result
+  }
+
+  return result
+}
+
 const formatParentRelation = (relationStr: string, parentNames?: string, relationText?: string) => {
   if (parentNames !== undefined && relationText !== undefined) {
     return (
@@ -647,6 +683,8 @@ export default function InvitationClient({
             const fonts = new Set<string>()
             if (fontKr) fonts.add(fontKr)
             if (fontEn) fonts.add(fontEn)
+            fonts.add('Covered By Your Grace')
+            fonts.add('Nothing You Could Do')
             if (themeStyles.heroSubtitleFont) fonts.add(themeStyles.heroSubtitleFont)
             if (themeStyles.heroInfoFont) fonts.add(themeStyles.heroInfoFont)
             if (themeStyles.sectionHeaders) {
@@ -672,6 +710,8 @@ export default function InvitationClient({
               'Kaushan Script': ['Kaushan+Script'],
               'Radio Canada Big': ['Radio+Canada+Big:ital,wght@0,400..700;1,400..700'],
               'Source Serif Pro': ['Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900'],
+              'Nothing You Could Do': ['Nothing+You+Could+Do'],
+              'Covered By Your Grace': ['Covered+By+Your+Grace'],
               'font-serif': ['Noto+Serif+KR:wght@200..900', 'Nanum+Myeongjo:wght@400;700;800', 'Playfair+Display:ital,wght@0,400..900;1,400..900', 'Lora:ital,wght@0,400..700;1,400..700'],
               'font-sans': ['Inter:wght@100..900', 'Montserrat:ital,wght@0,100..900;1,100..900']
             }
@@ -778,11 +818,13 @@ export default function InvitationClient({
                   <div 
                     key="hero" 
                     id="preview-section-hero" 
-                    className="relative min-h-[640px] flex flex-col items-center justify-between text-center overflow-hidden pb-12 pt-16 bg-[#EFD0D0] text-black"
+                    className="relative min-h-[640px] flex flex-col items-center justify-between text-center overflow-hidden pb-12 pt-28 bg-[#EFD0D0] text-black"
                     style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
                   >
-                    {/* Semi-circle Top Decorative Notch */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-12 bg-white rounded-b-full z-10" />
+                    {/* White bar at the top */}
+                    <div className="absolute top-0 left-0 right-0 h-10 bg-white z-10" />
+                    {/* Perfect semi-circle below the white bar */}
+                    <div className="absolute top-10 left-1/2 -translate-x-1/2 w-24 h-12 bg-white rounded-b-full z-10" />
 
                     {/* Title: You're Invited To Our Wedding! */}
                     <div className="z-10 mt-6 px-4">
@@ -792,7 +834,7 @@ export default function InvitationClient({
                     </div>
 
                     {/* Polaroid Photo Card */}
-                    <div className="z-10 my-6 bg-white p-4 pb-5 shadow-[5px_5px_15px_rgba(0,0,0,0.15)] flex flex-col items-center w-[250px] transition-transform hover:scale-[1.02] duration-300">
+                    <div className="z-10 my-12 bg-white p-4 pb-5 shadow-[5px_5px_15px_rgba(0,0,0,0.15)] flex flex-col items-center w-[250px] transition-transform hover:scale-[1.02] duration-300">
                       <div className="w-[218px] h-[260px] overflow-hidden bg-gray-100 flex items-center justify-center">
                         {invitation?.mainImage ? (
                           <img
@@ -808,15 +850,15 @@ export default function InvitationClient({
                         )}
                       </div>
                       {/* Signature Names */}
-                      <div className="mt-4 text-2xl font-normal text-black italic lowercase" style={{ fontFamily: "'Nothing You Could Do', cursive" }}>
+                      <div className="mt-4 text-2xl font-normal text-black italic lowercase" style={{ fontFamily: "'Covered By Your Grace', cursive" }}>
                         {groomEn} &amp; {brideEn}
                       </div>
                     </div>
 
                     {/* Bottom Information */}
                     <div className="z-10 text-center space-y-1.5 px-4 font-serif text-[#686868] text-xs tracking-wider" style={{ fontFamily: "'Goudy Bookletter 1911', serif" }}>
-                      <p className="uppercase text-sm font-semibold tracking-widest text-black">{venueStr}</p>
-                      <p className="uppercase text-[11px]">{formattedDate}. {timeStr}</p>
+                      <p className="uppercase font-semibold tracking-widest text-[#686868] text-xs">{venueStr}</p>
+                      <p className="uppercase text-[#686868] text-xs">{formattedDate}. {timeStr}</p>
                     </div>
                   </div>
                 )
@@ -1146,10 +1188,13 @@ export default function InvitationClient({
 
             case 'greeting':
               if (isConcept5) {
-                const groomFather = invitation?.customStyles?.groomFatherName || '박태수'
-                const groomMother = invitation?.customStyles?.groomMotherName || '선우명희'
-                const brideFather = invitation?.customStyles?.brideFatherName || '이훈'
-                const brideMother = invitation?.customStyles?.brideMotherName || '최현숙'
+                const parsedGroom = parseIndividualParents(invitation?.groomParentRelation || '')
+                const parsedBride = parseIndividualParents(invitation?.brideParentRelation || '')
+
+                const groomFather = invitation?.customStyles?.groomFatherName || parsedGroom.fatherName || '박태수'
+                const groomMother = invitation?.customStyles?.groomMotherName || parsedGroom.motherName || '선우명희'
+                const brideFather = invitation?.customStyles?.brideFatherName || parsedBride.fatherName || '이훈'
+                const brideMother = invitation?.customStyles?.brideMotherName || parsedBride.motherName || '최현숙'
 
                 return (
                   <section 
@@ -1158,17 +1203,23 @@ export default function InvitationClient({
                     style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
                   >
                     {/* Diagonal Slanted White Bar */}
-                    <div className="w-[120%] h-12 bg-white -rotate-[7.63deg] -translate-x-[10%] mb-12 shadow-sm" />
+                    <div 
+                      className="w-full h-[100px] bg-white mb-12" 
+                      style={{ 
+                        clipPath: 'polygon(0 50px, 100% 0, 100% 48px, 0 98px)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.06))'
+                      }}
+                    />
 
                     {/* Invitation Text */}
-                    <div className="px-6 max-w-[340px] mx-auto text-sm leading-[2.0] font-medium whitespace-pre-line text-white/90">
+                    <div className="px-6 max-w-[340px] mx-auto text-[15px] leading-[2.0] font-medium whitespace-pre-line text-white/90">
                       {invitation?.invitationMessage || 
                        '사랑으로 하나 된 두 사람이\n서로를 이해하며 한 길을 걸어가려 합니다.\n귀한 발걸음으로 저희의 출발을\n함께 축복해 주시기 바랍니다.'}
                     </div>
 
                     {/* Profile Photos */}
                     <div className="flex gap-4 justify-center items-center my-10 px-4">
-                      <div className="w-[110px] h-[110px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
+                      <div className="w-[140px] h-[140px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
                         {invitation?.customStyles?.groomImage ? (
                           <img
                             src={invitation.customStyles.groomImage}
@@ -1179,7 +1230,7 @@ export default function InvitationClient({
                           <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">신랑 사진</div>
                         )}
                       </div>
-                      <div className="w-[110px] h-[110px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
+                      <div className="w-[140px] h-[140px] bg-white/20 overflow-hidden shadow-inner border border-white/10 rounded-sm">
                         {invitation?.customStyles?.brideImage ? (
                           <img
                             src={invitation.customStyles.brideImage}
@@ -1197,28 +1248,28 @@ export default function InvitationClient({
                       {/* Groom side */}
                       <div className="space-y-4">
                         <div className="space-y-1">
-                          <span className="text-[12px] opacity-60 block">신랑</span>
-                          <h3 className="text-[20px] font-medium">{invitation?.groomName || '박성훈'}</h3>
+                          <span className="text-[13px] opacity-60 block">신랑</span>
+                          <h3 className="text-[21px] font-medium">{invitation?.groomName || '박성훈'}</h3>
                         </div>
                         <div className="h-px bg-white/20 w-8 mx-auto" />
-                        <div className="space-y-1.5 text-[13px] opacity-90">
-                          <span className="text-[10px] opacity-60 block">신랑 측 혼주</span>
-                          <p><span className="text-[10px] opacity-50 mr-1">아버지</span>{groomFather}</p>
-                          <p><span className="text-[10px] opacity-50 mr-1">어머니</span>{groomMother}</p>
+                        <div className="space-y-1.5 text-[14px] opacity-90">
+                          <span className="text-[11px] opacity-60 block">신랑 측 혼주</span>
+                          <p><span className="text-[11px] opacity-50 mr-1">아버지</span>{groomFather}</p>
+                          <p><span className="text-[11px] opacity-50 mr-1">어머니</span>{groomMother}</p>
                         </div>
                       </div>
 
                       {/* Bride side */}
                       <div className="space-y-4">
                         <div className="space-y-1">
-                          <span className="text-[12px] opacity-60 block">신부</span>
-                          <h3 className="text-[20px] font-medium">{invitation?.brideName || '이지혜'}</h3>
+                          <span className="text-[13px] opacity-60 block">신부</span>
+                          <h3 className="text-[21px] font-medium">{invitation?.brideName || '이지혜'}</h3>
                         </div>
                         <div className="h-px bg-white/20 w-8 mx-auto" />
-                        <div className="space-y-1.5 text-[13px] opacity-90">
-                          <span className="text-[10px] opacity-60 block">신부 측 혼주</span>
-                          <p><span className="text-[10px] opacity-50 mr-1">아버지</span>{brideFather}</p>
-                          <p><span className="text-[10px] opacity-50 mr-1">어머니</span>{brideMother}</p>
+                        <div className="space-y-1.5 text-[14px] opacity-90">
+                          <span className="text-[11px] opacity-60 block">신부 측 혼주</span>
+                          <p><span className="text-[11px] opacity-50 mr-1">아버지</span>{brideFather}</p>
+                          <p><span className="text-[11px] opacity-50 mr-1">어머니</span>{brideMother}</p>
                         </div>
                       </div>
                     </div>

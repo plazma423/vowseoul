@@ -554,14 +554,14 @@ export const sampleThemes: Theme[] = [
   },
   {
     id: 'concept5',
-    name: 'Concept 5',
+    name: 'Pink Envelope',
     thumbnail: '/themes/concept5.jpg',
     tags: ['핑크', '감성', '피그마 시안'],
     colorSets: [
-      { id: 'warm-pink', name: 'Warm Pink', colors: ['#EFD0D0', '#D76C6C', '#FFFFFF'] }
+      { id: 'warm-pink', name: 'Pink Envelope', colors: ['#EFD0D0', '#D76C6C', '#FFFFFF'] }
     ],
     fontSets: [
-      { id: 'goudy-radio', name: 'Goudy & Radio Canada', fonts: ['Radio Canada Big', 'Goudy Bookletter 1911', 'Nothing You Could Do'] }
+      { id: 'goudy-radio', name: 'Goudy & Radio Canada', fonts: ['Radio Canada Big', 'Goudy Bookletter 1911', 'Covered By Your Grace'] }
     ],
     layout: 'classic',
     styles: {

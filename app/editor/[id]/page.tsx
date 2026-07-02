@@ -22,6 +22,42 @@ const timeOptions = [
   '16:00', '16:30', '17:00', '17:30', '18:00'
 ]
 
+const parseIndividualParents = (fullRelation: string) => {
+  const result = { fatherName: '', motherName: '', relationText: '' }
+  if (!fullRelation) return result
+
+  // Pattern 1: "아버지 김철수, 어머니 이영희의 장남"
+  const pattern1 = /아버지\s*([^\s,··]+)[,\s·]*어머니\s*([^\s의]+)의\s*(.*)/
+  const match1 = fullRelation.match(pattern1)
+  if (match1) {
+    result.fatherName = match1[1].trim()
+    result.motherName = match1[2].trim()
+    result.relationText = `의 ${match1[3].trim()}`
+    return result
+  }
+
+  // Pattern 2: "김태진 · 정혜선 의 아들"
+  const pattern2 = /^([^\s의,·]+)[,\s·]+([^\s의,·]+)\s*의\s*(.*)/
+  const match2 = fullRelation.match(pattern2)
+  if (match2) {
+    result.fatherName = match2[1].trim()
+    result.motherName = match2[2].trim()
+    result.relationText = `의 ${match2[3].trim()}`
+    return result
+  }
+
+  // Pattern 3: "김태진 의 아들"
+  const pattern3 = /^([^\s의]+)\s*의\s*(.*)/
+  const match3 = fullRelation.match(pattern3)
+  if (match3) {
+    result.fatherName = match3[1].trim()
+    result.relationText = `의 ${match3[2].trim()}`
+    return result
+  }
+
+  return result
+}
+
 const parseParentNames = (fullRelation: string) => {
   if (!fullRelation) return ''
   const match = fullRelation.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/)
@@ -86,34 +122,94 @@ export default function BasicInfoPage() {
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="groomParentNames">혼주 이름</FieldLabel>
-                <Input
-                  id="groomParentNames"
-                  placeholder="아버지 홍길동 · 어머니 김순희"
-                  value={currentInvitation?.customStyles?.groomParentNames !== undefined 
-                    ? currentInvitation.customStyles.groomParentNames 
-                    : parseParentNames(currentInvitation?.groomParentRelation || '')}
-                  onChange={(e) => {
-                    const newNames = e.target.value;
-                    const curRelation = currentInvitation?.customStyles?.groomParentRelationText !== undefined
-                      ? currentInvitation.customStyles.groomParentRelationText
-                      : parseRelationText(currentInvitation?.groomParentRelation || '');
-                    
-                    const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
-                    updateCurrentInvitation({
-                      groomParentRelation: combined,
-                      customStyles: {
-                        ...(currentInvitation?.customStyles || {}),
-                        groomParentNames: newNames,
-                        groomParentRelationText: curRelation
-                      }
-                    });
-                  }}
-                  onFocus={() => setActiveSection('hero')}
-                />
-                <FieldDescription>혼주의 이름을 입력해주세요. (예: 아버지 홍길동 · 어머니 김순희)</FieldDescription>
-              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="groomFatherName">아버지 성함</FieldLabel>
+                  <Input
+                    id="groomFatherName"
+                    placeholder="홍길동"
+                    value={currentInvitation?.customStyles?.groomFatherName !== undefined 
+                      ? currentInvitation.customStyles.groomFatherName 
+                      : parseIndividualParents(currentInvitation?.groomParentRelation || '').fatherName}
+                    onChange={(e) => {
+                      const father = e.target.value
+                      const mother = currentInvitation?.customStyles?.groomMotherName !== undefined
+                        ? currentInvitation.customStyles.groomMotherName
+                        : parseIndividualParents(currentInvitation?.groomParentRelation || '').motherName
+                      const relation = currentInvitation?.customStyles?.groomParentRelationText !== undefined
+                        ? currentInvitation.customStyles.groomParentRelationText
+                        : parseRelationText(currentInvitation?.groomParentRelation || '')
+                      
+                      const namesArr = []
+                      if (father) namesArr.push(father)
+                      if (mother) namesArr.push(mother)
+                      const parentNamesCombined = namesArr.join(' · ')
+
+                      let relationCombined = ''
+                      if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                      else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                      else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                      else relationCombined = relation
+
+                      updateCurrentInvitation({
+                        groomParentRelation: relationCombined,
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          groomFatherName: father,
+                          groomMotherName: mother,
+                          groomParentNames: parentNamesCombined,
+                          groomParentRelationText: relation
+                        }
+                      })
+                    }}
+                    onFocus={() => setActiveSection('hero')}
+                  />
+                  <FieldDescription>아버님의 성함을 입력해주세요.</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="groomMotherName">어머니 성함</FieldLabel>
+                  <Input
+                    id="groomMotherName"
+                    placeholder="김순희"
+                    value={currentInvitation?.customStyles?.groomMotherName !== undefined 
+                      ? currentInvitation.customStyles.groomMotherName 
+                      : parseIndividualParents(currentInvitation?.groomParentRelation || '').motherName}
+                    onChange={(e) => {
+                      const mother = e.target.value
+                      const father = currentInvitation?.customStyles?.groomFatherName !== undefined
+                        ? currentInvitation.customStyles.groomFatherName
+                        : parseIndividualParents(currentInvitation?.groomParentRelation || '').fatherName
+                      const relation = currentInvitation?.customStyles?.groomParentRelationText !== undefined
+                        ? currentInvitation.customStyles.groomParentRelationText
+                        : parseRelationText(currentInvitation?.groomParentRelation || '')
+                      
+                      const namesArr = []
+                      if (father) namesArr.push(father)
+                      if (mother) namesArr.push(mother)
+                      const parentNamesCombined = namesArr.join(' · ')
+
+                      let relationCombined = ''
+                      if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                      else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                      else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                      else relationCombined = relation
+
+                      updateCurrentInvitation({
+                        groomParentRelation: relationCombined,
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          groomFatherName: father,
+                          groomMotherName: mother,
+                          groomParentNames: parentNamesCombined,
+                          groomParentRelationText: relation
+                        }
+                      })
+                    }}
+                    onFocus={() => setActiveSection('hero')}
+                  />
+                  <FieldDescription>어머님의 성함을 입력해주세요.</FieldDescription>
+                </Field>
+              </div>
               <Field>
                 <FieldLabel htmlFor="groomParentRelationText">관계 표기</FieldLabel>
                 <Input
@@ -123,20 +219,35 @@ export default function BasicInfoPage() {
                     ? currentInvitation.customStyles.groomParentRelationText 
                     : parseRelationText(currentInvitation?.groomParentRelation || '')}
                   onChange={(e) => {
-                    const newRelation = e.target.value;
-                    const curNames = currentInvitation?.customStyles?.groomParentNames !== undefined
-                      ? currentInvitation.customStyles.groomParentNames
-                      : parseParentNames(currentInvitation?.groomParentRelation || '');
+                    const relation = e.target.value
+                    const father = currentInvitation?.customStyles?.groomFatherName !== undefined
+                      ? currentInvitation.customStyles.groomFatherName
+                      : parseIndividualParents(currentInvitation?.groomParentRelation || '').fatherName
+                    const mother = currentInvitation?.customStyles?.groomMotherName !== undefined
+                      ? currentInvitation.customStyles.groomMotherName
+                      : parseIndividualParents(currentInvitation?.groomParentRelation || '').motherName
                     
-                    const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                    const namesArr = []
+                    if (father) namesArr.push(father)
+                    if (mother) namesArr.push(mother)
+                    const parentNamesCombined = namesArr.join(' · ')
+
+                    let relationCombined = ''
+                    if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                    else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                    else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                    else relationCombined = relation
+
                     updateCurrentInvitation({
-                      groomParentRelation: combined,
+                      groomParentRelation: relationCombined,
                       customStyles: {
                         ...(currentInvitation?.customStyles || {}),
-                        groomParentNames: curNames,
-                        groomParentRelationText: newRelation
+                        groomFatherName: father,
+                        groomMotherName: mother,
+                        groomParentNames: parentNamesCombined,
+                        groomParentRelationText: relation
                       }
-                    });
+                    })
                   }}
                   onFocus={() => setActiveSection('hero')}
                 />
@@ -178,34 +289,94 @@ export default function BasicInfoPage() {
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="brideParentNames">혼주 이름</FieldLabel>
-                <Input
-                  id="brideParentNames"
-                  placeholder="아버지 김철수 · 어머니 박미경"
-                  value={currentInvitation?.customStyles?.brideParentNames !== undefined 
-                    ? currentInvitation.customStyles.brideParentNames 
-                    : parseParentNames(currentInvitation?.brideParentRelation || '')}
-                  onChange={(e) => {
-                    const newNames = e.target.value;
-                    const curRelation = currentInvitation?.customStyles?.brideParentRelationText !== undefined
-                      ? currentInvitation.customStyles.brideParentRelationText
-                      : parseRelationText(currentInvitation?.brideParentRelation || '');
-                    
-                    const combined = newNames ? `${newNames} ${curRelation}`.trim() : curRelation;
-                    updateCurrentInvitation({
-                      brideParentRelation: combined,
-                      customStyles: {
-                        ...(currentInvitation?.customStyles || {}),
-                        brideParentNames: newNames,
-                        brideParentRelationText: curRelation
-                      }
-                    });
-                  }}
-                  onFocus={() => setActiveSection('hero')}
-                />
-                <FieldDescription>혼주의 이름을 입력해주세요. (예: 아버지 김철수 · 어머니 박미경)</FieldDescription>
-              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="brideFatherName">아버지 성함</FieldLabel>
+                  <Input
+                    id="brideFatherName"
+                    placeholder="김철수"
+                    value={currentInvitation?.customStyles?.brideFatherName !== undefined 
+                      ? currentInvitation.customStyles.brideFatherName 
+                      : parseIndividualParents(currentInvitation?.brideParentRelation || '').fatherName}
+                    onChange={(e) => {
+                      const father = e.target.value
+                      const mother = currentInvitation?.customStyles?.brideMotherName !== undefined
+                        ? currentInvitation.customStyles.brideMotherName
+                        : parseIndividualParents(currentInvitation?.brideParentRelation || '').motherName
+                      const relation = currentInvitation?.customStyles?.brideParentRelationText !== undefined
+                        ? currentInvitation.customStyles.brideParentRelationText
+                        : parseRelationText(currentInvitation?.brideParentRelation || '')
+                      
+                      const namesArr = []
+                      if (father) namesArr.push(father)
+                      if (mother) namesArr.push(mother)
+                      const parentNamesCombined = namesArr.join(' · ')
+
+                      let relationCombined = ''
+                      if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                      else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                      else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                      else relationCombined = relation
+
+                      updateCurrentInvitation({
+                        brideParentRelation: relationCombined,
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          brideFatherName: father,
+                          brideMotherName: mother,
+                          brideParentNames: parentNamesCombined,
+                          brideParentRelationText: relation
+                        }
+                      })
+                    }}
+                    onFocus={() => setActiveSection('hero')}
+                  />
+                  <FieldDescription>아버님의 성함을 입력해주세요.</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="brideMotherName">어머니 성함</FieldLabel>
+                  <Input
+                    id="brideMotherName"
+                    placeholder="박미경"
+                    value={currentInvitation?.customStyles?.brideMotherName !== undefined 
+                      ? currentInvitation.customStyles.brideMotherName 
+                      : parseIndividualParents(currentInvitation?.brideParentRelation || '').motherName}
+                    onChange={(e) => {
+                      const mother = e.target.value
+                      const father = currentInvitation?.customStyles?.brideFatherName !== undefined
+                        ? currentInvitation.customStyles.brideFatherName
+                        : parseIndividualParents(currentInvitation?.brideParentRelation || '').fatherName
+                      const relation = currentInvitation?.customStyles?.brideParentRelationText !== undefined
+                        ? currentInvitation.customStyles.brideParentRelationText
+                        : parseRelationText(currentInvitation?.brideParentRelation || '')
+                      
+                      const namesArr = []
+                      if (father) namesArr.push(father)
+                      if (mother) namesArr.push(mother)
+                      const parentNamesCombined = namesArr.join(' · ')
+
+                      let relationCombined = ''
+                      if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                      else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                      else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                      else relationCombined = relation
+
+                      updateCurrentInvitation({
+                        brideParentRelation: relationCombined,
+                        customStyles: {
+                          ...(currentInvitation?.customStyles || {}),
+                          brideFatherName: father,
+                          brideMotherName: mother,
+                          brideParentNames: parentNamesCombined,
+                          brideParentRelationText: relation
+                        }
+                      })
+                    }}
+                    onFocus={() => setActiveSection('hero')}
+                  />
+                  <FieldDescription>어머님의 성함을 입력해주세요.</FieldDescription>
+                </Field>
+              </div>
               <Field>
                 <FieldLabel htmlFor="brideParentRelationText">관계 표기</FieldLabel>
                 <Input
@@ -215,20 +386,35 @@ export default function BasicInfoPage() {
                     ? currentInvitation.customStyles.brideParentRelationText 
                     : parseRelationText(currentInvitation?.brideParentRelation || '')}
                   onChange={(e) => {
-                    const newRelation = e.target.value;
-                    const curNames = currentInvitation?.customStyles?.brideParentNames !== undefined
-                      ? currentInvitation.customStyles.brideParentNames
-                      : parseParentNames(currentInvitation?.brideParentRelation || '');
+                    const relation = e.target.value
+                    const father = currentInvitation?.customStyles?.brideFatherName !== undefined
+                      ? currentInvitation.customStyles.brideFatherName
+                      : parseIndividualParents(currentInvitation?.brideParentRelation || '').fatherName
+                    const mother = currentInvitation?.customStyles?.brideMotherName !== undefined
+                      ? currentInvitation.customStyles.brideMotherName
+                      : parseIndividualParents(currentInvitation?.brideParentRelation || '').motherName
                     
-                    const combined = curNames ? `${curNames} ${newRelation}`.trim() : newRelation;
+                    const namesArr = []
+                    if (father) namesArr.push(father)
+                    if (mother) namesArr.push(mother)
+                    const parentNamesCombined = namesArr.join(' · ')
+
+                    let relationCombined = ''
+                    if (father && mother) relationCombined = `아버지 ${father}, 어머니 ${mother} ${relation}`.trim()
+                    else if (father) relationCombined = `아버지 ${father} ${relation}`.trim()
+                    else if (mother) relationCombined = `어머니 ${mother} ${relation}`.trim()
+                    else relationCombined = relation
+
                     updateCurrentInvitation({
-                      brideParentRelation: combined,
+                      brideParentRelation: relationCombined,
                       customStyles: {
                         ...(currentInvitation?.customStyles || {}),
-                        brideParentNames: curNames,
-                        brideParentRelationText: newRelation
+                        brideFatherName: father,
+                        brideMotherName: mother,
+                        brideParentNames: parentNamesCombined,
+                        brideParentRelationText: relation
                       }
-                    });
+                    })
                   }}
                   onFocus={() => setActiveSection('hero')}
                 />

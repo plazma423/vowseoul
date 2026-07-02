@@ -30,9 +30,35 @@ export default function ContentPage() {
   const [isUploadingGallery, setIsUploadingGallery] = useState(false)
   const [isUploadingSubway, setIsUploadingSubway] = useState(false)
   const [isUploadingParking, setIsUploadingParking] = useState(false)
+  const [isUploadingGroom, setIsUploadingGroom] = useState(false)
+  const [isUploadingBride, setIsUploadingBride] = useState(false)
 
   const subwayImageInputRef = useRef<HTMLInputElement>(null)
   const parkingImageInputRef = useRef<HTMLInputElement>(null)
+  const groomImageInputRef = useRef<HTMLInputElement>(null)
+  const brideImageInputRef = useRef<HTMLInputElement>(null)
+
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, role: 'groom' | 'bride') => {
+    if (!e.target.files || e.target.files.length === 0) return
+    const isGroom = role === 'groom'
+    if (isGroom) setIsUploadingGroom(true)
+    else setIsUploadingBride(true)
+    
+    try {
+      const url = await uploadFile(e.target.files[0], 'profiles')
+      const newStyles = {
+        ...(currentInvitation?.customStyles || {}),
+        [isGroom ? 'groomImage' : 'brideImage']: url
+      }
+      updateCurrentInvitation({ customStyles: newStyles })
+    } catch (err) {
+      alert('프로필 사진 업로드에 실패했습니다.')
+    } finally {
+      if (isGroom) setIsUploadingGroom(false)
+      else setIsUploadingBride(false)
+      if (e.target) e.target.value = ''
+    }
+  }
 
   const updateCustomStyle = (key: string, value: any) => {
     const customStyles = {
@@ -350,6 +376,109 @@ export default function ContentPage() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Pink Envelope profile images uploader */}
+            <div className="mt-6 border-t border-border pt-6">
+              <h4 className="text-sm font-medium mb-1 flex items-center gap-1.5">
+                <Image className="w-4 h-4 text-muted-foreground" />
+                <span>Pink Envelope 테마 전용 사진</span>
+              </h4>
+              <p className="text-xs text-muted-foreground mb-4">Pink Envelope 테마를 사용할 경우 표시되는 신랑, 신부 프로필 사진을 등록해 주세요.</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Groom profile image */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-muted-foreground block text-center">신랑 프로필 사진</span>
+                  <div 
+                    className="aspect-square w-full rounded-md border border-dashed border-border bg-muted/40 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
+                    onClick={() => groomImageInputRef.current?.click()}
+                  >
+                    {currentInvitation?.customStyles?.groomImage ? (
+                      <>
+                        <img 
+                          src={currentInvitation.customStyles.groomImage} 
+                          alt="Groom Profile Uploaded" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <Pencil className="w-5 h-5 text-white" />
+                        </div>
+                      </>
+                    ) : isUploadingGroom ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <div className="flex flex-col items-center text-muted-foreground text-xs gap-1">
+                        <Upload className="w-4 h-4" />
+                        <span>사진 올리기</span>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={groomImageInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => handleProfileImageUpload(e, 'groom')} 
+                  />
+                  {currentInvitation?.customStyles?.groomImage && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-xs text-destructive h-7"
+                      onClick={() => updateCustomStyle('groomImage', null)}
+                    >
+                      사진 삭제
+                    </Button>
+                  )}
+                </div>
+
+                {/* Bride profile image */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-muted-foreground block text-center">신부 프로필 사진</span>
+                  <div 
+                    className="aspect-square w-full rounded-md border border-dashed border-border bg-muted/40 hover:bg-muted/60 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
+                    onClick={() => brideImageInputRef.current?.click()}
+                  >
+                    {currentInvitation?.customStyles?.brideImage ? (
+                      <>
+                        <img 
+                          src={currentInvitation.customStyles.brideImage} 
+                          alt="Bride Profile Uploaded" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <Pencil className="w-5 h-5 text-white" />
+                        </div>
+                      </>
+                    ) : isUploadingBride ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <div className="flex flex-col items-center text-muted-foreground text-xs gap-1">
+                        <Upload className="w-4 h-4" />
+                        <span>사진 올리기</span>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={brideImageInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => handleProfileImageUpload(e, 'bride')} 
+                  />
+                  {currentInvitation?.customStyles?.brideImage && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-xs text-destructive h-7"
+                      onClick={() => updateCustomStyle('brideImage', null)}
+                    >
+                      사진 삭제
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </AccordionContent>
         </AccordionItem>
 
