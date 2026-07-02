@@ -1596,7 +1596,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             }
                           }}
                         >
-                          <h3 className="font-semibold text-lg tracking-wide text-[#D76C6C]">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                          <h3 className="font-semibold text-base tracking-wide text-[#D76C6C]">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           <p className="text-xs text-[#D76C6C]/80">{currentInvitation?.venueHall || '그랜드홀'}</p>
                           <p className="text-sm font-medium text-[#D76C6C] mt-2 whitespace-pre-line">{currentInvitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
                           <p className="text-[10px] text-[#D76C6C]/60 mt-1">터치하여 주소 복사</p>
@@ -1650,7 +1650,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             }
                           }}
                         >
-                          <h3 className="font-semibold text-lg tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                          <h3 className="font-semibold text-base tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           {currentInvitation?.venueHall && (
                             <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
                           )}

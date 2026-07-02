@@ -1858,7 +1858,7 @@ export default function InvitationClient({
                         }
                       }}
                     >
-                      <h3 className="font-semibold text-lg tracking-wide text-[#D76C6C]">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                      <h3 className="font-semibold text-base tracking-wide text-[#D76C6C]">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                       <p className="text-xs text-[#D76C6C]/80">{invitation?.venueHall || '그랜드홀'}</p>
                       <p className="text-sm font-medium text-[#D76C6C] mt-2 whitespace-pre-line">{invitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
                       <p className="text-[10px] text-[#D76C6C]/60 mt-1">터치하여 주소 복사</p>
@@ -1911,7 +1911,7 @@ export default function InvitationClient({
                         }
                       }}
                     >
-                      <h3 className="font-semibold text-xl tracking-wide">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                      <h3 className="font-semibold text-lg tracking-wide">{invitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                       {invitation?.venueHall && (
                         <p className="text-sm text-[#526678] font-medium">{invitation.venueHall}</p>
                       )}
@@ -1963,7 +1963,7 @@ export default function InvitationClient({
                   >
                     <CardContent className="p-6 text-left space-y-4">
                       <div>
-                        <h3 className="font-semibold text-lg">{invitation.venueName}</h3>
+                        <h3 className="font-semibold text-base">{invitation.venueName}</h3>
                         {invitation.venueHall && <p className="text-base" style={{ color: isDuotone ? color1 : sectColors.accent }}>{invitation.venueHall}</p>}
                         <p className="text-sm mt-1 whitespace-pre-line" style={{ color: isDuotone ? `${color1}cc` : sectColors.secondaryTextColorVal }}>{invitation.venueAddress}</p>
                       </div>
