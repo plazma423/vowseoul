@@ -45,6 +45,7 @@ export const viewport: Viewport = {
 }
 
 import { FontLoader } from '@/components/font-loader'
+import { FeatureToggleProvider } from '@/components/feature-toggle-provider'
 
 export default function RootLayout({
   children,
@@ -55,7 +56,9 @@ export default function RootLayout({
     <html lang="ko" className={`${geist.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased min-h-screen" suppressHydrationWarning>
         <FontLoader />
-        {children}
+        <FeatureToggleProvider>
+          {children}
+        </FeatureToggleProvider>
         <Toaster position="top-center" richColors />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       {/* impeccable-live-start */}

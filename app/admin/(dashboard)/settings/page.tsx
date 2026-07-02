@@ -23,6 +23,7 @@ import { toast } from "sonner"
 
 export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
+  const [isFeatureOpen, setIsFeatureOpen] = useState(true)
 
   const [heroContent, setHeroContent] = useState({
     title: "소중한 서약을 담아드립니다",
@@ -51,6 +52,16 @@ export default function AdminSettingsPage() {
   }, [])
 
   const fetchCurrentSetting = async () => {
+    const { data: openData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'is_feature_open')
+      .single()
+
+    if (openData?.value) {
+      setIsFeatureOpen(!!openData.value.open)
+    }
+
     const { data: imgData } = await supabase
       .from('settings')
       .select('value')
@@ -184,9 +195,18 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setTimeout(() => setIsSaving(false), 1000)
+    const { error } = await supabase.from('settings').upsert({
+      key: 'is_feature_open',
+      value: { open: isFeatureOpen }
+    })
+    setIsSaving(false)
+    if (error) {
+      toast.error('설정 저장에 실패했습니다.')
+    } else {
+      toast.success('설정이 성공적으로 저장되었습니다.')
+    }
   }
 
   const currentImageUrl = supabase.storage.from('vow-seoul-storage').getPublicUrl(currentMainImagePath).data.publicUrl
@@ -296,6 +316,13 @@ export default function AdminSettingsPage() {
               <Separator />
               <div className="space-y-4">
                 <h4 className="text-sm font-medium">서비스 상태</h4>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">기능 오픈</p>
+                    <p className="text-xs text-muted-foreground">이 기능을 끄면 청첩장 제작 등 일반 기능 접속 시 준비중 페이지로 이동합니다</p>
+                  </div>
+                  <Switch checked={isFeatureOpen} onCheckedChange={setIsFeatureOpen} />
+                </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">점검 모드</p>

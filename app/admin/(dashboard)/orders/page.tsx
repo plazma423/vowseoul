@@ -239,7 +239,7 @@ export default function OrdersPage() {
       const randId = typeof window !== 'undefined' && window.crypto?.randomUUID 
         ? window.crypto.randomUUID() 
         : 'inv-admin-' + Math.random().toString(36).substring(2, 15)
-      const newInvitationId = `admin__${randId}`
+      const newInvitationId = `custom__${randId}`
 
       // 3. Copy invitation data with new ID
       const newInvitation = {
