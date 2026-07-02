@@ -1094,15 +1094,15 @@ export default function OrderDetailPage() {
 
                   <Field>
                     <FieldLabel htmlFor="v-addr">예식장 주소</FieldLabel>
-                    <div className="flex gap-2">
-                      <Input
+                    <div className="flex flex-col gap-2">
+                      <Textarea
                         id="v-addr"
-                        placeholder="주소를 선택하거나 입력하세요"
+                        placeholder="주소를 선택하거나 입력하세요 (원하는 위치에서 줄바꿈이 가능합니다)"
                         value={currentInvitation.venueAddress || ''}
                         onChange={(e) => updateCurrentInvitation({ venueAddress: e.target.value })}
-                        className="flex-1"
+                        className="min-h-[80px]"
                       />
-                      <Button variant="outline" type="button" onClick={handleAddressSearch}>
+                      <Button variant="outline" type="button" onClick={handleAddressSearch} className="self-end">
                         주소 검색
                       </Button>
                     </div>

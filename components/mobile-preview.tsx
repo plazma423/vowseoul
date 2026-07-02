@@ -1598,7 +1598,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         >
                           <h3 className="font-semibold text-lg tracking-wide text-[#D76C6C]">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           <p className="text-xs text-[#D76C6C]/80">{currentInvitation?.venueHall || '그랜드홀'}</p>
-                          <p className="text-sm font-medium text-[#D76C6C] mt-2">{currentInvitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
+                          <p className="text-sm font-medium text-[#D76C6C] mt-2 whitespace-pre-line">{currentInvitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
                           <p className="text-[10px] text-[#D76C6C]/60 mt-1">터치하여 주소 복사</p>
                         </div>
 
@@ -1654,7 +1654,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {currentInvitation?.venueHall && (
                             <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
                           )}
-                          <p className="text-xs opacity-75 mt-1">{currentInvitation?.venueAddress || '강남구 학동로 1212'}</p>
+                          <p className="text-xs opacity-75 mt-1 whitespace-pre-line">{currentInvitation?.venueAddress || '강남구 학동로 1212'}</p>
                         </div>
 
                         {/* Interactive Map & Navigation App Buttons */}
@@ -1704,7 +1704,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <div>
                             <h3 className="font-semibold text-xs">{currentInvitation?.venueName || '예식장명'}</h3>
                             {currentInvitation?.venueHall && <p className="text-[10px]" style={{ color: isDuotone ? color1 : sectColors.accent }}>{currentInvitation.venueHall}</p>}
-                            <p className="text-[10px] mt-0.5" style={{ color: isDuotone ? `${color1}cc` : sectColors.secondaryTextColorVal }}>{currentInvitation?.venueAddress || '주소를 입력해주세요.'}</p>
+                            <p className="text-[10px] mt-0.5 whitespace-pre-line" style={{ color: isDuotone ? `${color1}cc` : sectColors.secondaryTextColorVal }}>{currentInvitation?.venueAddress || '주소를 입력해주세요.'}</p>
                           </div>
 
                           {/* Traffic Info & Parking Info */}
