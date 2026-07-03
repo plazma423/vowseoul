@@ -86,7 +86,23 @@ export default function CustomerDashboardPage() {
       if (inviteErr || !invite) {
         throw new Error('청첩장 정보를 찾을 수 없습니다.')
       }
-      setInvitation(invite)
+
+      // Fetch Customer Name from Orders table
+      let customerName = ''
+      try {
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('customerName')
+          .eq('invitationId', invitationId)
+          .single()
+        if (orderData) {
+          customerName = orderData.customerName
+        }
+      } catch (e) {
+        console.warn('Failed to fetch order customerName, fallback to groom/bride:', e)
+      }
+
+      setInvitation({ ...invite, customerName })
 
       // 1-2. Expiry Policy Validation (예식일 기준 만료 검증)
       if (invite.weddingDate) {
@@ -448,7 +464,7 @@ export default function CustomerDashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">
-              {invitation.groomName} ♡ {invitation.brideName} 예식 관리
+              {invitation.customerName ? `${invitation.customerName}님의 청첩장 관리 대시보드` : `${invitation.groomName} ♡ ${invitation.brideName} 예식 관리`}
             </h1>
             <p className="text-xs text-muted-foreground font-light mt-1">
               예식장: {invitation.venueName} {invitation.venueHall} | 예식일자: {invitation.weddingDate} {invitation.weddingTime}

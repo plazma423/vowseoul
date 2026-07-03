@@ -27,6 +27,8 @@ import {
   Star,
   Navigation,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Music,
   Pause,
   Image
@@ -153,6 +155,7 @@ export default function InvitationClient({
 
   // Guestbook states
   const [guestbookMessages, setGuestbookMessages] = useState<any[]>([])
+  const [guestbookPage, setGuestbookPage] = useState(0)
   const [newCommentName, setNewCommentName] = useState("")
   const [newCommentMessage, setNewCommentMessage] = useState("")
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
@@ -454,6 +457,7 @@ export default function InvitationClient({
       if (error) throw error
 
       setGuestbookMessages([newComment, ...guestbookMessages])
+      setGuestbookPage(0)
       setNewCommentName("")
       setNewCommentMessage("")
       setShowCommentModal(false)
@@ -471,6 +475,7 @@ export default function InvitationClient({
         localStorage.setItem(localCommentsKey, JSON.stringify(updatedLocal))
         
         setGuestbookMessages(updatedLocal)
+        setGuestbookPage(0)
         setNewCommentName("")
         setNewCommentMessage("")
         setShowCommentModal(false)
@@ -2599,15 +2604,20 @@ export default function InvitationClient({
 
             case 'guestbook':
               if (invitation.guestbookType === 'none' || invitation.guestbookType === undefined) return null
+              const visibleMessages = guestbookMessages.filter((comment: any) => comment.is_visible !== false)
+              const PAGE_SIZE = 5
+              const totalPages = Math.ceil(visibleMessages.length / PAGE_SIZE)
+              const pagedMessages = visibleMessages.slice(guestbookPage * PAGE_SIZE, (guestbookPage + 1) * PAGE_SIZE)
+
               return (
                 <section key="guestbook" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                   {showDivider && renderDivider()}
                   {renderSectionHeader('guestbook', 'Guestbook', '방명록', 'mb-8')}
                   <div className="space-y-4 text-left">
-                    {guestbookMessages.filter((comment: any) => comment.is_visible !== false).length === 0 ? (
+                    {visibleMessages.length === 0 ? (
                       <p className="text-center text-sm opacity-40 py-6">남겨진 축하 메시지가 없습니다. 첫 메시지를 남겨보세요!</p>
                     ) : (
-                      guestbookMessages.filter((comment: any) => comment.is_visible !== false).map((comment) => (
+                      pagedMessages.map((comment) => (
                         <Card key={comment.id} className={cn("border-0 shadow-sm", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
@@ -2620,6 +2630,34 @@ export default function InvitationClient({
                       ))
                     )}
                   </div>
+
+                  {visibleMessages.length > PAGE_SIZE && (
+                    <div className="flex items-center justify-center gap-6 mt-6 text-sm">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-full border border-current/10 text-muted-foreground hover:text-foreground"
+                        disabled={guestbookPage === 0}
+                        onClick={() => setGuestbookPage(p => p - 1)}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-xs font-semibold tracking-wider opacity-60">
+                        {guestbookPage + 1} / {totalPages}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-full border border-current/10 text-muted-foreground hover:text-foreground"
+                        disabled={guestbookPage >= totalPages - 1}
+                        onClick={() => setGuestbookPage(p => p + 1)}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                   
                   <Dialog open={showCommentModal} onOpenChange={setShowCommentModal}>
                     <DialogTrigger asChild>
