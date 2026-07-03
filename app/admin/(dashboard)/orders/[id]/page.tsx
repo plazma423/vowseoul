@@ -21,7 +21,7 @@ import { MobilePreview } from '@/components/mobile-preview'
 import { useAppStore, sampleThemes, samplePhrases, type BankAccount, type Contact, type Order } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage'
-import { ChevronLeft, Save, Upload, Loader2, Plus, Trash2, Play, Pause, FileText, ArrowUp, ArrowDown, ExternalLink, Pencil, Image } from 'lucide-react'
+import { ChevronLeft, Save, Upload, Loader2, Plus, Trash2, Play, Pause, FileText, ArrowUp, ArrowDown, ExternalLink, Pencil, Image, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -647,12 +647,27 @@ export default function OrderDetailPage() {
 
         <div className="flex items-center gap-2">
           {currentInvitation.id && (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/invitation/${currentInvitation.id}`} target="_blank" className="flex items-center gap-1.5">
-                <ExternalLink className="h-4 w-4" />
-                배포된 화면 보기
-              </Link>
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  const url = `${window.location.origin}/invitation/${currentInvitation.id}/dashboard`
+                  navigator.clipboard.writeText(url)
+                  toast.success("고객용 대시보드 링크가 복사되었습니다.")
+                }}
+                className="flex items-center gap-1.5"
+              >
+                <Copy className="h-4 w-4" />
+                대시보드 링크 복사
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/invitation/${currentInvitation.id}`} target="_blank" className="flex items-center gap-1.5">
+                  <ExternalLink className="h-4 w-4" />
+                  배포된 화면 보기
+                </Link>
+              </Button>
+            </>
           )}
           <Button onClick={handleSave} disabled={isSaving} className="text-white bg-foreground hover:bg-foreground/90">
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -1921,26 +1936,129 @@ export default function OrderDetailPage() {
                     </div>
 
                     {currentInvitation.rsvpEnabled && (
-                      <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-3 pl-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-xs">식사 선택 제공</p>
-                            <p className="text-[10px] text-muted-foreground">식사(한식/양식) 여부 조사를 폼에 추가합니다.</p>
+                      <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-4 pl-6">
+                        {/* 식사 여부 조사 */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-xs">식사 여부 조사</p>
+                              <p className="text-[10px] text-muted-foreground">하객들의 식사 희망 조사 및 식사 종류(한식/양식 등)를 선택할 수 있게 합니다.</p>
+                            </div>
+                            <Switch
+                              checked={currentInvitation.customStyles?.rsvpMealSurvey ?? (currentInvitation.rsvpMealEnabled !== false)}
+                              onCheckedChange={(checked) => {
+                                updateCustomStyle('rsvpMealSurvey', checked)
+                                updateCurrentInvitation({ rsvpMealEnabled: checked })
+                              }}
+                            />
                           </div>
-                          <Switch
-                            checked={currentInvitation.rsvpMealEnabled !== false}
-                            onCheckedChange={(checked) => updateCurrentInvitation({ rsvpMealEnabled: checked })}
-                          />
+
+                          {(currentInvitation.customStyles?.rsvpMealSurvey ?? (currentInvitation.rsvpMealEnabled !== false)) && (
+                            <div className="space-y-2 mt-2 pt-2 border-t border-border/40 pl-2">
+                              <p className="text-[11px] font-medium text-muted-foreground">식사 종류 리스트 (엔터로 추가)</p>
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                {(currentInvitation.customStyles?.rsvpMealOptions || ['한식', '양식']).map((opt: string, idx: number) => (
+                                  <span key={idx} className="inline-flex items-center gap-1 bg-background border border-border text-foreground text-[10px] px-2 py-0.5 rounded-md">
+                                    {opt}
+                                    <button
+                                      type="button"
+                                      className="text-muted-foreground hover:text-destructive text-[12px] font-bold ml-1"
+                                      onClick={() => {
+                                        const currentOpts = currentInvitation.customStyles?.rsvpMealOptions || ['한식', '양식'];
+                                        const updated = currentOpts.filter((_: any, i: number) => i !== idx);
+                                        updateCustomStyle('rsvpMealOptions', updated);
+                                      }}
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="new-meal-opt"
+                                  placeholder="새 종류 입력 후 추가"
+                                  className="h-8 text-xs flex-1"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      const input = e.currentTarget;
+                                      const val = input.value.trim();
+                                      if (val) {
+                                        const currentOpts = currentInvitation.customStyles?.rsvpMealOptions || ['한식', '양식'];
+                                        if (!currentOpts.includes(val)) {
+                                          updateCustomStyle('rsvpMealOptions', [...currentOpts, val]);
+                                        }
+                                        input.value = '';
+                                      }
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs px-3"
+                                  onClick={() => {
+                                    const input = document.getElementById('new-meal-opt') as HTMLInputElement;
+                                    const val = input?.value.trim();
+                                    if (val) {
+                                      const currentOpts = currentInvitation.customStyles?.rsvpMealOptions || ['한식', '양식'];
+                                      if (!currentOpts.includes(val)) {
+                                        updateCustomStyle('rsvpMealOptions', [...currentOpts, val]);
+                                      }
+                                      if (input) input.value = '';
+                                    }
+                                  }}
+                                >
+                                  추가
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-border/50 pt-2">
+                        {/* 셔틀 운영 조사 */}
+                        <div className="space-y-3 border-t border-border/50 pt-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-xs">셔틀 운영 조사</p>
+                              <p className="text-[10px] text-muted-foreground">하객들의 셔틀 이용 여부를 수집하고 운행 안내를 제공합니다.</p>
+                            </div>
+                            <Switch
+                              checked={currentInvitation.customStyles?.rsvpShuttleSurvey || false}
+                              onCheckedChange={(checked) => updateCustomStyle('rsvpShuttleSurvey', checked)}
+                            />
+                          </div>
+
+                          {currentInvitation.customStyles?.rsvpShuttleSurvey && (
+                            <div className="space-y-1.5 mt-2 pt-2 border-t border-border/40 pl-2">
+                              <label htmlFor="rsvp-shuttle-info" className="text-[11px] font-medium text-muted-foreground block">
+                                셔틀 운영 안내 텍스트
+                              </label>
+                              <Textarea
+                                id="rsvp-shuttle-info"
+                                placeholder="예: 예식일 당일 강남역 1번 출구에서 10분 간격으로 셔틀버스가 운행됩니다."
+                                value={currentInvitation.customStyles?.rsvpShuttleInfo || ''}
+                                onChange={(e) => updateCustomStyle('rsvpShuttleInfo', e.target.value)}
+                                className="text-xs min-h-[60px]"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 축하 메세지 작성 */}
+                        <div className="flex items-center justify-between border-t border-border/50 pt-3">
                           <div>
-                            <p className="font-medium text-xs">축하 한마디 메시지 작성</p>
-                            <p className="text-[10px] text-muted-foreground">참석 정보 전송 시 한마디 코멘트 작성을 지원합니다.</p>
+                            <p className="font-medium text-xs">축하 메세지 작성</p>
+                            <p className="text-[10px] text-muted-foreground">참석여부 회신 시 축하 한마디 메시지 수집을 함께 활성화합니다.</p>
                           </div>
                           <Switch
-                            checked={currentInvitation.rsvpCommentEnabled !== false}
-                            onCheckedChange={(checked) => updateCurrentInvitation({ rsvpCommentEnabled: checked })}
+                            checked={currentInvitation.customStyles?.rsvpMessageSurvey ?? (currentInvitation.rsvpCommentEnabled !== false)}
+                            onCheckedChange={(checked) => {
+                              updateCustomStyle('rsvpMessageSurvey', checked)
+                              updateCurrentInvitation({ rsvpCommentEnabled: checked })
+                            }}
                           />
                         </div>
                       </div>

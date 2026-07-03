@@ -127,9 +127,13 @@ export default function InvitationClient({
   const [isPlaying, setIsPlaying] = useState(true)
   const [showRsvp, setShowRsvp] = useState(false)
   const [attendance, setAttendance] = useState("yes")
-  const [guestCount, setGuestCount] = useState("2")
+  const [guestCount, setGuestCount] = useState<number>(1)
   const [mealType, setMealType] = useState("korean")
   const [rsvpName, setRsvpName] = useState("")
+  const [rsvpPhone, setRsvpPhone] = useState("")
+  const [rsvpSide, setRsvpSide] = useState("groom") // "groom" | "bride"
+  const [rsvpShuttleUsed, setRsvpShuttleUsed] = useState("no") // "yes" | "no"
+  const [rsvpMealInfo, setRsvpMealInfo] = useState<Record<string, number>>({})
   const [rsvpMessage, setRsvpMessage] = useState("")
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false)
 
@@ -212,6 +216,22 @@ export default function InvitationClient({
     if (!id) return
 
     const loadData = async () => {
+      // 0. Log visitor count
+      try {
+        await supabase.from('visitor_logs').insert({ invitationId: id })
+      } catch (err) {
+        console.warn('Logging visitor count to DB failed. Recording locally:', err)
+        const visitorLogsKey = `visitor_logs_${id}`
+        const localLogs = JSON.parse(localStorage.getItem(visitorLogsKey) || '[]')
+        localLogs.push({
+          id: 'vlog-' + Math.random().toString(36).substring(2, 9),
+          invitationId: id,
+          visitedDate: new Date().toISOString().split('T')[0],
+          visitedAt: new Date().toISOString()
+        })
+        localStorage.setItem(visitorLogsKey, JSON.stringify(localLogs))
+      }
+
       try {
         // Fetch themes (Skip if pre-fetched)
         if (!initialThemes || initialThemes.length === 0) {
@@ -347,15 +367,38 @@ export default function InvitationClient({
       toast.error("성함을 입력해주세요.")
       return
     }
+    if (!rsvpPhone) {
+      toast.error("연락처를 입력해주세요.")
+      return
+    }
     setIsSubmittingRsvp(true)
+
+    const isMealSurvey = invitation.customStyles?.rsvpMealSurvey ?? (invitation.rsvpMealEnabled !== false);
+    const mealOptions = invitation.customStyles?.rsvpMealOptions || ['한식', '양식'];
+    let totalMeals = 0;
+    if (attendance === 'yes' && isMealSurvey) {
+      mealOptions.forEach((opt: string) => {
+        totalMeals += rsvpMealInfo[opt] || 0;
+      });
+      if (totalMeals > guestCount) {
+        toast.error(`식사 선택 수량 합(${totalMeals}개)이 동행인 수(${guestCount}명)를 초과할 수 없습니다.`);
+        setIsSubmittingRsvp(false);
+        return;
+      }
+    }
+
     const newRsvp = {
       id: 'rsvp-' + Math.random().toString(36).substring(2, 9),
       invitationId: id,
       name: rsvpName,
+      phone: rsvpPhone,
       attendance: attendance,
-      guestCount: attendance === 'yes' ? (parseInt(guestCount) || 1) : 0,
-      mealType: (attendance === 'yes' && invitation.rsvpMealEnabled !== false) ? mealType : 'none',
-      message: invitation.rsvpCommentEnabled !== false ? rsvpMessage : '',
+      side: rsvpSide,
+      guestCount: attendance === 'yes' ? guestCount : 0,
+      mealType: (attendance === 'yes' && isMealSurvey) ? (mealType || 'korean') : 'none',
+      shuttleUsed: attendance === 'yes' && invitation.customStyles?.rsvpShuttleSurvey ? (rsvpShuttleUsed === 'yes') : false,
+      mealInfo: (attendance === 'yes' && isMealSurvey) ? rsvpMealInfo : {},
+      message: (invitation.customStyles?.rsvpMessageSurvey ?? (invitation.rsvpCommentEnabled !== false)) ? rsvpMessage : '',
       createdAt: new Date().toISOString()
     }
 
@@ -366,7 +409,9 @@ export default function InvitationClient({
       toast.success("참석 의사가 정상적으로 전달되었습니다.")
       setShowRsvp(false)
       setRsvpName("")
+      setRsvpPhone("")
       setRsvpMessage("")
+      setRsvpMealInfo({})
     } catch (err: any) {
       console.error("RSVP insert error:", err)
       const localRsvpsKey = `rsvps_${id}`
@@ -376,7 +421,9 @@ export default function InvitationClient({
       toast.success("참석 의사가 전달되었습니다. (로컬 저장)")
       setShowRsvp(false)
       setRsvpName("")
+      setRsvpPhone("")
       setRsvpMessage("")
+      setRsvpMealInfo({})
     } finally {
       setIsSubmittingRsvp(false)
     }
@@ -2312,6 +2359,10 @@ export default function InvitationClient({
 
             case 'rsvp':
               if (!invitation.rsvpEnabled) return null
+              const isMealSurvey = invitation.customStyles?.rsvpMealSurvey ?? (invitation.rsvpMealEnabled !== false);
+              const mealOptions = invitation.customStyles?.rsvpMealOptions || ['한식', '양식'];
+              const totalSelectedMeals = Object.values(rsvpMealInfo).reduce((a, b) => a + b, 0);
+
               return (
                 <section key="rsvp" className={cn(spacingClass, "px-8", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                   {showDivider && renderDivider()}
@@ -2324,64 +2375,216 @@ export default function InvitationClient({
                         참석 의사 전달하기
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-sm bg-background border border-border p-6 rounded-lg shadow-lg">
+                    <DialogContent className="max-w-sm bg-background border border-border p-6 rounded-lg shadow-lg max-h-[85vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>참석 여부 전달</DialogTitle>
                         <DialogDescription>참석 여부와 인원을 알려주세요</DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-6 py-4">
-                        <div className="space-y-3">
-                          <Label htmlFor="rsvp-name">성함</Label>
+                      <div className="space-y-5 py-4 text-foreground">
+                        {/* 1. 성함 */}
+                        <div className="space-y-2">
+                          <Label htmlFor="rsvp-name" className="text-sm font-semibold">성함</Label>
                           <Input id="rsvp-name" placeholder="성함을 입력해주세요" value={rsvpName} onChange={(e) => setRsvpName(e.target.value)} />
                         </div>
-                        <div className="space-y-3">
-                          <Label>참석 여부</Label>
-                          <RadioGroup value={attendance} onValueChange={setAttendance}>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id="yes" />
-                              <Label htmlFor="yes" className="font-normal">참석</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id="no" />
-                              <Label htmlFor="no" className="font-normal">불참</Label>
-                            </div>
-                          </RadioGroup>
+
+                        {/* 2. 연락처 */}
+                        <div className="space-y-2">
+                          <Label htmlFor="rsvp-phone" className="text-sm font-semibold">연락처</Label>
+                          <Input id="rsvp-phone" placeholder="예: 010-0000-0000" value={rsvpPhone} onChange={(e) => setRsvpPhone(e.target.value)} />
                         </div>
+
+                        {/* 3. 참석여부 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold">참석 여부</Label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                attendance === "yes" 
+                                  ? "border-primary bg-primary/5 text-primary" 
+                                  : "border-border hover:bg-muted/50 text-muted-foreground"
+                              )}
+                              onClick={() => setAttendance("yes")}
+                            >
+                              참석
+                            </button>
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                attendance === "no" 
+                                  ? "border-primary bg-primary/5 text-primary" 
+                                  : "border-border hover:bg-muted/50 text-muted-foreground"
+                              )}
+                              onClick={() => setAttendance("no")}
+                            >
+                              불참
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 참석인 경우에만 추가 문항들을 부드럽게 노출 */}
                         {attendance === "yes" && (
-                          <>
-                            <div className="space-y-3">
-                              <Label>참석 인원</Label>
-                              <RadioGroup value={guestCount} onValueChange={setGuestCount}>
-                                <div className="grid grid-cols-4 gap-2">
-                                  {["1", "2", "3", "4+"].map((count) => (
-                                    <div key={count} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={count} id={`count-${count}`} />
-                                      <Label htmlFor={`count-${count}`} className="font-normal">{count}명</Label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </RadioGroup>
+                          <div className="space-y-5 pt-3 border-t border-border/40 animate-fade-in">
+                            {/* 4. 참여 구분 */}
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold">참여 구분</Label>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                    rsvpSide === "groom" 
+                                      ? "border-primary bg-primary/5 text-primary" 
+                                      : "border-border hover:bg-muted/50 text-muted-foreground"
+                                  )}
+                                  onClick={() => setRsvpSide("groom")}
+                                >
+                                  신랑측
+                                </button>
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                    rsvpSide === "bride" 
+                                      ? "border-primary bg-primary/5 text-primary" 
+                                      : "border-border hover:bg-muted/50 text-muted-foreground"
+                                  )}
+                                  onClick={() => setRsvpSide("bride")}
+                                >
+                                  신부측
+                                </button>
+                              </div>
                             </div>
-                            {invitation.rsvpMealEnabled !== false && (
-                              <div className="space-y-3">
-                                <Label>식사 선택</Label>
-                                <RadioGroup value={mealType} onValueChange={setMealType}>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="korean" id="korean" />
-                                    <Label htmlFor="korean" className="font-normal">한식</Label>
+
+                            {/* 5. 동행인 수 */}
+                            <div className="flex items-center justify-between border border-border/80 rounded-lg p-2.5 bg-muted/20">
+                              <span className="text-xs font-semibold text-muted-foreground">동행인 수 (본인 포함)</span>
+                              <div className="flex items-center gap-3">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="w-7 h-7 rounded-full text-foreground"
+                                  disabled={guestCount <= 1}
+                                  onClick={() => setGuestCount(prev => Math.max(1, prev - 1))}
+                                >
+                                  -
+                                </Button>
+                                <span className="text-sm font-bold w-6 text-center">{guestCount}명</span>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="w-7 h-7 rounded-full text-foreground"
+                                  disabled={guestCount >= 10}
+                                  onClick={() => setGuestCount(prev => Math.min(10, prev + 1))}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* 6. 식사 여부 */}
+                            {isMealSurvey && (
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold">식사 여부</Label>
+                                <div className="space-y-2 bg-muted/20 rounded-lg p-3 border border-border/50">
+                                  {mealOptions.map((opt: string) => {
+                                    const currentQty = rsvpMealInfo[opt] || 0;
+                                    return (
+                                      <div key={opt} className="flex items-center justify-between py-1">
+                                        <span className="text-xs font-medium text-muted-foreground">{opt}</span>
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="w-6 h-6 rounded-md text-foreground"
+                                            disabled={currentQty <= 0}
+                                            onClick={() => {
+                                              setRsvpMealInfo(prev => ({
+                                                ...prev,
+                                                [opt]: Math.max(0, currentQty - 1)
+                                              }));
+                                            }}
+                                          >
+                                            -
+                                          </Button>
+                                          <span className="text-xs font-semibold w-5 text-center">{currentQty}개</span>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="w-6 h-6 rounded-md text-foreground"
+                                            disabled={totalSelectedMeals >= guestCount}
+                                            onClick={() => {
+                                              setRsvpMealInfo(prev => ({
+                                                ...prev,
+                                                [opt]: (prev[opt] || 0) + 1
+                                              }));
+                                            }}
+                                          >
+                                            +
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="text-[10px] text-muted-foreground mt-1 text-right">
+                                    선택 수량: {totalSelectedMeals} / {guestCount} 개
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="western" id="western" />
-                                    <Label htmlFor="western" className="font-normal">양식</Label>
-                                  </div>
-                                </RadioGroup>
+                                </div>
                               </div>
                             )}
-                          </>
+
+                            {/* 7. 셔틀 사용 여부 */}
+                            {invitation.customStyles?.rsvpShuttleSurvey && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-semibold">셔틀 버스 사용</Label>
+                                </div>
+                                {invitation.customStyles?.rsvpShuttleInfo && (
+                                  <p className="text-[10px] text-muted-foreground bg-secondary/50 p-2 rounded-md leading-relaxed mb-1.5 whitespace-pre-line border border-border/30">
+                                    {invitation.customStyles.rsvpShuttleInfo}
+                                  </p>
+                                )}
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    className={cn(
+                                      "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                      rsvpShuttleUsed === "yes" 
+                                        ? "border-primary bg-primary/5 text-primary" 
+                                        : "border-border hover:bg-muted/50 text-muted-foreground"
+                                    )}
+                                    onClick={() => setRsvpShuttleUsed("yes")}
+                                  >
+                                    사용함
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={cn(
+                                      "flex-1 py-2.5 text-center border rounded-lg text-sm transition-all font-medium",
+                                      rsvpShuttleUsed === "no" 
+                                        ? "border-primary bg-primary/5 text-primary" 
+                                        : "border-border hover:bg-muted/50 text-muted-foreground"
+                                    )}
+                                    onClick={() => setRsvpShuttleUsed("no")}
+                                  >
+                                    사용안함
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
-                        {invitation.rsvpCommentEnabled !== false && (
-                          <div className="space-y-3">
-                            <Label htmlFor="rsvp-msg">축하 메시지 (선택)</Label>
+
+                        {/* 8. 축하 메세지 */}
+                        {(invitation.customStyles?.rsvpMessageSurvey ?? (invitation.rsvpCommentEnabled !== false)) && (
+                          <div className="space-y-2">
+                            <Label htmlFor="rsvp-msg" className="text-sm font-semibold">축하 메시지 (선택)</Label>
                             <Textarea id="rsvp-msg" placeholder="축하 메시지를 남겨주세요" rows={3} value={rsvpMessage} onChange={(e) => setRsvpMessage(e.target.value)} />
                           </div>
                         )}
@@ -2401,10 +2604,10 @@ export default function InvitationClient({
                   {showDivider && renderDivider()}
                   {renderSectionHeader('guestbook', 'Guestbook', '방명록', 'mb-8')}
                   <div className="space-y-4 text-left">
-                    {guestbookMessages.length === 0 ? (
+                    {guestbookMessages.filter((comment: any) => comment.is_visible !== false).length === 0 ? (
                       <p className="text-center text-sm opacity-40 py-6">남겨진 축하 메시지가 없습니다. 첫 메시지를 남겨보세요!</p>
                     ) : (
-                      guestbookMessages.map((comment) => (
+                      guestbookMessages.filter((comment: any) => comment.is_visible !== false).map((comment) => (
                         <Card key={comment.id} className={cn("border-0 shadow-sm", effectiveCardBg, shadowClass)} style={{ ...borderStyle, color: 'inherit' }}>
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">

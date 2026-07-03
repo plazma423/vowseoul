@@ -175,4 +175,33 @@ ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpMealEnabled" boolea
 ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "rsvpCommentEnabled" boolean DEFAULT true;
 ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS "customStyles" jsonb;
 
+-- 10. rsvps 테이블 컬럼 확장
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS "phone" text;
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS "side" text; -- 'groom' / 'bride'
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS "shuttleUsed" boolean DEFAULT false;
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS "mealInfo" jsonb;
+
+-- 11. guestbook 테이블 생성 (방명록 글 보관 및 비공개 전환용)
+CREATE TABLE IF NOT EXISTS public.guestbook (
+  "id" text PRIMARY KEY,
+  "invitationId" text NOT NULL,
+  "name" text NOT NULL,
+  "message" text NOT NULL,
+  "is_visible" boolean DEFAULT true,
+  "createdAt" timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.guestbook DISABLE ROW LEVEL SECURITY;
+
+-- 12. visitor_logs 테이블 생성 (최근 7일 방문자 분석 그래프용)
+CREATE TABLE IF NOT EXISTS public.visitor_logs (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "invitationId" text NOT NULL,
+  "visitedDate" date DEFAULT CURRENT_DATE,
+  "visitedAt" timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.visitor_logs DISABLE ROW LEVEL SECURITY;
+
+
 

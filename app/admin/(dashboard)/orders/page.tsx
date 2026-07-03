@@ -120,6 +120,20 @@ export default function OrdersPage() {
     }
   }
 
+  const handleCopyDashboardLink = async (invitationId: string) => {
+    if (!invitationId) {
+      toast.error('청첩장 ID가 유효하지 않습니다.')
+      return
+    }
+    const url = `${window.location.origin}/invitation/${invitationId}/dashboard`
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('고객 대시보드 링크가 클립보드에 복사되었습니다.')
+    } catch (err) {
+      toast.error('대시보드 링크 복사에 실패했습니다.')
+    }
+  }
+
   const handleOpenEditDialog = (order: Order) => {
     setSelectedOrderForEdit(order)
     setEditForm({
@@ -605,12 +619,19 @@ export default function OrdersPage() {
                               <span>청첩장 수정하기</span>
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                           <DropdownMenuItem 
                             onClick={() => handleCopyLink(order.invitationId)}
                             className="cursor-pointer flex items-center gap-2 w-full"
                           >
                             <Link2 className="h-4 w-4" />
                             <span>링크 복사하기</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleCopyDashboardLink(order.invitationId)}
+                            className="cursor-pointer flex items-center gap-2 w-full"
+                          >
+                            <Copy className="h-4 w-4" />
+                            <span>대시보드 링크 복사</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleOpenEditDialog(order)}
