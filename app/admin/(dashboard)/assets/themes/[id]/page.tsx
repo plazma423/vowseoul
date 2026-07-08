@@ -18,6 +18,20 @@ import { sampleThemes } from '@/lib/store'
 import { cn, getLegibleColor } from '@/lib/utils'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
+const hexToRgb = (hex: string) => {
+  const c = (hex || '#9EB7CE').replace('#', '')
+  if (c.length === 3) {
+    const r = parseInt(c.charAt(0) + c.charAt(0), 16)
+    const g = parseInt(c.charAt(1) + c.charAt(1), 16)
+    const b = parseInt(c.charAt(2) + c.charAt(2), 16)
+    return `${r}, ${g}, ${b}`
+  }
+  const r = parseInt(c.substring(0, 2), 16) || 158
+  const g = parseInt(c.substring(2, 4), 16) || 183
+  const b = parseInt(c.substring(4, 6), 16) || 206
+  return `${r}, ${g}, ${b}`
+}
+
 export default function ThemeEditorPage() {
   const params = useParams()
   const router = useRouter()
@@ -367,6 +381,19 @@ export default function ThemeEditorPage() {
   const legibleSecondaryTextColor = getLegibleColor(theme.backgroundColor, theme.secondaryTextColor, false)
 
   const isDuotone = themeId === 'duotone-contrast' || theme.duotoneEnabled === true
+  const isSereneBlue = themeId === 'serene-blue'
+  const isPinkEnvelope = themeId === 'pink-envelope' || themeId === 'concept5'
+
+  // Custom colors for Serene Blue and Pink Envelope (prioritizes user edits, fallbacks to originals)
+  const sereneBgColor = theme.backgroundColor || '#9EB7CE'
+  const sereneTextColor = theme.textColor || '#FFFFFF'
+  const sereneAccentColor = theme.primaryColor || '#FFFFFF'
+
+  const pinkBgColor = theme.backgroundColor || '#EFD0D0'
+  const pinkPrimaryColor = theme.primaryColor || '#D76C6C'
+  const pinkTextColor = theme.textColor || '#FFFFFF'
+  const pinkSecondaryColor = theme.secondaryColor || '#EFD0D0'
+
   // 듀오톤 테마 미리보기 시 컬러셋 색상을 올바르게 읽어오도록 개선
   let color1 = '#CCECFF'
   let color2 = '#361623'
@@ -976,7 +1003,7 @@ export default function ThemeEditorPage() {
         <div 
           className="w-[320px] h-[650px] border-8 border-gray-900 rounded-[2.5rem] shadow-xl overflow-y-auto relative transition-colors duration-300 scrollbar-hide"
           style={{ 
-            backgroundColor: isDuotone ? color1 : theme.backgroundColor, 
+            backgroundColor: isDuotone ? color1 : (isPinkEnvelope ? pinkBgColor : (isSereneBlue ? sereneBgColor : theme.backgroundColor)), 
             fontSize: `${theme.fontSize}px`,
             letterSpacing: `${theme.letterSpacing}em`,
             fontFamily: getFontFamily(theme.fontKr, theme.fontEn)
@@ -1056,6 +1083,113 @@ export default function ThemeEditorPage() {
               const sectionContent = (() => {
                 switch (sectionId) {
                   case 'hero':
+                    if (isPinkEnvelope) {
+                      const headTextColor = theme.textColor === '#FFFFFF' ? '#1a1a1a' : theme.textColor
+                      const infoTextColor = theme.textColor === '#FFFFFF' ? '#686868' : theme.textColor
+
+                      return (
+                        <div 
+                          key="hero" 
+                          id="preview-section-hero" 
+                          className="relative h-[560px] flex flex-col items-center justify-between text-center overflow-hidden pb-8 pt-16"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor }}
+                        >
+                          {/* White bar at the top */}
+                          <div className="absolute top-0 left-0 right-0 h-[60px] bg-white z-10" />
+                          {/* Perfect semi-circle below the white bar */}
+                          <div className="absolute top-[60px] left-1/2 -translate-x-1/2 w-20 h-10 bg-white rounded-b-full z-10" />
+
+                          {/* Title */}
+                          <div className="z-10 mt-2 px-4">
+                            <h1 className="text-[20px] font-normal leading-[1.2]" style={{ color: headTextColor, fontFamily: "'Goudy Bookletter 1911', serif", textTransform: 'capitalize' }}>
+                              You&apos;re Invited<br />To Our Wedding!
+                            </h1>
+                          </div>
+
+                          {/* Polaroid Photo Card */}
+                          <div className="z-10 my-4 bg-white p-3 pb-4 shadow-md flex flex-col items-center w-[180px]">
+                            <div className="w-[156px] h-[180px] overflow-hidden bg-gray-100 flex items-center justify-center">
+                              {theme.thumbnail ? (
+                                <img
+                                  src={theme.thumbnail}
+                                  alt="Polaroid Main Visual"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center opacity-40 text-[9px] gap-0.5">
+                                  <span className="font-serif">VOW SEOUL</span>
+                                  <span>사진을 등록해주세요</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2 text-lg font-normal text-black italic lowercase" style={{ fontFamily: "'Covered By Your Grace', cursive" }}>
+                              sunghoon &amp; jihye
+                            </div>
+                          </div>
+
+                          {/* Bottom Information */}
+                          <div className="z-10 text-center space-y-1 px-4 font-serif text-[10px] tracking-wider" style={{ color: infoTextColor, fontFamily: "'Goudy Bookletter 1911', serif" }}>
+                            <p className="uppercase font-semibold tracking-widest">VOW SEOUL GRAND HALL</p>
+                            <p className="uppercase">MAY 7, 2028. 11:00 AM</p>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      const heroFont = theme.heroSubtitleFont || 'Kaushan Script'
+                      return (
+                        <div 
+                          key="hero" 
+                          className="relative h-[560px] flex flex-col justify-between text-center overflow-hidden pb-8"
+                          style={{ backgroundColor: sereneBgColor, color: sereneTextColor }}
+                        >
+                          {/* Background Visual */}
+                          {theme.thumbnail ? (
+                            <img
+                              src={theme.thumbnail}
+                              alt="Main Visual"
+                              className="absolute inset-0 w-full h-full object-cover z-0"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center z-0" style={{ backgroundColor: sereneBgColor }}>
+                              <span className="text-[10px] opacity-40">사진을 등록해주세요</span>
+                            </div>
+                          )}
+                          {/* Gradient Overlay */}
+                          <div 
+                            className="absolute inset-0 z-10" 
+                            style={{ background: `linear-gradient(to top, rgba(${hexToRgb(sereneBgColor)}, 1) 0%, rgba(${hexToRgb(sereneBgColor)}, 0) 70%, rgba(${hexToRgb(sereneBgColor)}, 0.3) 100%)` }} 
+                          />
+
+                          {/* Centered Main Text: SAVE the DATE */}
+                          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none -mt-4">
+                            <div className="relative w-[280px] h-[130px] select-none scale-[0.8]">
+                              <span className="absolute left-[8px] top-4 text-5xl tracking-widest leading-none font-normal" style={{ fontFamily: getFontFamily(theme.fontKr, heroFont) }}>SAVE</span>
+                              <span className="absolute left-[103px] top-[72px] text-lg italic opacity-90" style={{ fontFamily: getFontFamily(theme.fontKr, heroFont) }}>the</span>
+                              <span className="absolute left-[138px] top-[60px] text-5xl tracking-widest leading-none font-normal" style={{ fontFamily: getFontFamily(theme.fontKr, heroFont) }}>DATE</span>
+                            </div>
+                          </div>
+
+                          {/* Top spacing placeholder */}
+                          <div className="h-6" />
+
+                          {/* Bottom Information */}
+                          <div className="relative z-20 space-y-3 px-6">
+                            <div className="flex items-center justify-center gap-4 text-sm font-semibold tracking-wider">
+                              <span>홍길동</span>
+                              <span className="opacity-50 text-xs font-serif">&amp;</span>
+                              <span>김영희</span>
+                            </div>
+                            <div className="text-[10px] tracking-widest leading-relaxed opacity-90 border-t border-current/20 pt-3 max-w-[200px] mx-auto">
+                              <p>2026. 09. 19 (토) 오후 5시</p>
+                              <p className="mt-0.5 font-light">춘천 스카이컨벤션 4층 스카이홀</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+
                     if (isDuotone) {
                       const subtitleText = theme.heroSubtitleText || 'save the date'
                       const subtitleFont = theme.heroSubtitleFont || theme.fontEn
@@ -1164,6 +1298,58 @@ export default function ThemeEditorPage() {
                       </div>
                     )
                   case 'greeting':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="greeting" 
+                          className="relative pb-10 pt-0 text-center overflow-hidden"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
+                        >
+                          {/* Diagonal Slanted White Bar */}
+                          <div 
+                            className="w-full h-[50px] bg-white mb-6" 
+                            style={{ 
+                              clipPath: 'polygon(0 25px, 100% 0, 100% 24px, 0 49px)'
+                            }}
+                          />
+                          <div className="px-4 max-w-[280px] mx-auto text-[11px] leading-[2.0] font-medium whitespace-pre-line text-white/90">
+                            사랑으로 하나 된 두 사람이{"\n"}서로를 이해하며 한 길을 걸어가려 합니다.{"\n"}귀한 발걸음으로 저희의 출발을{"\n"}함께 축복해 주시기 바랍니다.
+                          </div>
+                          <div className="mt-8 text-[10px] space-y-1.5 opacity-90">
+                            <p>박태수 · 선우명희 의 아들 <span className="font-semibold text-white">혁</span></p>
+                            <p>이훈 · 최현숙 의 딸 <span className="font-semibold text-white">현</span></p>
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="greeting" 
+                          className="py-10 px-6 text-center" 
+                          style={{ backgroundColor: sereneBgColor, color: sereneTextColor }}
+                        >
+                          <div className="space-y-3 text-[10px] font-light max-w-[240px] mx-auto py-2 mb-4">
+                            <div className="flex justify-between items-center">
+                              <div className="text-left">
+                                <span className="text-[8px] opacity-60 block tracking-widest font-mono">GROOM</span>
+                                <span className="tracking-wide">김태진 · 정혜선 의 아들</span>
+                              </div>
+                              <span className="text-sm font-semibold tracking-wider">혁</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <div className="text-left">
+                                <span className="text-[8px] opacity-60 block tracking-widest font-mono">BRIDE</span>
+                                <span className="tracking-wide">이훈 · 최현숙 의 딸</span>
+                              </div>
+                              <span className="text-sm font-semibold tracking-wider">현</span>
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="greeting" className={cn(spacingClass, "px-4 text-center", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
@@ -1174,6 +1360,53 @@ export default function ThemeEditorPage() {
                       </section>
                     )
                   case 'sequence':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="sequence" 
+                          className="py-10 px-6 text-center"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
+                        >
+                          <h4 className="text-[10px] uppercase tracking-widest opacity-80">WEDDING ORDER</h4>
+                          <h3 className="text-xs font-bold mt-0.5 mb-4">식순 안내</h3>
+                          <div className="max-w-[240px] mx-auto border-t border-b border-white/80 text-[10px] divide-y divide-white/20">
+                            <div className="flex items-center py-2">
+                              <span className="w-16 font-mono text-left">12:00</span>
+                              <span className="flex-1 text-left font-medium">개식 및 화촉점화</span>
+                            </div>
+                            <div className="flex items-center py-2">
+                              <span className="w-16 font-mono text-left">12:15</span>
+                              <span className="flex-1 text-left font-medium">신랑 신부 입장</span>
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="sequence" 
+                          className="py-10 px-6 text-center" 
+                          style={{ backgroundColor: theme.backgroundColor || '#ffffff', color: theme.textColor || '#000000' }}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider font-semibold font-mono mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>WEDDING ORDER</div>
+                          <div className="text-sm font-semibold mb-4">식순 안내</div>
+                          
+                          <div className="max-w-[240px] mx-auto border-t border-b border-current divide-y divide-current/10 text-[10px]">
+                            <div className="flex items-center py-2 px-1">
+                              <span className="w-16 text-left font-mono font-semibold">12:00</span>
+                              <span className="flex-1 text-left">신랑 신부 입장</span>
+                            </div>
+                            <div className="flex items-center py-2 px-1">
+                              <span className="w-16 text-left font-mono font-semibold">13:00</span>
+                              <span className="flex-1 text-left">축가 및 폐식</span>
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="sequence" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
@@ -1198,6 +1431,40 @@ export default function ThemeEditorPage() {
                       </section>
                     )
                   case 'gallery':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="gallery" 
+                          className="py-10 px-0 text-center overflow-hidden"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
+                        >
+                          <h4 className="text-[10px] uppercase tracking-widest opacity-80">GALLERY</h4>
+                          <h3 className="text-xs font-bold mt-0.5 mb-4">갤러리</h3>
+                          <div className="w-full overflow-x-auto flex gap-3 snap-x scrollbar-hide pb-1 px-4">
+                            <div className="w-[110px] h-[140px] flex-shrink-0 snap-center bg-white/20 border border-white/10 shadow-sm rounded-sm" />
+                            <div className="w-[110px] h-[140px] flex-shrink-0 snap-center bg-white/20 border border-white/10 shadow-sm rounded-sm" />
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="gallery" 
+                          className="py-10 px-4 text-center" 
+                          style={{ backgroundColor: theme.backgroundColor || '#ffffff', color: theme.textColor || '#000000' }}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider font-semibold font-mono mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>GALLERY</div>
+                          <div className="text-sm font-semibold mb-4">갤러리</div>
+                          <div className="grid grid-cols-2 gap-2 max-w-[240px] mx-auto">
+                            <div className="aspect-square bg-black/10 rounded-sm" />
+                            <div className="aspect-square bg-black/10 rounded-sm" />
+                          </div>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="gallery" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
@@ -1210,6 +1477,78 @@ export default function ThemeEditorPage() {
                       </section>
                     )
                   case 'calendar':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="calendar" 
+                          className="py-10 px-4 bg-white text-center"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", color: pinkPrimaryColor }}
+                        >
+                          <h4 className="text-[10px] uppercase tracking-widest mb-1" style={{ color: `${pinkPrimaryColor}99` }}>Calendar</h4>
+                          <div className="max-w-[240px] mx-auto bg-white p-2">
+                            <div className="text-center mb-2">
+                              <p className="text-xs font-bold font-mono tracking-widest uppercase">MAY</p>
+                            </div>
+                            <div className="grid grid-cols-7 gap-0.5 text-[7px] text-[#A67E7E]">
+                              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                <div key={i} className="py-0.5 font-semibold opacity-60">{day}</div>
+                              ))}
+                              {calDays.map((day, i) => {
+                                if (day === null) return <div key={`empty-${i}`} />
+                                return (
+                                  <div
+                                    key={i}
+                                    className="py-0.5 text-[7px] flex items-center justify-center w-4 h-4 mx-auto rounded-full"
+                                    style={day === 24 ? { backgroundColor: pinkPrimaryColor, color: '#FFFFFF', fontWeight: 'bold' } : {}}
+                                  >
+                                    {day}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="calendar" 
+                          className="py-10 px-4 animate-fade-in" 
+                          style={{ backgroundColor: theme.backgroundColor || '#E8E8E8', color: theme.textColor || '#000000' }}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider font-semibold font-mono mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>Calendar</div>
+                          <div className="text-sm font-semibold mb-4">소중한 날</div>
+                          
+                          <Card className="border-0 shadow-none bg-white rounded-none text-black">
+                            <CardContent className="p-3">
+                              <div className="text-center mb-2">
+                                <p className="text-xs font-semibold font-mono tracking-widest uppercase" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>SEP</p>
+                              </div>
+                              <div className="grid grid-cols-7 gap-0.5 text-center text-[7px]">
+                                {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                                  <div key={day} className="py-0.5 opacity-55 font-semibold">{day}</div>
+                                ))}
+                                {calDays.map((day, i) => {
+                                  if (day === null) return <div key={`empty-${i}`} />
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="py-0.5 text-[7px] flex items-center justify-center w-4 h-4 mx-auto"
+                                      style={day === 19 ? { backgroundColor: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor, color: '#fff', fontWeight: 'bold' } : {}}
+                                    >
+                                      {day}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="calendar" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
@@ -1242,6 +1581,40 @@ export default function ThemeEditorPage() {
                       </section>
                     )
                   case 'location':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="location" 
+                          className="py-10 px-6 text-center"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
+                        >
+                          <h4 className="text-[10px] uppercase tracking-widest opacity-80">LOCATION</h4>
+                          <h3 className="text-xs font-bold mt-0.5 mb-4">식장 위치</h3>
+                          <div className="bg-white p-3 text-center space-y-1.5 shadow-sm mb-4">
+                            <h3 className="font-semibold text-xs text-[#D76C6C]" style={{ color: pinkPrimaryColor }}>VOW SEOUL GRAND HALL</h3>
+                            <p className="text-[9px] font-medium mt-1" style={{ color: pinkPrimaryColor }}>서울시 강남구 학동로 1212</p>
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="location" 
+                          className="py-10 px-4 animate-fade-in" 
+                          style={{ backgroundColor: theme.backgroundColor || '#F2F2F2', color: theme.textColor || '#000000' }}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider font-semibold font-mono mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>Location</div>
+                          <div className="text-sm font-semibold mb-4">식장 위치</div>
+                          <div className="bg-white p-3 text-center space-y-1 border border-black/5 shadow-sm mb-3">
+                            <h3 className="font-semibold text-xs">VOW SEOUL GRAND HALL</h3>
+                            <p className="text-[9px] font-medium" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>서울시 강남구 학동로 1212</p>
+                          </div>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="location" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}
@@ -1295,6 +1668,49 @@ export default function ThemeEditorPage() {
                       </section>
                     )
                   case 'account':
+                    if (isPinkEnvelope) {
+                      return (
+                        <section 
+                          key="account" 
+                          className="py-10 px-4 text-center"
+                          style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
+                        >
+                          <h4 className="text-[10px] uppercase tracking-widest opacity-80">ACCOUNT</h4>
+                          <h3 className="text-xs font-bold mt-0.5 mb-4">마음 전하실 곳</h3>
+                          <div className="max-w-[240px] mx-auto border-t border-white/60 divide-y divide-white/40 text-left text-[9px]">
+                            <div className="py-2 flex items-center justify-between">
+                              <span className="font-semibold text-white/90">신랑측 혁</span>
+                              <span className="font-mono text-white/80">신한은행 110-123-456789</span>
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
+                    if (isSereneBlue) {
+                      return (
+                        <section 
+                          key="account" 
+                          className="py-10 px-4 animate-fade-in" 
+                          style={{ backgroundColor: theme.backgroundColor || '#ffffff', color: theme.textColor || '#000000' }}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider font-semibold font-mono mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>Account</div>
+                          <div className="text-sm font-semibold mb-4">마음 전하실 곳</div>
+                          <div className="max-w-[240px] mx-auto space-y-4 text-left text-[9px]">
+                            <div>
+                              <span className="font-semibold block mb-1" style={{ color: sereneAccentColor === '#FFFFFF' ? '#62798E' : sereneAccentColor }}>Groom Side</span>
+                              <div className="border-t border-current divide-y divide-current/10">
+                                <div className="py-2 flex justify-between">
+                                  <span>신랑 혁</span>
+                                  <span className="font-mono">신한 110-123-456789</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+                      )
+                    }
+
                     return (
                       <section key="account" className={cn(spacingClass, "px-4", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                         {renderDivider()}

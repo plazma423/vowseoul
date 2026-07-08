@@ -553,9 +553,9 @@ export const sampleThemes: Theme[] = [
     }
   },
   {
-    id: 'concept5',
+    id: 'pink-envelope',
     name: 'Pink Envelope',
-    thumbnail: '/themes/concept5.jpg',
+    thumbnail: '/themes/pink-envelope.jpg',
     tags: ['핑크', '감성', '피그마 시안'],
     colorSets: [
       { id: 'warm-pink', name: 'Pink Envelope', colors: ['#EFD0D0', '#D76C6C', '#FFFFFF'] }

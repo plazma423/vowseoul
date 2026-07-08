@@ -38,6 +38,14 @@ const getSvgMaskStyle = (url: string, color: string) => ({
   maskPosition: 'center',
 })
 
+const hexToRgb = (hex: string) => {
+  const cleanHex = hex.replace('#', '')
+  const r = parseInt(cleanHex.substring(0, 2), 16)
+  const g = parseInt(cleanHex.substring(2, 4), 16)
+  const b = parseInt(cleanHex.substring(4, 6), 16)
+  return isNaN(r) || isNaN(g) || isNaN(b) ? '0, 0, 0' : `${r}, ${g}, ${b}`
+}
+
 const parseIndividualParents = (fullRelation: string) => {
   const result = { fatherName: '', motherName: '', relationText: '' }
   if (!fullRelation) return result
@@ -170,6 +178,17 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
   const isDuotone = theme?.id === 'duotone-contrast' || themeStyles.duotoneEnabled === true
   const isSereneBlue = theme?.id === 'serene-blue'
   const isConcept5 = theme?.id === 'concept5'
+  const isPinkEnvelope = theme?.id === 'pink-envelope' || theme?.id === 'concept5'
+
+  // Pink Envelope custom colors (user customizable with fallback to defaults)
+  const pinkPrimaryColor = isPinkEnvelope ? (themeStyles.primaryColor || '#D76C6C') : '#D76C6C'
+  const pinkBgColor = isPinkEnvelope ? (themeStyles.backgroundColor || '#EFD0D0') : '#EFD0D0'
+  const pinkTextColor = isPinkEnvelope ? (themeStyles.textColor || '#FFFFFF') : '#FFFFFF'
+
+  // Serene Blue custom colors (user customizable with fallback to defaults)
+  const sereneBgColor = isSereneBlue ? (themeStyles.backgroundColor || '#9EB7CE') : '#9EB7CE'
+  const sereneTextColor = isSereneBlue ? (themeStyles.textColor || '#FFFFFF') : '#FFFFFF'
+  const sereneAccentColor = isSereneBlue ? (themeStyles.primaryColor || '#62798E') : '#62798E'
   
   let color1 = '#CCECFF'
   let color2 = '#361623'
@@ -524,7 +543,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   const heroInfoFont = themeStyles.heroInfoFont || fontEn
                   const heroInfoGroomBrideSize = themeStyles.heroInfoGroomBrideSize ?? 16
                   const heroInfoDetailsSize = themeStyles.heroInfoDetailsSize ?? 11
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     let formattedDate = 'MAY 7, 2028'
                     if (currentInvitation?.weddingDate) {
                       try {
@@ -539,21 +558,24 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                     const groomEn = currentInvitation?.groomNameEn || 'Sunghoon'
                     const brideEn = currentInvitation?.brideNameEn || 'Jihye'
 
+                    const headTextColor = rawTextColor === '#FFFFFF' ? '#1a1a1a' : rawTextColor
+                    const infoTextColor = rawTextColor === '#FFFFFF' ? '#686868' : rawTextColor
+
                     return (
                       <div 
                         key="hero" 
                         id="preview-section-hero" 
-                        className="relative min-h-[640px] flex flex-col items-center justify-between text-center overflow-hidden pb-12 pt-28 bg-[#EFD0D0] text-black"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="relative min-h-[640px] flex flex-col items-center justify-between text-center overflow-hidden pb-12 pt-28"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor }}
                       >
                         {/* White bar at the top */}
-                        <div className="absolute top-0 left-0 right-0 h-10 bg-white z-10" />
+                        <div className="absolute top-0 left-0 right-0 h-[60px] bg-white z-10" />
                         {/* Perfect semi-circle below the white bar */}
-                        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-24 h-12 bg-white rounded-b-full z-10" />
+                        <div className="absolute top-[60px] left-1/2 -translate-x-1/2 w-24 h-12 bg-white rounded-b-full z-10" />
 
                         {/* Title: You're Invited To Our Wedding! */}
                         <div className="z-10 mt-6 px-4">
-                          <h1 className="text-[25px] font-normal leading-[1.2] text-[#1a1a1a]" style={{ fontFamily: "'Goudy Bookletter 1911', serif", textTransform: 'capitalize' }}>
+                          <h1 className="text-[25px] font-normal leading-[1.2]" style={{ color: headTextColor, fontFamily: "'Goudy Bookletter 1911', serif", textTransform: 'capitalize' }}>
                             You&apos;re Invited<br />To Our Wedding!
                           </h1>
                         </div>
@@ -581,9 +603,9 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         </div>
 
                         {/* Bottom Information */}
-                        <div className="z-10 text-center space-y-1.5 px-4 font-serif text-[#686868] text-xs tracking-wider" style={{ fontFamily: "'Goudy Bookletter 1911', serif" }}>
-                          <p className="uppercase font-semibold tracking-widest text-[#686868] text-xs">{venueStr}</p>
-                          <p className="uppercase text-[#686868] text-xs">{formattedDate}. {timeStr}</p>
+                        <div className="z-10 text-center space-y-1.5 px-4 font-serif text-xs tracking-wider" style={{ color: infoTextColor, fontFamily: "'Goudy Bookletter 1911', serif" }}>
+                          <p className="uppercase font-semibold tracking-widest">{venueStr}</p>
+                          <p className="uppercase">{formattedDate}. {timeStr}</p>
                         </div>
                       </div>
                     )
@@ -606,7 +628,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         key="hero" 
                         id="preview-section-hero" 
                         className="relative h-[640px] flex flex-col justify-between text-center overflow-hidden pb-12"
-                        style={{ backgroundColor: '#9EB7CE', color: '#FFFFFF' }}
+                        style={{ backgroundColor: sereneBgColor, color: sereneTextColor }}
                       >
                         {/* Background Visual */}
                         {currentInvitation?.mainImage ? (
@@ -616,14 +638,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             className="absolute inset-0 w-full h-full object-cover z-0"
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center bg-[#9EB7CE] z-0">
+                          <div className="absolute inset-0 flex items-center justify-center z-0" style={{ backgroundColor: sereneBgColor }}>
                             <span className="text-[10px] opacity-40">사진을 등록해주세요</span>
                           </div>
                         )}
                         {/* Gradient Overlay */}
                         <div 
                           className="absolute inset-0 z-10" 
-                          style={{ background: 'linear-gradient(to top, #9EB7CE 0%, rgba(158, 183, 206, 0) 70%, rgba(158, 183, 206, 0.3) 100%)' }} 
+                          style={{ background: `linear-gradient(to top, rgba(${hexToRgb(sereneBgColor)}, 1) 0%, rgba(${hexToRgb(sereneBgColor)}, 0) 70%, rgba(${hexToRgb(sereneBgColor)}, 0.3) 100%)` }} 
                         />
 
                         {/* Centered Main Text: SAVE the DATE */}
@@ -915,7 +937,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
                 
                 case 'greeting':
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     const parsedGroom = parseIndividualParents(currentInvitation?.groomParentRelation || '')
                     const parsedBride = parseIndividualParents(currentInvitation?.brideParentRelation || '')
 
@@ -928,8 +950,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <section 
                         key="greeting" 
                         id="preview-section-greeting" 
-                        className="relative pb-16 pt-0 text-center overflow-hidden bg-[#EFD0D0] text-white"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="relative pb-16 pt-0 text-center overflow-hidden"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
                         {/* Diagonal Slanted White Bar */}
                         <div 
@@ -941,7 +963,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         />
 
                         {/* Invitation Text */}
-                        <div className="px-6 max-w-[340px] mx-auto text-[15px] leading-[2.0] font-medium whitespace-pre-line text-white/90">
+                        <div className="px-6 max-w-[340px] mx-auto text-[15px] leading-[2.0] font-medium whitespace-pre-line opacity-95">
                           {currentInvitation?.invitationMessage || 
                            '사랑으로 하나 된 두 사람이\n서로를 이해하며 한 길을 걸어가려 합니다.\n귀한 발걸음으로 저희의 출발을\n함께 축복해 주시기 바랍니다.'}
                         </div>
@@ -973,7 +995,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         </div>
 
                         {/* Spouses & Parents Info */}
-                        <div className="grid grid-cols-2 gap-8 text-center text-white max-w-[300px] mx-auto mt-6">
+                        <div className="grid grid-cols-2 gap-8 text-center max-w-[300px] mx-auto mt-6">
                           {/* Groom side */}
                           <div className="space-y-4">
                             <div className="space-y-1">
@@ -1012,7 +1034,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         key="greeting" 
                         id="preview-section-greeting" 
                         className="py-16 px-6 text-center" 
-                        style={{ backgroundColor: '#9EB7CE', color: '#FFFFFF' }}
+                        style={{ backgroundColor: sereneBgColor, color: sereneTextColor }}
                       >
                         {/* Parent Names Spaced */}
                         <div className="space-y-4 text-xs font-light max-w-[280px] mx-auto py-6 mb-8">
@@ -1115,15 +1137,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                     { id: '6', time: '13:00', title: '신랑 신부 행진 및 폐식' }
                   ]
 
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     return (
                       <section 
                         key="sequence" 
                         id="preview-section-sequence" 
-                        className="py-16 px-6 bg-[#EFD0D0] text-white text-center"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="py-16 px-6 text-center"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
-                        <h4 className="text-[14px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>WEDDING ORDER</h4>
+                        <h4 className="text-[14px] uppercase tracking-widest opacity-80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>WEDDING ORDER</h4>
                         <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>식순 안내</h3>
 
                         <div className="max-w-[320px] mx-auto border-t border-b border-white/80">
@@ -1152,22 +1174,22 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <section 
                         key="sequence" 
                         id="preview-section-sequence" 
-                        className="py-16 px-6 bg-white" 
-                        style={{ color: '#000000' }}
+                        className="py-16 px-6" 
+                        style={{ backgroundColor: themeStyles.backgroundColor || '#ffffff', color: themeStyles.textColor || '#000000' }}
                       >
                         {renderSectionHeader('sequence', sequenceSubtitle, sequenceTitle, 'mb-8')}
                         
-                        <div className="max-w-[280px] mx-auto border-t border-b border-black">
+                        <div className="max-w-[280px] mx-auto border-t border-b border-current">
                           {sequenceEvents.map((event: any, i: number) => (
                             <div 
                               key={event.id} 
                               className={cn(
                                 "flex items-center text-xs py-3.5 px-2", 
-                                i < sequenceEvents.length - 1 && "border-b border-black"
+                                i < sequenceEvents.length - 1 && "border-b border-current"
                               )}
                             >
                               <div className="w-[60px] text-left tracking-wider font-semibold font-mono">{event.time}</div>
-                              <div className="w-[1px] h-4 bg-black mx-4" />
+                              <div className="w-[1px] h-4 bg-current mx-4 opacity-30" />
                               <div className="flex-1 text-left tracking-wide font-medium">{event.title}</div>
                             </div>
                           ))}
@@ -1200,15 +1222,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 case 'gallery':
                   if (!currentInvitation?.galleryImages || currentInvitation.galleryImages.length === 0) return null
 
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     return (
                       <section 
                         key="gallery" 
                         id="preview-section-gallery" 
-                        className="py-16 px-0 bg-[#EFD0D0] text-white text-center overflow-hidden"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="py-16 px-0 text-center overflow-hidden"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
-                        <h4 className="text-[18px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>GALLERY</h4>
+                        <h4 className="text-[18px] uppercase tracking-widest opacity-80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>GALLERY</h4>
                         <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>갤러리</h3>
 
                         <div className="w-full overflow-x-auto flex gap-4 snap-x scrollbar-hide pb-2 px-6">
@@ -1255,7 +1277,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   if (!currentInvitation?.weddingDate) return null
                   const ddayEnabled = currentInvitation.customStyles?.ddayEnabled ?? false
 
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
                     const d = currentInvitation?.weddingDate ? new Date(currentInvitation.weddingDate + 'T00:00:00') : new Date()
                     const monthName = months[d.getMonth()]
@@ -1264,23 +1286,23 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <section 
                         key="calendar" 
                         id="preview-section-calendar" 
-                        className="py-16 px-6 bg-white text-[#D59B9B] text-center"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="py-16 px-6 text-center animate-fade-in"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
-                        <h4 className="text-[14px] uppercase tracking-widest text-[#D59B9B]/60 mb-2" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>Calendar</h4>
+                        <h4 className="text-[14px] uppercase tracking-widest mb-2" style={{ fontFamily: "'Radio Canada Big', sans-serif", color: `${pinkPrimaryColor}99` }}>Calendar</h4>
                         
-                        <div className="max-w-[320px] mx-auto bg-white p-4">
+                        <div className="max-w-[320px] mx-auto bg-white p-4 rounded-sm shadow-sm text-black">
                           {/* Month Heading */}
                           <div className="text-center mb-6">
-                            <p className="text-xl font-medium tracking-widest text-[#D59B9B] uppercase font-serif">
+                            <p className="text-xl font-medium tracking-widest uppercase font-serif" style={{ color: pinkPrimaryColor }}>
                               {monthName}
                             </p>
                           </div>
                           
                           {/* Calendar Grid */}
-                          <div className="grid grid-cols-7 gap-y-3 text-center text-xs font-medium text-[#D59B9B]/80">
+                          <div className="grid grid-cols-7 gap-y-3 text-center text-xs font-medium" style={{ color: `${pinkPrimaryColor}cc` }}>
                             {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-                              <div key={day} className="py-1 opacity-50 font-semibold">{day}</div>
+                              <div key={day} className="py-1 opacity-55 font-semibold">{day}</div>
                             ))}
                             {calDays.map((day, i) => {
                               if (day === null) return <div key={`empty-${i}`} />
@@ -1290,7 +1312,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 return (
                                   <div
                                     key={i}
-                                    className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10 bg-[#D76C6C]"
+                                    className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10"
+                                    style={{ backgroundColor: pinkPrimaryColor }}
                                   >
                                     {day}
                                   </div>
@@ -1311,9 +1334,9 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
                         {/* Concept 5 D-day Timer */}
                         {ddayEnabled && (
-                          <div className="mt-12 pt-8 border-t border-[#EFD0D0] text-center space-y-5">
-                            <p className="text-[14px] uppercase tracking-[0.1em] font-semibold text-[#D59B9B]">Days left</p>
-                            <div className="flex justify-center items-center gap-10 max-w-[280px] mx-auto text-[#D59B9B]">
+                          <div className="mt-12 pt-8 text-center space-y-5 border-t" style={{ borderTopColor: pinkPrimaryColor }}>
+                            <p className="text-[14px] uppercase tracking-[0.1em] font-semibold" style={{ color: pinkPrimaryColor }}>Days left</p>
+                            <div className="flex justify-center items-center gap-10 max-w-[280px] mx-auto" style={{ color: pinkPrimaryColor }}>
                               <div className="flex flex-col items-center">
                                 <p className="text-[14px] tracking-wider opacity-60">DAYS</p>
                                 <p className="text-[36px] font-normal mt-1 leading-none">{timeLeft.days}</p>
@@ -1339,14 +1362,14 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         key="calendar" 
                         id="preview-section-calendar" 
                         className="py-16 px-6" 
-                        style={{ backgroundColor: '#E8E8E8', color: '#000000' }}
+                        style={{ backgroundColor: themeStyles.backgroundColor || '#E8E8E8', color: themeStyles.textColor || '#000000' }}
                       >
                         {renderSectionHeader('calendar', 'Calendar', '소중한 날', 'mb-6')}
                         
                         <Card className="border-0 shadow-none bg-white rounded-none text-black">
                           <CardContent className="p-6">
                             <div className="text-center mb-6">
-                              <p className="text-lg font-semibold text-[#62798E] font-mono tracking-widest uppercase">
+                              <p className="text-lg font-semibold font-mono tracking-widest uppercase" style={{ color: sereneAccentColor }}>
                                 {new Date(currentInvitation.weddingDate).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
                               </p>
                             </div>
@@ -1374,7 +1397,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                         {isSvg ? (
                                           <div 
                                             className="absolute inset-0 w-full h-full z-0 pointer-events-none"
-                                            style={getSvgMaskStyle(customShapeUrl, currentInvitation.customStyles?.calendarDaySvgColor || '#526678')}
+                                            style={getSvgMaskStyle(customShapeUrl, currentInvitation.customStyles?.calendarDaySvgColor || sereneAccentColor)}
                                           />
                                         ) : (
                                           <img 
@@ -1395,7 +1418,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                         className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
                                         style={{ color: highlightTextColor }}
                                       >
-                                        <Heart className="absolute inset-0 w-full h-full text-red-400 fill-red-400 opacity-90 z-0 scale-110" style={{ color: '#526678', fill: '#526678' }} />
+                                        <Heart className="absolute inset-0 w-full h-full opacity-90 z-0 scale-110" style={{ color: sereneAccentColor, fill: sereneAccentColor }} />
                                         <span className="relative z-10 text-[10px] -mt-0.5">{day}</span>
                                       </div>
                                     )
@@ -1406,7 +1429,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                     <div
                                       key={i}
                                       className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10"
-                                      style={{ backgroundColor: '#526678' }}
+                                      style={{ backgroundColor: sereneAccentColor }}
                                     >
                                       {day}
                                     </div>
@@ -1429,19 +1452,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         {/* Serene Blue Countdown Timer */}
                         {ddayEnabled && (
                           <div className="mt-8 text-center space-y-4">
-                            <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 font-semibold text-[#62798E]">Days left</p>
-                            <div className="flex justify-center items-center gap-6 max-w-[280px] mx-auto text-[#62798E] font-mono">
+                            <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 font-semibold" style={{ color: sereneAccentColor }}>Days left</p>
+                            <div className="flex justify-center items-center gap-6 max-w-[280px] mx-auto font-mono" style={{ color: sereneAccentColor }}>
                               <div className="flex flex-col items-center">
                                 <p className="text-[9px] uppercase tracking-wider opacity-60">DAYS</p>
-                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.days}</p>
+                                <p className="text-3xl font-light mt-1" style={{ color: sereneAccentColor }}>{timeLeft.days}</p>
                               </div>
                               <div className="flex flex-col items-center">
                                 <p className="text-[9px] uppercase tracking-wider opacity-60">HOURS</p>
-                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.hours}</p>
+                                <p className="text-3xl font-light mt-1" style={{ color: sereneAccentColor }}>{timeLeft.hours}</p>
                               </div>
                               <div className="flex flex-col items-center">
                                 <p className="text-[9px] uppercase tracking-wider opacity-60">MINUTES</p>
-                                <p className="text-3xl font-light text-[#526678] mt-1">{timeLeft.minutes}</p>
+                                <p className="text-3xl font-light mt-1" style={{ color: sereneAccentColor }}>{timeLeft.minutes}</p>
                               </div>
                             </div>
                           </div>
@@ -1576,15 +1599,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'location':
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     return (
                       <section 
                         key="location" 
                         id="preview-section-location" 
-                        className="py-16 px-6 bg-[#EFD0D0] text-white"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="py-16 px-6"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
-                        <h4 className="text-[18px] uppercase tracking-widest text-center text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>LOCATION</h4>
+                        <h4 className="text-[18px] uppercase tracking-widest text-center opacity-80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>LOCATION</h4>
                         <h3 className="text-lg font-bold text-center mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>식장 위치</h3>
 
                         {/* White Address Card */}
@@ -1596,10 +1619,10 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                             }
                           }}
                         >
-                          <h3 className="font-semibold text-base tracking-wide text-[#D76C6C]">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
-                          <p className="text-xs text-[#D76C6C]/80">{currentInvitation?.venueHall || '그랜드홀'}</p>
-                          <p className="text-sm font-medium text-[#D76C6C] mt-2 whitespace-pre-line">{currentInvitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
-                          <p className="text-[10px] text-[#D76C6C]/60 mt-1">터치하여 주소 복사</p>
+                          <h3 className="font-semibold text-base tracking-wide" style={{ color: pinkPrimaryColor }}>{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
+                          <p className="text-xs" style={{ color: `${pinkPrimaryColor}cc` }}>{currentInvitation?.venueHall || '그랜드홀'}</p>
+                          <p className="text-sm font-medium mt-2 whitespace-pre-line" style={{ color: pinkPrimaryColor }}>{currentInvitation?.venueAddress || '서울 강남구 학동로 1212'}</p>
+                          <p className="text-[10px] mt-1" style={{ color: `${pinkPrimaryColor}99` }}>터치하여 주소 복사</p>
                         </div>
 
                         {/* Map View */}
@@ -1613,16 +1636,16 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         )}
 
                         {/* Traffic & Parking Info */}
-                        <div className="space-y-4 text-xs text-left text-white/90 leading-relaxed">
+                        <div className="space-y-4 text-xs text-left opacity-90 leading-relaxed">
                           {currentInvitation?.trafficInfo && (
                             <div>
-                              <p className="font-semibold text-white">대중교통 안내</p>
+                              <p className="font-semibold">대중교통 안내</p>
                               <p className="whitespace-pre-line mt-1">{currentInvitation.trafficInfo}</p>
                             </div>
                           )}
                           {currentInvitation?.parkingInfo && (
                             <div>
-                              <p className="font-semibold text-white">주차 안내</p>
+                              <p className="font-semibold">주차 안내</p>
                               <p className="whitespace-pre-line mt-1">{currentInvitation.parkingInfo}</p>
                             </div>
                           )}
@@ -1637,7 +1660,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         key="location" 
                         id="preview-section-location" 
                         className="py-16 px-6" 
-                        style={{ backgroundColor: '#F2F2F2', color: '#000000' }}
+                        style={{ backgroundColor: themeStyles.backgroundColor || '#F2F2F2', color: themeStyles.textColor || '#000000' }}
                       >
                         {renderSectionHeader('location', 'Location', '식장 위치', 'mb-6')}
                         
@@ -1652,7 +1675,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         >
                           <h3 className="font-semibold text-base tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           {currentInvitation?.venueHall && (
-                            <p className="text-xs text-[#526678] font-medium">{currentInvitation.venueHall}</p>
+                            <p className="text-xs font-medium" style={{ color: sereneAccentColor }}>{currentInvitation.venueHall}</p>
                           )}
                           <p className="text-xs opacity-75 mt-1 whitespace-pre-line">{currentInvitation?.venueAddress || '강남구 학동로 1212'}</p>
                         </div>
@@ -1671,19 +1694,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <div className="space-y-4 text-xs font-light text-left max-w-[280px] mx-auto">
                           {currentInvitation?.parkingInfo && (
                             <div className="space-y-1">
-                              <span className="font-semibold block text-[#62798E]">주차안내</span>
+                              <span className="font-semibold block" style={{ color: sereneAccentColor }}>주차안내</span>
                               <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.parkingInfo}</p>
                             </div>
                           )}
                           {currentInvitation?.trafficInfo && (
                             <div className="space-y-1">
-                              <span className="font-semibold block text-[#62798E]">대중교통</span>
+                              <span className="font-semibold block" style={{ color: sereneAccentColor }}>대중교통</span>
                               <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.trafficInfo}</p>
                             </div>
                           )}
                           {currentInvitation?.customStyles?.shuttleEnabled && currentInvitation?.customStyles?.shuttleInfo && (
                             <div className="space-y-1">
-                              <span className="font-semibold block text-[#62798E]">셔틀버스</span>
+                              <span className="font-semibold block" style={{ color: sereneAccentColor }}>셔틀버스</span>
                               <p className="opacity-80 leading-relaxed whitespace-pre-line">{currentInvitation.customStyles.shuttleInfo}</p>
                             </div>
                           )}
@@ -1828,15 +1851,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   const groomAccounts = accountsList.filter((acc: any) => acc.relation === 'groom' || acc.relation === 'groomParent')
                   const brideAccounts = accountsList.filter((acc: any) => acc.relation === 'bride' || acc.relation === 'brideParent')
 
-                  if (isConcept5) {
+                  if (isPinkEnvelope) {
                     return (
                       <section 
                         key="account" 
                         id="preview-section-account" 
-                        className="py-16 px-6 bg-[#EFD0D0] text-white text-center"
-                        style={{ fontFamily: "'Radio Canada Big', sans-serif" }}
+                        className="py-16 px-6 text-center"
+                        style={{ fontFamily: "'Radio Canada Big', sans-serif", backgroundColor: pinkBgColor, color: pinkTextColor }}
                       >
-                        <h4 className="text-[18px] uppercase tracking-widest text-white/80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>ACCOUNT</h4>
+                        <h4 className="text-[18px] uppercase tracking-widest opacity-80" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>ACCOUNT</h4>
                         <h3 className="text-lg font-bold mt-1 mb-8" style={{ fontFamily: "'Radio Canada Big', sans-serif" }}>마음 전하실 곳</h3>
 
                         <div className="max-w-[320px] mx-auto border-t border-white/60 divide-y divide-white/40 text-left">
@@ -1874,8 +1897,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       <section 
                         key="account" 
                         id="preview-section-account" 
-                        className="py-16 px-6 bg-white" 
-                        style={{ color: '#000000' }}
+                        className="py-16 px-6" 
+                        style={{ backgroundColor: themeStyles.backgroundColor || '#ffffff', color: themeStyles.textColor || '#000000' }}
                       >
                         {renderSectionHeader('account', 'Account', '마음 전하실 곳', 'mb-8')}
                         
@@ -1883,7 +1906,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {/* Groom Side Accounts */}
                           {groomAccounts.length > 0 && (
                             <div className="space-y-3">
-                              <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Groom Side</span>
+                              <span className="text-xs font-semibold tracking-wider block text-left" style={{ color: sereneAccentColor }}>Groom Side</span>
                               <div className="border-t border-black divide-y divide-black/10">
                                 {groomAccounts.map((account: any) => (
                                   <div 
@@ -1914,7 +1937,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {/* Bride Side Accounts */}
                           {brideAccounts.length > 0 && (
                             <div className="space-y-3">
-                              <span className="text-xs text-[#62798E] font-semibold tracking-wider block text-left">Bride Side</span>
+                              <span className="text-xs font-semibold tracking-wider block text-left" style={{ color: sereneAccentColor }}>Bride Side</span>
                               <div className="border-t border-black divide-y divide-black/10">
                                 {brideAccounts.map((account: any) => (
                                   <div 
