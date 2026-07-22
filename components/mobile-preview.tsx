@@ -2368,7 +2368,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   navigator.clipboard.writeText(textToCopy)
                   
                   // 2) 카카오톡 페이 송금 딥링크로 이동
-                  window.location.href = 'kakaotalk://kakaopay/money'
+                  window.location.href = 'kakaotalk://kakaopay/home'
                   
                   // 3) 토스트 알림 제공
                   toast.success("계좌번호 복사 완료! 카카오페이 창에 붙여넣어주세요.")
