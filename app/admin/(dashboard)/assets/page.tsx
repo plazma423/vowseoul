@@ -53,10 +53,21 @@ export default function AssetsPage() {
   const [isFontDialogOpen, setIsFontDialogOpen] = useState(false)
   const fontFileInputRef = useRef<HTMLInputElement>(null)
 
+  const [svgs, setSvgs] = useState<any[]>([])
+  const [isLoadingSvgs, setIsLoadingSvgs] = useState(true)
+  const [newSvgName, setNewSvgName] = useState('')
+  const [svgCategory, setSvgCategory] = useState<'calendar' | 'greeting' | 'deceased'>('calendar')
+  const [svgFileUrl, setSvgFileUrl] = useState<string | null>(null)
+  const [isUploadingSvg, setIsUploadingSvg] = useState(false)
+  const [isSavingSvg, setIsSavingSvg] = useState(false)
+  const [isSvgDialogOpen, setIsSvgDialogOpen] = useState(false)
+  const svgFileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetchThemes()
     fetchBgms()
     fetchFonts()
+    fetchSvgs()
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
@@ -165,6 +176,108 @@ export default function AssetsPage() {
     setFontType('embed')
     setEmbedCode('')
     setFontFileUrl(null)
+  }
+
+  const fetchSvgs = async () => {
+    setIsLoadingSvgs(true)
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'svg_assets')
+      
+      if (data && data.length > 0 && data[0].value) {
+        setSvgs(data[0].value)
+      } else {
+        setSvgs([])
+      }
+    } catch (err) {
+      console.error('Error fetching SVGs:', err)
+      setSvgs([])
+    } finally {
+      setIsLoadingSvgs(false)
+    }
+  }
+
+  const handleSvgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    const file = e.target.files[0]
+    if (!file.name.toLowerCase().endsWith('.svg')) {
+      return alert('SVG 파일만 업로드할 수 있습니다.')
+    }
+    setIsUploadingSvg(true)
+    try {
+      const url = await uploadFile(file, 'svgs')
+      setSvgFileUrl(url)
+    } catch (err) {
+      alert('SVG 파일 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingSvg(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleSaveSvg = async () => {
+    if (!newSvgName) return alert('SVG 아이콘 명칭을 입력해주세요.')
+    if (!svgFileUrl) return alert('SVG 파일을 업로드해주세요.')
+
+    setIsSavingSvg(true)
+    try {
+      const newSvg = {
+        id: `svg_${Date.now()}`,
+        name: newSvgName,
+        category: svgCategory,
+        url: svgFileUrl
+      }
+
+      const updatedSvgs = [...svgs, newSvg]
+      
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'svg_assets', value: updatedSvgs, updatedAt: new Date().toISOString() })
+
+      if (error) throw error
+
+      setIsSvgDialogOpen(false)
+      resetSvgForm()
+      await fetchSvgs()
+    } catch (err) {
+      console.error('Save SVG error:', err)
+      alert('SVG 저장에 실패했습니다.')
+    } finally {
+      setIsSavingSvg(false)
+    }
+  }
+
+  const handleDeleteSvg = async (id: string) => {
+    if (!confirm('정말로 이 SVG 파일을 삭제하시겠습니까?')) return
+    try {
+      const svgToDelete = svgs.find(s => s.id === id)
+      if (svgToDelete && svgToDelete.url) {
+        try {
+          await deleteFile(svgToDelete.url)
+        } catch (e) {
+          console.warn('Could not delete SVG file from storage:', e)
+        }
+      }
+
+      const updatedSvgs = svgs.filter(s => s.id !== id)
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'svg_assets', value: updatedSvgs, updatedAt: new Date().toISOString() })
+
+      if (error) throw error
+      await fetchSvgs()
+    } catch (err) {
+      console.error('Delete SVG error:', err)
+      alert('SVG 삭제에 실패했습니다.')
+    }
+  }
+
+  const resetSvgForm = () => {
+    setNewSvgName('')
+    setSvgCategory('calendar')
+    setSvgFileUrl(null)
   }
 
   const fetchBgms = async () => {
@@ -309,6 +422,7 @@ export default function AssetsPage() {
           <TabsTrigger value="phrases">문구 관리</TabsTrigger>
           <TabsTrigger value="bgm">BGM 관리</TabsTrigger>
           <TabsTrigger value="fonts">폰트 관리</TabsTrigger>
+          <TabsTrigger value="svg">SVG 관리</TabsTrigger>
         </TabsList>
 
         {/* Themes */}
@@ -708,6 +822,124 @@ export default function AssetsPage() {
                         </div>
                       </div>
                       <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFont(font.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* SVG 관리 */}
+        <TabsContent value="svg" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">SVG 관리</CardTitle>
+                <CardDescription>달력 예식일 강조, 초대 인사말 아이콘, 고인(故) 표기 아이콘 등에 사용될 SVG 리소스를 관리합니다.</CardDescription>
+              </div>
+              <Dialog open={isSvgDialogOpen} onOpenChange={(open) => {
+                if (!open) resetSvgForm()
+                setIsSvgDialogOpen(open)
+              }}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetSvgForm}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    새 SVG 추가
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>새 SVG 등록</DialogTitle>
+                    <DialogDescription>의뢰 청첩장에 사용될 벡터 그래픽 SVG 파일을 업로드합니다.</DialogDescription>
+                  </DialogHeader>
+                  <FieldGroup className="mt-4">
+                    <Field>
+                      <FieldLabel>아이콘 명칭</FieldLabel>
+                      <Input placeholder="예: 국화 모양 고인 표기, 사선 컷, 둥글기 강조" value={newSvgName} onChange={e => setNewSvgName(e.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel>사용 용도 (카테고리)</FieldLabel>
+                      <Select value={svgCategory} onValueChange={(v: 'calendar' | 'greeting' | 'deceased') => setSvgCategory(v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="calendar">달력 예식일 강조 표시 모양</SelectItem>
+                          <SelectItem value="greeting">초대 인사말 아이콘 모양</SelectItem>
+                          <SelectItem value="deceased">고인(故) 표기 아이콘 모양</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field>
+                      <FieldLabel>SVG 파일 (.svg)</FieldLabel>
+                      <div className="flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 cursor-pointer" onClick={() => svgFileInputRef.current?.click()}>
+                        <div className="text-center">
+                          {svgFileUrl ? (
+                            <>
+                              <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
+                              <p className="mt-1 text-xs text-green-600">업로드 완료</p>
+                            </>
+                          ) : isUploadingSvg ? (
+                            <>
+                              <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                              <p className="mt-1 text-xs text-muted-foreground">업로드 중...</p>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+                              <p className="mt-1 text-xs text-muted-foreground">SVG 파일 업로드</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <input 
+                        type="file" 
+                        accept=".svg" 
+                        className="hidden" 
+                        ref={svgFileInputRef}
+                        onChange={handleSvgFileUpload}
+                        disabled={isUploadingSvg}
+                      />
+                    </Field>
+                  </FieldGroup>
+                  <Button className="mt-4 w-full" onClick={handleSaveSvg} disabled={isSavingSvg || isUploadingSvg}>
+                    {isSavingSvg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    등록하기
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingSvgs ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : svgs.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  등록된 SVG 파일이 없습니다.
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {svgs.map((svg) => (
+                    <div 
+                      key={svg.id} 
+                      className="flex items-center justify-between rounded-lg border border-border p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded border border-border flex items-center justify-center p-1.5 bg-gray-50 dark:bg-zinc-900">
+                          <img src={svg.url} alt={svg.name} className="w-full h-full object-contain" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">{svg.name}</p>
+                          <div className="mt-1 flex gap-1">
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                              {svg.category === 'calendar' ? '달력 예식일' : svg.category === 'greeting' ? '초대 인사말' : '고인 표기'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteSvg(svg.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

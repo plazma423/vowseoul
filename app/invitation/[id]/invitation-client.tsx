@@ -104,25 +104,90 @@ const parseIndividualParents = (fullRelation: string) => {
   return result
 }
 
-const formatParentRelation = (relationStr: string, parentNames?: string, relationText?: string) => {
-  if (parentNames !== undefined && relationText !== undefined) {
-    return (
-      <span>
-        <strong className="font-semibold">{parentNames}</strong>
-        {relationText ? ` ${relationText}` : ''}
-      </span>
-    );
+const renderDeceasedInline = (isDeceased: boolean, markerType: string, svgId: string, svgs: any[] = []) => {
+  if (!isDeceased) return null;
+  if (markerType === 'svg' && svgId) {
+    const svgObj = svgs.find(s => s.id === svgId);
+    if (svgObj?.url) {
+      return (
+        <span className="inline-flex items-center align-middle mr-1 select-none">
+          <img 
+            src={svgObj.url} 
+            alt="deceased icon" 
+            className="w-[1.1em] h-[1.1em] object-contain inline" 
+            style={{ verticalAlign: 'middle', display: 'inline-block' }} 
+          />
+        </span>
+      );
+    }
   }
-  if (!relationStr) return '';
-  const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
-  if (match) {
-    return (
-      <span>
-        <strong className="font-semibold">{match[1]}</strong>{match[2]}
-      </span>
-    );
+  return <span className="mr-0.5 align-middle select-none text-[0.9em] font-normal opacity-85">(故)</span>;
+};
+
+const formatParentRelation = (
+  relationStr: string, 
+  parentNames?: string, 
+  relationText?: string,
+  customStyles?: any,
+  svgs: any[] = [],
+  side: 'groom' | 'bride' = 'groom'
+) => {
+  const fatherDeceased = side === 'groom' ? customStyles?.groomFatherDeceased : customStyles?.brideFatherDeceased;
+  const fatherMarker = side === 'groom' ? customStyles?.groomFatherDeceasedMarker : customStyles?.brideFatherDeceasedMarker;
+  const fatherSvgId = side === 'groom' ? customStyles?.groomFatherDeceasedSvgId : customStyles?.brideFatherDeceasedSvgId;
+
+  const motherDeceased = side === 'groom' ? customStyles?.groomMotherDeceased : customStyles?.brideMotherDeceased;
+  const motherMarker = side === 'groom' ? customStyles?.groomMotherDeceasedMarker : customStyles?.brideMotherDeceasedMarker;
+  const motherSvgId = side === 'groom' ? customStyles?.groomMotherDeceasedSvgId : customStyles?.brideMotherDeceasedSvgId;
+
+  const parsed = parseIndividualParents(relationStr);
+  const fatherName = side === 'groom' 
+    ? (customStyles?.groomFatherName !== undefined ? customStyles.groomFatherName : parsed.fatherName) 
+    : (customStyles?.brideFatherName !== undefined ? customStyles.brideFatherName : parsed.fatherName);
+  const motherName = side === 'groom' 
+    ? (customStyles?.groomMotherName !== undefined ? customStyles.groomMotherName : parsed.motherName) 
+    : (customStyles?.brideMotherName !== undefined ? customStyles.brideMotherName : parsed.motherName);
+  const finalRelationText = relationText !== undefined ? relationText : parsed.relationText;
+
+  if (!fatherName && !motherName) {
+    if (parentNames !== undefined && relationText !== undefined) {
+      return (
+        <span>
+          <strong className="font-semibold">{parentNames}</strong>
+          {relationText ? ` ${relationText}` : ''}
+        </span>
+      );
+    }
+    if (!relationStr) return '';
+    const match = relationStr.match(/^(.*?)(의\s+아들|의\s+딸|의\s*\S*)$/);
+    if (match) {
+      return (
+        <span>
+          <strong className="font-semibold">{match[1]}</strong>{match[2]}
+        </span>
+      );
+    }
+    return <strong className="font-semibold">{relationStr}</strong>;
   }
-  return <strong className="font-semibold">{relationStr}</strong>;
+
+  return (
+    <span>
+      {fatherName && (
+        <>
+          {renderDeceasedInline(fatherDeceased, fatherMarker, fatherSvgId, svgs)}
+          <strong className="font-semibold">{fatherName}</strong>
+        </>
+      )}
+      {fatherName && motherName && <span className="mx-1 font-normal opacity-60">·</span>}
+      {motherName && (
+        <>
+          {renderDeceasedInline(motherDeceased, motherMarker, motherSvgId, svgs)}
+          <strong className="font-semibold">{motherName}</strong>
+        </>
+      )}
+      {finalRelationText ? ` ${finalRelationText}` : ''}
+    </span>
+  );
 };
 
 export default function InvitationClient({ 
@@ -139,6 +204,7 @@ export default function InvitationClient({
   const [invitation, setInvitation] = useState<any>(initialInvitation || null)
   const [themes, setThemes] = useState<any[]>(initialThemes || [])
   const [customFonts, setCustomFonts] = useState<any[]>(initialFonts || [])
+  const [svgs, setSvgs] = useState<any[]>([])
   const [loading, setLoading] = useState(!initialInvitation)
   const [isPlaying, setIsPlaying] = useState(true)
   const [showRsvp, setShowRsvp] = useState(false)
@@ -152,6 +218,14 @@ export default function InvitationClient({
   const [rsvpMealInfo, setRsvpMealInfo] = useState<Record<string, number>>({})
   const [rsvpMessage, setRsvpMessage] = useState("")
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false)
+
+  const [activeAccountForDialog, setActiveAccountForDialog] = useState<any | null>(null)
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
+
+  const handleAccountCopy = (account: any) => {
+    setActiveAccountForDialog(account)
+    setIsAccountDialogOpen(true)
+  }
 
   const getDDayString = (dateStr: string) => {
     if (!dateStr) return null
@@ -263,6 +337,20 @@ export default function InvitationClient({
     }
     loadFonts()
   }, [initialFonts])
+
+  useEffect(() => {
+    const loadSvgs = async () => {
+      try {
+        const { data } = await supabase.from('settings').select('*').eq('key', 'svg_assets')
+        if (data && data.length > 0 && data[0].value) {
+          setSvgs(data[0].value)
+        }
+      } catch (err) {
+        console.error('Error fetching SVGs in Client:', err)
+      }
+    }
+    loadSvgs()
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -1173,7 +1261,10 @@ export default function InvitationClient({
                               {formatParentRelation(
                                 invitation.groomParentRelation,
                                 invitation.customStyles?.groomParentNames,
-                                invitation.customStyles?.groomParentRelationText
+                                invitation.customStyles?.groomParentRelationText,
+                                invitation.customStyles,
+                                svgs,
+                                'groom'
                               )}
                             </p>
                           )}
@@ -1194,7 +1285,10 @@ export default function InvitationClient({
                               {formatParentRelation(
                                 invitation.brideParentRelation,
                                 invitation.customStyles?.brideParentNames,
-                                invitation.customStyles?.brideParentRelationText
+                                invitation.customStyles?.brideParentRelationText,
+                                invitation.customStyles,
+                                svgs,
+                                'bride'
                               )}
                             </p>
                           )}
@@ -1241,7 +1335,10 @@ export default function InvitationClient({
                               {formatParentRelation(
                                 invitation.groomParentRelation,
                                 invitation.customStyles?.groomParentNames,
-                                invitation.customStyles?.groomParentRelationText
+                                invitation.customStyles?.groomParentRelationText,
+                                invitation.customStyles,
+                                svgs,
+                                'groom'
                               )}
                             </p>
                           )}
@@ -1262,7 +1359,10 @@ export default function InvitationClient({
                               {formatParentRelation(
                                 invitation.brideParentRelation,
                                 invitation.customStyles?.brideParentNames,
-                                invitation.customStyles?.brideParentRelationText
+                                invitation.customStyles?.brideParentRelationText,
+                                invitation.customStyles,
+                                svgs,
+                                'bride'
                               )}
                             </p>
                           )}
@@ -1369,8 +1469,26 @@ export default function InvitationClient({
                         <div className="h-px bg-white/20 w-8 mx-auto" />
                         <div className="space-y-1.5 text-[14px] opacity-90">
                           <span className="text-[11px] opacity-60 block">신랑 측 혼주</span>
-                          <p><span className="text-[11px] opacity-50 mr-1">아버지</span>{groomFather}</p>
-                          <p><span className="text-[11px] opacity-50 mr-1">어머니</span>{groomMother}</p>
+                          <p>
+                            <span className="text-[11px] opacity-50 mr-1">아버지</span>
+                            {renderDeceasedInline(
+                              invitation.customStyles?.groomFatherDeceased,
+                              invitation.customStyles?.groomFatherDeceasedMarker,
+                              invitation.customStyles?.groomFatherDeceasedSvgId,
+                              svgs
+                            )}
+                            {groomFather}
+                          </p>
+                          <p>
+                            <span className="text-[11px] opacity-50 mr-1">어머니</span>
+                            {renderDeceasedInline(
+                              invitation.customStyles?.groomMotherDeceased,
+                              invitation.customStyles?.groomMotherDeceasedMarker,
+                              invitation.customStyles?.groomMotherDeceasedSvgId,
+                              svgs
+                            )}
+                            {groomMother}
+                          </p>
                         </div>
                       </div>
 
@@ -1383,8 +1501,26 @@ export default function InvitationClient({
                         <div className="h-px bg-white/20 w-8 mx-auto" />
                         <div className="space-y-1.5 text-[14px] opacity-90">
                           <span className="text-[11px] opacity-60 block">신부 측 혼주</span>
-                          <p><span className="text-[11px] opacity-50 mr-1">아버지</span>{brideFather}</p>
-                          <p><span className="text-[11px] opacity-50 mr-1">어머니</span>{brideMother}</p>
+                          <p>
+                            <span className="text-[11px] opacity-50 mr-1">아버지</span>
+                            {renderDeceasedInline(
+                              invitation.customStyles?.brideFatherDeceased,
+                              invitation.customStyles?.brideFatherDeceasedMarker,
+                              invitation.customStyles?.brideFatherDeceasedSvgId,
+                              svgs
+                            )}
+                            {brideFather}
+                          </p>
+                          <p>
+                            <span className="text-[11px] opacity-50 mr-1">어머니</span>
+                            {renderDeceasedInline(
+                              invitation.customStyles?.brideMotherDeceased,
+                              invitation.customStyles?.brideMotherDeceasedMarker,
+                              invitation.customStyles?.brideMotherDeceasedSvgId,
+                              svgs
+                            )}
+                            {brideMother}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1408,7 +1544,10 @@ export default function InvitationClient({
                             {formatParentRelation(
                               invitation?.groomParentRelation || '김태진 · 정혜선 의 아들',
                               invitation?.customStyles?.groomParentNames,
-                              invitation?.customStyles?.groomParentRelationText
+                              invitation?.customStyles?.groomParentRelationText,
+                              invitation?.customStyles,
+                              svgs,
+                              'groom'
                             )}
                           </span>
                         </div>
@@ -1421,7 +1560,10 @@ export default function InvitationClient({
                             {formatParentRelation(
                               invitation?.brideParentRelation || '김필래 · 이수윤 의 딸',
                               invitation?.customStyles?.brideParentNames,
-                              invitation?.customStyles?.brideParentRelationText
+                              invitation?.customStyles?.brideParentRelationText,
+                              invitation?.customStyles,
+                              svgs,
+                              'bride'
                             )}
                           </span>
                         </div>
@@ -2237,7 +2379,7 @@ export default function InvitationClient({
                           <div 
                             key={account.id} 
                             className="py-4 px-2 flex justify-between items-start cursor-pointer hover:bg-white/10 transition-colors"
-                            onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`, 'account')}
+                            onClick={() => handleAccountCopy(account)}
                           >
                             <div className="space-y-1">
                               <span className="text-[10px] uppercase tracking-wider text-white/70 block">{relationLabel}</span>
@@ -2274,7 +2416,7 @@ export default function InvitationClient({
                               <div 
                                 key={account.id} 
                                 className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
-                                onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                                onClick={() => handleAccountCopy(account)}
                               >
                                 <div className="text-left space-y-1">
                                   <div className="flex items-center gap-2">
@@ -2305,7 +2447,7 @@ export default function InvitationClient({
                               <div 
                                 key={account.id} 
                                 className="py-3 px-1 flex justify-between items-center text-sm cursor-pointer hover:bg-black/5"
-                                onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                                onClick={() => handleAccountCopy(account)}
                               >
                                 <div className="text-left space-y-1">
                                   <div className="flex items-center gap-2">
@@ -2345,7 +2487,7 @@ export default function InvitationClient({
                             key={account.id} 
                             className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors shadow-sm", effectiveCardBg, shadowClass)} 
                             style={{ ...borderStyle, color: 'inherit' }}
-                            onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                            onClick={() => handleAccountCopy(account)}
                           >
                             <CardContent className="p-2 px-2.5 text-left flex flex-col justify-center min-h-[44px] space-y-0.5">
                               <div className="flex justify-between items-center w-full text-[10px] leading-tight">
@@ -2372,7 +2514,7 @@ export default function InvitationClient({
                             key={account.id} 
                             className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors shadow-sm", effectiveCardBg, shadowClass)} 
                             style={{ ...borderStyle, color: 'inherit' }}
-                            onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                            onClick={() => handleAccountCopy(account)}
                           >
                             <CardContent className="p-2 px-2.5 text-left flex flex-col justify-center min-h-[44px] space-y-0.5">
                               <div className="flex justify-between items-center w-full text-[10px] leading-tight">
@@ -2400,7 +2542,7 @@ export default function InvitationClient({
                           key={account.id} 
                           className={cn("border-0 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors shadow-sm", effectiveCardBg, shadowClass)} 
                           style={{ ...borderStyle, color: 'inherit' }}
-                          onClick={() => copyToClipboard(`${account.bank} ${account.accountNumber}`)}
+                          onClick={() => handleAccountCopy(account)}
                         >
                           <CardContent className="p-4 text-left">
                             <div className="flex items-center justify-between">
@@ -2814,6 +2956,82 @@ export default function InvitationClient({
           </div>
         </div>
       )}
+
+      {/* 축의금 계좌 복사 / 카카오페이 송금 다이얼로그 */}
+      <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+        <DialogContent className="max-w-[340px] rounded-2xl p-6 border-0 bg-white dark:bg-zinc-950 shadow-2xl text-center pointer-events-auto">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base font-semibold text-center text-zinc-900 dark:text-zinc-50">송금 방식 선택</DialogTitle>
+            <DialogDescription className="text-xs text-center text-zinc-500 mt-1">
+              원하시는 송금 방식을 선택해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {activeAccountForDialog && (
+            <div className="my-4 py-3 px-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left border border-zinc-100 dark:border-zinc-800">
+              <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">
+                {activeAccountForDialog.relation === 'groom' && '신랑 계좌'}
+                {activeAccountForDialog.relation === 'bride' && '신부 계좌'}
+                {activeAccountForDialog.relation === 'groomParent' && '신랑 혼주 계좌'}
+                {activeAccountForDialog.relation === 'brideParent' && '신부 혼주 계좌'}
+              </div>
+              <div className="font-mono text-sm font-semibold text-zinc-800 dark:text-zinc-100 mt-1 select-all">
+                {activeAccountForDialog.bank} {activeAccountForDialog.accountNumber}
+              </div>
+              <div className="text-[11px] text-zinc-500 mt-0.5">
+                예금주: {activeAccountForDialog.accountHolder}
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-2.5 mt-2">
+            {/* 1. 클립보드 복사 버튼 */}
+            <Button
+              className="w-full h-11 text-xs font-semibold rounded-xl bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 hover:opacity-90 transition-opacity"
+              onClick={() => {
+                if (activeAccountForDialog) {
+                  const textToCopy = `${activeAccountForDialog.bank} ${activeAccountForDialog.accountNumber}`
+                  navigator.clipboard.writeText(textToCopy)
+                  toast.success("계좌번호가 복사되었습니다.")
+                }
+                setIsAccountDialogOpen(false)
+              }}
+            >
+              계좌번호 복사하기
+            </Button>
+
+            {/* 2. 카카오페이 송금 버튼 */}
+            <Button
+              className="w-full h-11 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-800 bg-[#FFEB00] text-[#191919] hover:bg-[#FFEB00]/90 transition-colors flex items-center justify-center gap-2"
+              onClick={() => {
+                if (activeAccountForDialog) {
+                  // 1) 계좌번호 복사 진행
+                  const textToCopy = `${activeAccountForDialog.bank} ${activeAccountForDialog.accountNumber}`
+                  navigator.clipboard.writeText(textToCopy)
+                  
+                  // 2) 카카오톡 페이 송금 딥링크로 이동
+                  window.location.href = 'kakaotalk://kakaopay/money'
+                  
+                  // 3) 토스트 알림 제공
+                  toast.success("계좌번호 복사 완료! 카카오페이 창에 붙여넣어주세요.")
+                }
+                setIsAccountDialogOpen(false)
+              }}
+            >
+              <span className="font-bold">kakaopay</span> 카카오페이로 송금하기
+            </Button>
+
+            {/* 3. 취소 버튼 */}
+            <Button
+              variant="ghost"
+              className="w-full h-10 text-xs text-zinc-500 rounded-xl mt-1"
+              onClick={() => setIsAccountDialogOpen(false)}
+            >
+              닫기
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

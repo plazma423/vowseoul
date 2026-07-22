@@ -130,6 +130,7 @@ export default function OrderDetailPage() {
   const [playingBgmUrl, setPlayingBgmUrl] = useState<string | null>(null)
   const [activeHeaderSection, setActiveHeaderSection] = useState('gallery')
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [svgs, setSvgs] = useState<any[]>([])
 
   // Refs
   const mainImageInputRef = useRef<HTMLInputElement>(null)
@@ -146,6 +147,7 @@ export default function OrderDetailPage() {
     fetchData()
     fetchBgms()
     fetchFonts()
+    fetchSvgs()
     loadOrderAndInvitation()
 
     return () => {
@@ -168,6 +170,17 @@ export default function OrderDetailPage() {
       }
     } catch (e) {
       console.error('Error fetching fonts:', e)
+    }
+  }
+
+  const fetchSvgs = async () => {
+    try {
+      const { data } = await supabase.from('settings').select('*').eq('key', 'svg_assets')
+      if (data && data.length > 0 && data[0].value) {
+        setSvgs(data[0].value)
+      }
+    } catch (e) {
+      console.error('Error fetching SVGs:', e)
     }
   }
 
@@ -906,6 +919,144 @@ export default function OrderDetailPage() {
                         }}
                       />
                     </Field>
+
+                    {/* 신랑측 고인 표기 설정 */}
+                    <div className="border border-dashed border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-4">
+                      <h4 className="text-xs font-semibold text-gray-500">고인(故) 표기 설정</h4>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {/* 신랑 아버지 */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">아버지 고인 표기</span>
+                            <Switch 
+                              checked={currentInvitation?.customStyles?.groomFatherDeceased || false} 
+                              onCheckedChange={(checked) => {
+                                updateCurrentInvitation({
+                                  customStyles: {
+                                    ...(currentInvitation?.customStyles || {}),
+                                    groomFatherDeceased: checked,
+                                    groomFatherDeceasedMarker: currentInvitation?.customStyles?.groomFatherDeceasedMarker || 'hanja'
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                          {currentInvitation?.customStyles?.groomFatherDeceased && (
+                            <div className="space-y-2">
+                              <Select 
+                                value={currentInvitation?.customStyles?.groomFatherDeceasedMarker || 'hanja'}
+                                onValueChange={(val: 'hanja' | 'svg') => {
+                                  updateCurrentInvitation({
+                                    customStyles: {
+                                      ...(currentInvitation?.customStyles || {}),
+                                      groomFatherDeceasedMarker: val
+                                    }
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hanja">한자 故 표기</SelectItem>
+                                  <SelectItem value="svg">국화 아이콘 (SVG)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {currentInvitation?.customStyles?.groomFatherDeceasedMarker === 'svg' && (
+                                <Select 
+                                  value={currentInvitation?.customStyles?.groomFatherDeceasedSvgId || ''}
+                                  onValueChange={(val) => {
+                                    updateCurrentInvitation({
+                                      customStyles: {
+                                        ...(currentInvitation?.customStyles || {}),
+                                        groomFatherDeceasedSvgId: val
+                                      }
+                                    })
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="SVG 아이콘 선택" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {svgs.filter(s => s.category === 'deceased').map((s: any) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                    {svgs.filter(s => s.category === 'deceased').length === 0 && (
+                                      <SelectItem value="none" disabled>등록된 고인 표기 SVG 없음</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 신랑 어머니 */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">어머니 고인 표기</span>
+                            <Switch 
+                              checked={currentInvitation?.customStyles?.groomMotherDeceased || false} 
+                              onCheckedChange={(checked) => {
+                                updateCurrentInvitation({
+                                  customStyles: {
+                                    ...(currentInvitation?.customStyles || {}),
+                                    groomMotherDeceased: checked,
+                                    groomMotherDeceasedMarker: currentInvitation?.customStyles?.groomMotherDeceasedMarker || 'hanja'
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                          {currentInvitation?.customStyles?.groomMotherDeceased && (
+                            <div className="space-y-2">
+                              <Select 
+                                value={currentInvitation?.customStyles?.groomMotherDeceasedMarker || 'hanja'}
+                                onValueChange={(val: 'hanja' | 'svg') => {
+                                  updateCurrentInvitation({
+                                    customStyles: {
+                                      ...(currentInvitation?.customStyles || {}),
+                                      groomMotherDeceasedMarker: val
+                                    }
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hanja">한자 故 표기</SelectItem>
+                                  <SelectItem value="svg">국화 아이콘 (SVG)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {currentInvitation?.customStyles?.groomMotherDeceasedMarker === 'svg' && (
+                                <Select 
+                                  value={currentInvitation?.customStyles?.groomMotherDeceasedSvgId || ''}
+                                  onValueChange={(val) => {
+                                    updateCurrentInvitation({
+                                      customStyles: {
+                                        ...(currentInvitation?.customStyles || {}),
+                                        groomMotherDeceasedSvgId: val
+                                      }
+                                    })
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="SVG 아이콘 선택" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {svgs.filter(s => s.category === 'deceased').map((s: any) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                    {svgs.filter(s => s.category === 'deceased').length === 0 && (
+                                      <SelectItem value="none" disabled>등록된 고인 표기 SVG 없음</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Bride */}
@@ -1054,6 +1205,144 @@ export default function OrderDetailPage() {
                         }}
                       />
                     </Field>
+
+                    {/* 신부측 고인 표기 설정 */}
+                    <div className="border border-dashed border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-4">
+                      <h4 className="text-xs font-semibold text-gray-500">고인(故) 표기 설정</h4>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {/* 신부 아버지 */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">아버지 고인 표기</span>
+                            <Switch 
+                              checked={currentInvitation?.customStyles?.brideFatherDeceased || false} 
+                              onCheckedChange={(checked) => {
+                                updateCurrentInvitation({
+                                  customStyles: {
+                                    ...(currentInvitation?.customStyles || {}),
+                                    brideFatherDeceased: checked,
+                                    brideFatherDeceasedMarker: currentInvitation?.customStyles?.brideFatherDeceasedMarker || 'hanja'
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                          {currentInvitation?.customStyles?.brideFatherDeceased && (
+                            <div className="space-y-2">
+                              <Select 
+                                value={currentInvitation?.customStyles?.brideFatherDeceasedMarker || 'hanja'}
+                                onValueChange={(val: 'hanja' | 'svg') => {
+                                  updateCurrentInvitation({
+                                    customStyles: {
+                                      ...(currentInvitation?.customStyles || {}),
+                                      brideFatherDeceasedMarker: val
+                                    }
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hanja">한자 故 표기</SelectItem>
+                                  <SelectItem value="svg">국화 아이콘 (SVG)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {currentInvitation?.customStyles?.brideFatherDeceasedMarker === 'svg' && (
+                                <Select 
+                                  value={currentInvitation?.customStyles?.brideFatherDeceasedSvgId || ''}
+                                  onValueChange={(val) => {
+                                    updateCurrentInvitation({
+                                      customStyles: {
+                                        ...(currentInvitation?.customStyles || {}),
+                                        brideFatherDeceasedSvgId: val
+                                      }
+                                    })
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="SVG 아이콘 선택" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {svgs.filter(s => s.category === 'deceased').map((s: any) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                    {svgs.filter(s => s.category === 'deceased').length === 0 && (
+                                      <SelectItem value="none" disabled>등록된 고인 표기 SVG 없음</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 신부 어머니 */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">어머니 고인 표기</span>
+                            <Switch 
+                              checked={currentInvitation?.customStyles?.brideMotherDeceased || false} 
+                              onCheckedChange={(checked) => {
+                                updateCurrentInvitation({
+                                  customStyles: {
+                                    ...(currentInvitation?.customStyles || {}),
+                                    brideMotherDeceased: checked,
+                                    brideMotherDeceasedMarker: currentInvitation?.customStyles?.brideMotherDeceasedMarker || 'hanja'
+                                  }
+                                })
+                              }}
+                            />
+                          </div>
+                          {currentInvitation?.customStyles?.brideMotherDeceased && (
+                            <div className="space-y-2">
+                              <Select 
+                                value={currentInvitation?.customStyles?.brideMotherDeceasedMarker || 'hanja'}
+                                onValueChange={(val: 'hanja' | 'svg') => {
+                                  updateCurrentInvitation({
+                                    customStyles: {
+                                      ...(currentInvitation?.customStyles || {}),
+                                      brideMotherDeceasedMarker: val
+                                    }
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hanja">한자 故 표기</SelectItem>
+                                  <SelectItem value="svg">국화 아이콘 (SVG)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {currentInvitation?.customStyles?.brideMotherDeceasedMarker === 'svg' && (
+                                <Select 
+                                  value={currentInvitation?.customStyles?.brideMotherDeceasedSvgId || ''}
+                                  onValueChange={(val) => {
+                                    updateCurrentInvitation({
+                                      customStyles: {
+                                        ...(currentInvitation?.customStyles || {}),
+                                        brideMotherDeceasedSvgId: val
+                                      }
+                                    })
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="SVG 아이콘 선택" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {svgs.filter(s => s.category === 'deceased').map((s: any) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                    {svgs.filter(s => s.category === 'deceased').length === 0 && (
+                                      <SelectItem value="none" disabled>등록된 고인 표기 SVG 없음</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
