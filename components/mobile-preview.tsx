@@ -580,13 +580,21 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 .join('\n');
               const fontFaces = customFonts
                 .filter(f => f.type === 'file' && f.fileUrl)
-                .map(f => `
-                  @font-face {
-                    font-family: '${f.family}';
-                    src: url('/api/fonts?url=${encodeURIComponent(f.fileUrl)}') format('truetype');
-                    font-display: swap;
-                  }
-                `)
+                .map(f => {
+                  const url = (f.fileUrl || '').toLowerCase();
+                  let formatHint = '';
+                  if (url.includes('.woff2')) formatHint = " format('woff2')";
+                  else if (url.includes('.woff')) formatHint = " format('woff')";
+                  else if (url.includes('.otf')) formatHint = " format('opentype')";
+                  else if (url.includes('.ttf')) formatHint = " format('truetype')";
+                  return `
+                    @font-face {
+                      font-family: '${f.family}';
+                      src: url('/api/fonts?url=${encodeURIComponent(f.fileUrl)}')${formatHint};
+                      font-display: swap;
+                    }
+                  `;
+                })
                 .join('\n');
               return `${defaultGoogleFonts}\n${imports}\n${directImports}\n${fontFaces}`;
             })()

@@ -47,10 +47,16 @@ export function FontLoader() {
     .map(f => {
       // Use local API proxy to bypass CORS restrictions on cross-origin font files
       const proxiedUrl = `/api/fonts?url=${encodeURIComponent(f.fileUrl)}`;
+      const url = (f.fileUrl || '').toLowerCase();
+      let formatHint = '';
+      if (url.includes('.woff2')) formatHint = " format('woff2')";
+      else if (url.includes('.woff')) formatHint = " format('woff')";
+      else if (url.includes('.otf')) formatHint = " format('opentype')";
+      else if (url.includes('.ttf')) formatHint = " format('truetype')";
       return `
         @font-face {
           font-family: '${f.family}';
-          src: url('${proxiedUrl}') format('truetype');
+          src: url('${proxiedUrl}')${formatHint};
           font-display: swap;
         }
       `;
