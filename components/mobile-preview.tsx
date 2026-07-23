@@ -548,7 +548,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                 'Source Serif Pro': ['Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900'],
                 'Nothing You Could Do': ['Nothing+You+Could+Do'],
                 'Covered By Your Grace': ['Covered+By+Your+Grace'],
-                'font-serif': ['Noto+Serif+KR:wght@200..900', 'Nanum+Myeongjo:wght@400;700;800', 'Playfair+Display:ital,wght@0,400..900;1,400..900', 'Lora:ital,wght@0,400..700;1,400..700'],
+                'Goudy Bookletter 1911': ['Goudy+Bookletter+1911'],
+                'font-serif': ['Noto+Serif+KR:wght@200..900', 'Nanum+Myeongjo:wght@400;700;800', 'Playfair+Display:ital,wght@0,400..900;1,400..900', 'Lora:ital,wght@0,400..700;1,400..700', 'Goudy+Bookletter+1911'],
                 'font-sans': ['Inter:wght@100..900', 'Montserrat:ital,wght@0,100..900;1,100..900']
               }
 
