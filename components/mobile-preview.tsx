@@ -451,11 +451,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
       })()
 
   const visibleSections = (sectionOrder as string[]).filter(id => isSectionVisible(id, currentInvitation))
-  const shareBtnIsDark = visibleSections.length % 2 === 0
-  const shareBtnBg = shareBtnIsDark ? color2 : color1
-  const shareBtnText = shareBtnIsDark ? color1 : color2
-
-  const footerIsDark = !shareBtnIsDark
+  const footerIsDark = visibleSections.length % 2 === 0
   const footerBg = footerIsDark ? color2 : color1
   const footerText = footerIsDark ? color1 : color2
 
@@ -2331,16 +2327,12 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
               )
             })}
 
-            {/* Share Section */}
-            <section className="py-6 px-6 text-center bg-transparent" style={isDuotone ? { backgroundColor: shareBtnBg, color: shareBtnText } : undefined}>
-              <Button variant="ghost" className={cn("text-[10px] h-auto p-0 gap-1", isDuotone ? "text-current opacity-70 hover:opacity-100 hover:bg-transparent" : "text-muted-foreground opacity-60 hover:opacity-100 hover:bg-transparent")}>
+            {/* Footer & Share Combined Block */}
+            <footer className="py-8 px-6 text-center text-[9px] tracking-wider flex flex-col items-center justify-center gap-4" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
+              <Button variant="ghost" className={cn("text-[10px] h-auto p-0 gap-1 hover:bg-transparent", isDuotone ? "text-current opacity-70 hover:opacity-100" : "text-muted-foreground opacity-60 hover:opacity-100")}>
                 <Share2 className="w-3 h-3" />
                 청첩장 주소 복사하기
               </Button>
-            </section>
-
-            {/* Footer */}
-            <footer className="py-6 px-6 text-center text-[9px] tracking-wider flex justify-center" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
               <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
             </footer>
             

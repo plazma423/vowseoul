@@ -838,11 +838,7 @@ export default function InvitationClient({
       })()
 
   const visibleSections = (sectionOrder as string[]).filter(id => isSectionVisible(id, invitation))
-  const shareBtnIsDark = visibleSections.length % 2 === 0
-  const shareBtnBg = shareBtnIsDark ? color2 : color1
-  const shareBtnText = shareBtnIsDark ? color1 : color2
-
-  const footerIsDark = !shareBtnIsDark
+  const footerIsDark = visibleSections.length % 2 === 0
   const footerBg = footerIsDark ? color2 : color1
   const footerText = footerIsDark ? color1 : color2
 
@@ -2973,8 +2969,8 @@ export default function InvitationClient({
           )
         })}
 
-        {/* Share Section */}
-        <section className="py-12 px-8 text-center bg-transparent" style={isDuotone ? { backgroundColor: shareBtnBg, color: shareBtnText } : undefined}>
+        {/* Footer & Share Combined Block */}
+        <footer className="py-12 px-8 text-center text-xs flex flex-col items-center justify-center gap-6" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
           <Button variant="ghost" className={cn("text-xs gap-1.5 hover:bg-transparent", isDuotone ? "text-current opacity-70 hover:opacity-100" : "text-muted-foreground opacity-60 hover:opacity-100")} onClick={() => {
             navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '');
             toast.success("청첩장 주소가 복사되었습니다.");
@@ -2982,10 +2978,6 @@ export default function InvitationClient({
             <Share2 className="w-3.5 h-3.5" />
             청첩장 주소 복사하기
           </Button>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-8 px-8 text-center text-xs flex flex-col items-center justify-center" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
           <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
         </footer>
       </div>
