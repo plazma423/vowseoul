@@ -421,8 +421,7 @@ export default function ThemeEditorPage() {
     }
     
     // Duotone alternating behavior
-    const darkSections = ['hero', 'sequence', 'gallery', 'calendar', 'rsvp', 'guestbook', 'footer']
-    const isDark = darkSections.includes(sectionId)
+    const isDark = index % 2 === 0
     
     const bgVal = isDark ? color2 : color1
     const textVal = isDark ? color1 : color2

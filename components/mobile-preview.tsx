@@ -33,6 +33,35 @@ import {
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 
+const isSectionVisible = (sectionId: string, invitation: any) => {
+  if (!invitation) return false
+  switch (sectionId) {
+    case 'hero':
+      return true
+    case 'greeting':
+      return true
+    case 'sequence':
+      return invitation.customStyles?.sequenceEnabled ?? false
+    case 'gallery':
+      return !!(invitation.galleryImages && invitation.galleryImages.length > 0)
+    case 'calendar':
+      return (invitation.customStyles?.calendarEnabled !== false) && !!invitation.weddingDate
+    case 'location':
+      return invitation.customStyles?.locationEnabled !== false
+    case 'contact':
+      return !!(invitation.contacts && invitation.contacts.length > 0)
+    case 'account':
+      return !!(invitation.bankAccounts && invitation.bankAccounts.length > 0)
+    case 'rsvp':
+      return !!invitation.rsvpEnabled
+    case 'guestbook':
+      return invitation.guestbookType !== 'none'
+    default:
+      return false
+  }
+}
+
+
 const getSvgMaskStyle = (url: string, color: string) => ({
   backgroundColor: color,
   WebkitMaskImage: `url(${url})`,
@@ -339,8 +368,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
     }
     
     // Duotone alternating behavior
-    const darkSections = ['hero', 'sequence', 'gallery', 'calendar', 'rsvp', 'guestbook', 'footer']
-    const isDark = darkSections.includes(sectionId)
+    const isDark = index % 2 === 0
     
     const bgVal = isDark ? color2 : color1
     const textVal = isDark ? color1 : color2
@@ -421,6 +449,16 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
         newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
         return newOrder
       })()
+
+  const visibleSections = (sectionOrder as string[]).filter(id => isSectionVisible(id, currentInvitation))
+  const shareBtnIsDark = visibleSections.length % 2 === 0
+  const shareBtnBg = shareBtnIsDark ? color2 : color1
+  const shareBtnText = shareBtnIsDark ? color1 : color2
+
+  const footerIsDark = !shareBtnIsDark
+  const footerBg = footerIsDark ? color2 : color1
+  const footerText = footerIsDark ? color1 : color2
+
 
   // Generate calendar days
   const getCalendarDays = (dateStr: string) => {
@@ -603,7 +641,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
 
           <div className={cn("text-center select-none w-[304px] max-w-full overflow-x-hidden", fontClass, isDuotone ? "" : "pb-12")} style={{ color: textColor, fontFamily: getFontFamily(fontKr, fontEn) }}>
             
-            {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
+            {visibleSections.map((sectionId: string, idx: number) => {
               // Layout-specific styling rules
               const isMinimal = theme.layout === 'minimal'
               const isGrid = theme.layout === 'grid'
@@ -1432,6 +1470,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'calendar':
+                  if (currentInvitation.customStyles?.calendarEnabled === false) return null
                   if (!currentInvitation?.weddingDate) return null
                   const ddayEnabled = currentInvitation.customStyles?.ddayEnabled ?? false
 
@@ -1757,6 +1796,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'location':
+                  if (currentInvitation.customStyles?.locationEnabled === false) return null
                   if (isPinkEnvelope) {
                     return (
                       <section 
@@ -2292,7 +2332,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             })}
 
             {/* Share Section */}
-            <section className="py-6 px-6 text-center bg-transparent" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+            <section className="py-6 px-6 text-center bg-transparent" style={isDuotone ? { backgroundColor: shareBtnBg, color: shareBtnText } : undefined}>
               <Button variant="ghost" className={cn("text-[10px] h-auto p-0 gap-1", isDuotone ? "text-current opacity-70 hover:opacity-100 hover:bg-transparent" : "text-muted-foreground opacity-60 hover:opacity-100 hover:bg-transparent")}>
                 <Share2 className="w-3 h-3" />
                 청첩장 주소 복사하기
@@ -2300,7 +2340,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
             </section>
 
             {/* Footer */}
-            <footer className="py-6 px-6 text-center text-[9px] tracking-wider flex justify-center" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+            <footer className="py-6 px-6 text-center text-[9px] tracking-wider flex justify-center" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
               <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
             </footer>
             

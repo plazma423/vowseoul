@@ -42,6 +42,35 @@ import { sampleThemes } from "@/lib/store"
 import { cn, getLegibleColor } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 
+const isSectionVisible = (sectionId: string, invitation: any) => {
+  if (!invitation) return false
+  switch (sectionId) {
+    case 'hero':
+      return true
+    case 'greeting':
+      return true
+    case 'sequence':
+      return invitation.customStyles?.sequenceEnabled ?? false
+    case 'gallery':
+      return !!(invitation.galleryImages && invitation.galleryImages.length > 0)
+    case 'calendar':
+      return (invitation.customStyles?.calendarEnabled !== false) && !!invitation.weddingDate
+    case 'location':
+      return invitation.customStyles?.locationEnabled !== false
+    case 'contact':
+      return !!(invitation.contacts && invitation.contacts.length > 0)
+    case 'account':
+      return !!(invitation.bankAccounts && invitation.bankAccounts.length > 0)
+    case 'rsvp':
+      return !!invitation.rsvpEnabled
+    case 'guestbook':
+      return invitation.guestbookType !== 'none'
+    default:
+      return false
+  }
+}
+
+
 const hexToRgb = (hex: string) => {
   const c = (hex || '#9EB7CE').replace('#', '')
   if (c.length === 3) {
@@ -751,8 +780,7 @@ export default function InvitationClient({
     }
     
     // Duotone alternating behavior
-    const darkSections = ['hero', 'sequence', 'gallery', 'calendar', 'rsvp', 'guestbook', 'footer']
-    const isDark = darkSections.includes(sectionId)
+    const isDark = index % 2 === 0
     
     const bgVal = isDark ? color2 : color1
     const textVal = isDark ? color1 : color2
@@ -808,6 +836,16 @@ export default function InvitationClient({
         newOrder.splice(idx !== -1 ? idx + 1 : 2, 0, 'sequence')
         return newOrder
       })()
+
+  const visibleSections = (sectionOrder as string[]).filter(id => isSectionVisible(id, invitation))
+  const shareBtnIsDark = visibleSections.length % 2 === 0
+  const shareBtnBg = shareBtnIsDark ? color2 : color1
+  const shareBtnText = shareBtnIsDark ? color1 : color2
+
+  const footerIsDark = !shareBtnIsDark
+  const footerBg = footerIsDark ? color2 : color1
+  const footerText = footerIsDark ? color1 : color2
+
 
   const renderSectionHeader = (sectionId: string, defaultEn: string, defaultKr: string, extraMb = 'mb-8', px = '') => {
     const headerSettings = themeStyles.sectionHeaders?.[sectionId] || {}
@@ -965,7 +1003,7 @@ export default function InvitationClient({
           })()
         }} />
 
-        {(sectionOrder as string[]).map((sectionId: string, idx: number) => {
+        {visibleSections.map((sectionId: string, idx: number) => {
           const isMinimal = theme.layout === 'minimal'
           const isGrid = theme.layout === 'grid'
           const isTwoColumn = theme.layout === 'two-column'
@@ -1783,6 +1821,7 @@ export default function InvitationClient({
               )
 
             case 'calendar':
+              if (invitation.customStyles?.calendarEnabled === false) return null
               if (!invitation.weddingDate) return null
               const ddayEnabled = invitation.customStyles?.ddayEnabled ?? false
 
@@ -2106,6 +2145,7 @@ export default function InvitationClient({
               )
 
             case 'location':
+              if (invitation.customStyles?.locationEnabled === false) return null
               if (isPinkEnvelope) {
                 return (
                   <section 
@@ -2934,7 +2974,7 @@ export default function InvitationClient({
         })}
 
         {/* Share Section */}
-        <section className="py-12 px-8 text-center bg-transparent" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+        <section className="py-12 px-8 text-center bg-transparent" style={isDuotone ? { backgroundColor: shareBtnBg, color: shareBtnText } : undefined}>
           <Button variant="ghost" className={cn("text-xs gap-1.5 hover:bg-transparent", isDuotone ? "text-current opacity-70 hover:opacity-100" : "text-muted-foreground opacity-60 hover:opacity-100")} onClick={() => {
             navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '');
             toast.success("청첩장 주소가 복사되었습니다.");
@@ -2945,7 +2985,7 @@ export default function InvitationClient({
         </section>
 
         {/* Footer */}
-        <footer className="py-8 px-8 text-center text-xs flex flex-col items-center justify-center" style={isDuotone ? { backgroundColor: color2, color: color1 } : undefined}>
+        <footer className="py-8 px-8 text-center text-xs flex flex-col items-center justify-center" style={isDuotone ? { backgroundColor: footerBg, color: footerText } : undefined}>
           <Logo className={cn("h-3.5 w-auto text-current", isDuotone ? "opacity-60" : "opacity-30")} />
         </footer>
       </div>

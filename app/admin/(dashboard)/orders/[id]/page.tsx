@@ -1853,11 +1853,19 @@ export default function OrderDetailPage() {
 
               {/* Location Details */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">오시는 길 교통 정보</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle className="text-lg">오시는 길 교통 정보</CardTitle>
+                  </div>
+                  <Switch
+                    checked={currentInvitation.customStyles?.locationEnabled !== false}
+                    onCheckedChange={(checked) => updateCustomStyle('locationEnabled', checked)}
+                  />
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FieldGroup>
+                {currentInvitation.customStyles?.locationEnabled !== false && (
+                  <CardContent className="space-y-4 pt-4 border-t">
+                    <FieldGroup>
+
                     <Field>
                       <FieldLabel htmlFor="t-info">지하철 / 대중교통 안내</FieldLabel>
                       <Textarea
@@ -2048,6 +2056,7 @@ export default function OrderDetailPage() {
                     )}
                   </FieldGroup>
                 </CardContent>
+                )}
               </Card>
 
               {/* Section Insert Images Card */}
@@ -2358,11 +2367,18 @@ export default function OrderDetailPage() {
 
               {/* Calendar Detail Settings */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">달력 상세 설정</CardTitle>
-                  <CardDescription>달력의 디데이 표시 및 예식일 강조 디자인을 설정합니다.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle className="text-lg">달력 상세 설정</CardTitle>
+                    <CardDescription>달력의 노출 여부, 디데이 표시 및 예식일 강조 디자인을 설정합니다.</CardDescription>
+                  </div>
+                  <Switch
+                    checked={currentInvitation.customStyles?.calendarEnabled !== false}
+                    onCheckedChange={(checked) => updateCustomStyle('calendarEnabled', checked)}
+                  />
                 </CardHeader>
-                <CardContent className="space-y-6">
+                {currentInvitation.customStyles?.calendarEnabled !== false && (
+                  <CardContent className="space-y-6 pt-4 border-t">
                   {/* D-Day Toggle */}
                   <div className="flex items-center justify-between pb-4 border-b">
                     <div>
@@ -2503,6 +2519,7 @@ export default function OrderDetailPage() {
                     </div>
                   )}
                 </CardContent>
+                )}
               </Card>
 
               {/* Greeting Icon Settings */}
