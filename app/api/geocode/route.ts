@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       headers: {
         // NCP Maps Geocoding API가 요구하는 정확한 대문자 헤더를 전송합니다.
         'X-NCP-APIGW-API-KEY-ID': 'od370yq3ix',
-        'X-NCP-APIGW-API-KEY': 'PjdSYiZq4qw7CWQVGtIuitUJJezKhkhFOU5SzizE',
+        'X-NCP-APIGW-API-KEY': 'nf88XZWXFe8NjB5J73g9PttrAKnVFTIgbG7tSL89',
         'Accept': 'application/json'
       }
     };
