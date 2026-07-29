@@ -2086,7 +2086,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                  contact.relation}
                               </p>
                               <p className="font-semibold text-sm mb-2 truncate">{contact.name}</p>
-                              <Button variant="outline" size="sm" className="w-full text-xs h-7 px-0" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                              <Button variant="outline" size="sm" className="w-full text-xs h-7 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 <Phone className="w-3 h-3 mr-1" />
                                 전화
                               </Button>

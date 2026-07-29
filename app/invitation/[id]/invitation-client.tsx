@@ -1246,8 +1246,8 @@ export default function InvitationClient({
                     const ampm = hours >= 12 ? 'PM' : 'AM'
                     hours = hours % 12
                     hours = hours ? hours : 12
-                    
-                    return `${month} ${day}, ${year} ${hours} ${ampm}`
+                    const minStr = minutes > 0 ? `:${String(minutes).padStart(2, '0')}` : ''
+                    return `${month} ${day}, ${year} ${hours}${minStr} ${ampm}`
                   } catch (e) {
                     return invitation.weddingDate
                   }
@@ -2441,7 +2441,7 @@ export default function InvitationClient({
                              contact.relation}
                           </p>
                           <p className="font-semibold mb-3 text-sm truncate">{contact.name}</p>
-                          <Button variant="outline" size="sm" className="w-full text-sm h-9" style={isDuotone ? { borderColor: `${color2}33`, color: color2, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
+                          <Button variant="outline" size="sm" className="w-full text-sm h-9" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
                             <a href={`tel:${contact.phone}`}>
                               <Phone className="w-4 h-4 mr-2" />
                               전화
