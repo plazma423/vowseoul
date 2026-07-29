@@ -105,6 +105,7 @@ export default function OrderDetailPage() {
   const [isUploadingGreetingIcon, setIsUploadingGreetingIcon] = useState(false)
   const [isUploadingGroom, setIsUploadingGroom] = useState(false)
   const [isUploadingBride, setIsUploadingBride] = useState(false)
+  const [isUploadingGreeting, setIsUploadingGreeting] = useState(false)
 
   // Dialog / Modal States
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false)
@@ -141,6 +142,7 @@ export default function OrderDetailPage() {
   const greetingIconInputRef = useRef<HTMLInputElement>(null)
   const groomImageInputRef = useRef<HTMLInputElement>(null)
   const brideImageInputRef = useRef<HTMLInputElement>(null)
+  const greetingImageInputRef = useRef<HTMLInputElement>(null)
 
   // Load Initial Data
   useEffect(() => {
@@ -493,6 +495,27 @@ export default function OrderDetailPage() {
       toast.error('아이콘 이미지 업로드에 실패했습니다.')
     } finally {
       setIsUploadingGreetingIcon(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleGreetingImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    setIsUploadingGreeting(true)
+    try {
+      const url = await uploadFile(e.target.files[0], 'greeting-images')
+      const prevStyles = currentInvitation?.customStyles || {}
+      updateCurrentInvitation({
+        customStyles: {
+          ...prevStyles,
+          greetingImage: url
+        }
+      })
+      toast.success('인사말 대체 이미지가 업로드되었습니다.')
+    } catch (err) {
+      toast.error('인사말 이미지 업로드에 실패했습니다.')
+    } finally {
+      setIsUploadingGreeting(false)
       if (e.target) e.target.value = ''
     }
   }
@@ -1462,9 +1485,52 @@ export default function OrderDetailPage() {
                   </div>
                   <Textarea
                     rows={8}
+                    placeholder="하객들을 모시는 정중한 초대글을 입력하세요. (비워둘 시 텍스트 영역은 미노출되며, 이미지만 있는 경우 이미지만 출력됩니다)"
                     value={currentInvitation.invitationMessage || ''}
                     onChange={(e) => updateCurrentInvitation({ invitationMessage: e.target.value })}
                   />
+
+                  <div className="mt-4 border-t pt-4 space-y-2">
+                    <span className="text-xs font-semibold block">초대장 인사말 대체/추가 이미지</span>
+                    <p className="text-xs text-muted-foreground">텍스트 대신 사용하거나 추가할 이미지를 첨부하세요.</p>
+                    
+                    {currentInvitation.customStyles?.greetingImage ? (
+                      <div className="space-y-2">
+                        <div className="relative w-40 aspect-[4/3] rounded border overflow-hidden bg-muted flex items-center justify-center">
+                          <img src={currentInvitation.customStyles.greetingImage} className="max-w-full max-h-full object-contain" alt="인사말 이미지" />
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute right-1 top-1 h-6 w-6 animate-fade-in" 
+                            onClick={() => updateCustomStyle('greetingImage', null)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 text-xs"
+                          type="button"
+                          onClick={() => greetingImageInputRef.current?.click()}
+                          disabled={isUploadingGreeting}
+                        >
+                          {isUploadingGreeting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+                          이미지 추가
+                        </Button>
+                        <input 
+                          type="file" 
+                          ref={greetingImageInputRef} 
+                          onChange={handleGreetingImageUpload} 
+                          accept="image/*" 
+                          className="hidden" 
+                        />
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 

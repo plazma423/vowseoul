@@ -48,7 +48,7 @@ const isSectionVisible = (sectionId: string, invitation: any) => {
     case 'hero':
       return true
     case 'greeting':
-      return true
+      return !!invitation.invitationMessage || !!invitation.customStyles?.greetingImage
     case 'sequence':
       return invitation.customStyles?.sequenceEnabled ?? false
     case 'gallery':
@@ -70,6 +70,38 @@ const isSectionVisible = (sectionId: string, invitation: any) => {
   }
 }
 
+
+const parseWeddingTime = (timeStr: string) => {
+  const defaultResult = { hours: 12, minutes: 0 }
+  if (!timeStr) return defaultResult
+
+  const normalized = timeStr.replace(/\s+/g, '').toLowerCase()
+  const matchHm = normalized.match(/(\d+)(?::|시)(\d+)/)
+  const matchH = normalized.match(/(\d+)(?:시)?/)
+
+  let hours = 12
+  let minutes = 0
+
+  if (matchHm) {
+    hours = parseInt(matchHm[1], 10)
+    minutes = parseInt(matchHm[2], 10)
+  } else if (matchH) {
+    hours = parseInt(matchH[1], 10)
+  } else {
+    return defaultResult
+  }
+
+  const isPM = normalized.includes('오후') || normalized.includes('pm')
+  const isAM = normalized.includes('오전') || normalized.includes('am')
+
+  if (isPM && hours < 12) {
+    hours += 12
+  } else if (isAM && hours === 12) {
+    hours = 0
+  }
+
+  return { hours, minutes }
+}
 
 const hexToRgb = (hex: string) => {
   const c = (hex || '#9EB7CE').replace('#', '')
@@ -1202,13 +1234,15 @@ export default function InvitationClient({
                 const getHeroDateString = () => {
                   if (!invitation?.weddingDate) return 'MAY 7, 2026 11 AM'
                   try {
-                    const d = new Date(invitation.weddingDate + 'T' + (invitation.weddingTime || '12:00') + ':00')
+                    const d = new Date(invitation.weddingDate + 'T00:00:00')
+                    const timeInfo = parseWeddingTime(invitation.weddingTime)
                     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                     const month = months[d.getMonth()]
                     const day = d.getDate()
                     const year = d.getFullYear()
                     
-                    let hours = d.getHours()
+                    let hours = timeInfo.hours
+                    const minutes = timeInfo.minutes
                     const ampm = hours >= 12 ? 'PM' : 'AM'
                     hours = hours % 12
                     hours = hours ? hours : 12
@@ -1469,11 +1503,17 @@ export default function InvitationClient({
                       }}
                     />
 
-                    {/* Invitation Text */}
-                    <div className="px-6 max-w-[340px] mx-auto text-[15px] leading-[2.0] font-medium whitespace-pre-line text-white/90">
-                      {invitation?.invitationMessage || 
-                       '사랑으로 하나 된 두 사람이\n서로를 이해하며 한 길을 걸어가려 합니다.\n귀한 발걸음으로 저희의 출발을\n함께 축복해 주시기 바랍니다.'}
-                    </div>
+                    {/* Invitation Text / Image */}
+                    {invitation?.invitationMessage && (
+                      <div className="px-6 max-w-[340px] mx-auto text-[15px] leading-[2.0] font-medium whitespace-pre-line text-white/90 mb-4">
+                        {invitation.invitationMessage}
+                      </div>
+                    )}
+                    {invitation?.customStyles?.greetingImage && (
+                      <div className="px-6 max-w-[340px] mx-auto mb-4 flex justify-center">
+                        <img src={invitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                      </div>
+                    )}
 
                     {/* Profile Photos */}
                     <div className="flex gap-4 justify-center items-center my-10 px-4">
@@ -1617,12 +1657,17 @@ export default function InvitationClient({
                     {/* Divider */}
                     {renderDivider()}
 
-                    {/* Greeting Message */}
-                    <div className="leading-relaxed whitespace-pre-wrap text-sm tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
-                      {invitation?.invitationMessage || (
-                        "여보, 우리는 등불 하나 켜서 삽시다.\n바람에 흔들리는 심지 등불이라도 켜서\n기름 졸이듯 마음을 다하여\n사랑하며 삽시다. 오래도록."
-                      )}
-                    </div>
+                    {/* Greeting Message / Image */}
+                    {invitation?.invitationMessage && (
+                      <div className="leading-relaxed whitespace-pre-wrap text-sm tracking-wider font-light max-w-[300px] mx-auto opacity-95 mt-6">
+                        {invitation.invitationMessage}
+                      </div>
+                    )}
+                    {invitation?.customStyles?.greetingImage && (
+                      <div className="mt-6 flex justify-center">
+                        <img src={invitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                      </div>
+                    )}
                   </section>
                 )
               }
@@ -1665,9 +1710,21 @@ export default function InvitationClient({
                 <section key="greeting" className={cn(spacingClass, "px-8 text-center", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                   {showDivider && renderDivider()}
                   {renderGreetingIcon()}
-                  <p className="leading-relaxed whitespace-pre-line text-sm opacity-80 mb-6">
-                    {invitation.invitationMessage || '초대의 말씀을 드립니다.'}
-                  </p>
+                  {invitation.invitationMessage && (
+                    <p className="leading-relaxed whitespace-pre-line text-sm opacity-80 mb-6">
+                      {invitation.invitationMessage}
+                    </p>
+                  )}
+                  {invitation.customStyles?.greetingImage && (
+                    <div className="w-full mt-4 flex justify-center">
+                      <img 
+                        src={invitation.customStyles.greetingImage} 
+                        className={cn("max-w-full h-auto object-contain", shadowClass)} 
+                        style={borderStyle}
+                        alt="초대 인사말 이미지" 
+                      />
+                    </div>
+                  )}
                 </section>
               )
 
@@ -2169,7 +2226,7 @@ export default function InvitationClient({
 
                     {/* Map View */}
                     {invitation?.customStyles?.mapEnabled !== false && (
-                      <div className="mb-6 px-0">
+                      <div className="mt-6 mb-6 px-0">
                         <NaverMap 
                           address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
                           venueName={invitation?.venueName || '웨딩홀'} 
@@ -2223,7 +2280,7 @@ export default function InvitationClient({
 
                     {/* Interactive Map & Navigation App Buttons */}
                     {invitation?.customStyles?.mapEnabled !== false && (
-                      <div className="mb-6 px-4">
+                      <div className="mt-6 mb-6 px-4">
                         <NaverMap 
                           address={invitation?.venueAddress || '서울 강남구 학동로 1212'} 
                           venueName={invitation?.venueName || '웨딩홀'} 
