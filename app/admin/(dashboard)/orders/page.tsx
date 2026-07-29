@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { useAppStore, sampleOrders, type Order, sampleThemes } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
-import { Search, CalendarIcon, Eye, Plus, Settings, MoreVertical, Link2, Pencil, Copy, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, CalendarIcon, Eye, Plus, Settings, MoreVertical, Link2, Pencil, Copy, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -335,6 +335,40 @@ export default function OrdersPage() {
     }
   }
 
+  const handleResetVisitorLogs = async (orderId: string, invitationId: string) => {
+    if (!invitationId) {
+      toast.error('청첩장 ID가 유효하지 않습니다.')
+      return
+    }
+
+    if (!confirm('정말로 이 청첩장의 누적 방문수를 리셋하시겠습니까?')) {
+      return
+    }
+
+    setIsActionLoading(orderId)
+    try {
+      // 1. Delete visitor logs in Supabase
+      const { error } = await supabase
+        .from('visitor_logs')
+        .delete()
+        .eq('invitationId', invitationId)
+
+      if (error) throw error
+
+      // 2. Remove from local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`visitor_logs_${invitationId}`)
+      }
+
+      toast.success('방문수가 성공적으로 초기화되었습니다.')
+    } catch (err: any) {
+      console.error('Error resetting visitor logs:', err)
+      toast.error('방문수 초기화 중 오류가 발생했습니다.')
+    } finally {
+      setIsActionLoading(null)
+    }
+  }
+
   const filteredOrders = orders.filter(order => {
     // Search filter
     if (searchQuery) {
@@ -646,6 +680,13 @@ export default function OrdersPage() {
                           >
                             <Copy className="h-4 w-4" />
                             <span>청첩장 복사하기</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleResetVisitorLogs(order.id, order.invitationId)}
+                            className="cursor-pointer flex items-center gap-2 w-full text-amber-600 dark:text-amber-500 focus:bg-amber-500/10 focus:text-amber-600"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            <span>방문수 초기화</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
