@@ -1510,8 +1510,8 @@ export default function InvitationClient({
                       </div>
                     )}
                     {invitation?.customStyles?.greetingImage && (
-                      <div className="px-6 max-w-[340px] mx-auto mb-4 flex justify-center">
-                        <img src={invitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                      <div className={cn(invitation?.customStyles?.greetingImageFullWidth ? "w-full mb-4 flex justify-center animate-fade-in" : "px-6 max-w-[340px] mx-auto mb-4 flex justify-center")}>
+                        <img src={invitation.customStyles.greetingImage} className={cn("h-auto object-contain", invitation?.customStyles?.greetingImageFullWidth ? "w-full" : "max-w-full rounded-sm shadow-sm")} alt="초대장 인사말 이미지" />
                       </div>
                     )}
 
@@ -1664,8 +1664,8 @@ export default function InvitationClient({
                       </div>
                     )}
                     {invitation?.customStyles?.greetingImage && (
-                      <div className="mt-6 flex justify-center">
-                        <img src={invitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                      <div className={cn("flex justify-center", invitation?.customStyles?.greetingImageFullWidth ? "-mx-6 mt-6" : "mt-6")}>
+                        <img src={invitation.customStyles.greetingImage} className={cn("h-auto object-contain", invitation?.customStyles?.greetingImageFullWidth ? "w-full" : "max-w-full rounded-sm shadow-sm")} alt="초대장 인사말 이미지" />
                       </div>
                     )}
                   </section>
@@ -1716,11 +1716,11 @@ export default function InvitationClient({
                     </p>
                   )}
                   {invitation.customStyles?.greetingImage && (
-                    <div className="w-full mt-4 flex justify-center">
+                    <div className={cn("flex justify-center", invitation?.customStyles?.greetingImageFullWidth ? "-mx-8 mt-4 animate-fade-in" : "w-full mt-4")}>
                       <img 
                         src={invitation.customStyles.greetingImage} 
-                        className={cn("max-w-full h-auto object-contain", shadowClass)} 
-                        style={borderStyle}
+                        className={cn("h-auto object-contain", invitation?.customStyles?.greetingImageFullWidth ? "w-full" : cn("max-w-full", shadowClass))} 
+                        style={invitation?.customStyles?.greetingImageFullWidth ? {} : borderStyle}
                         alt="초대 인사말 이미지" 
                       />
                     </div>

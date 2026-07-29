@@ -1495,17 +1495,32 @@ export default function OrderDetailPage() {
                     <p className="text-xs text-muted-foreground">텍스트 대신 사용하거나 추가할 이미지를 첨부하세요.</p>
                     
                     {currentInvitation.customStyles?.greetingImage ? (
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <div className="relative w-40 aspect-[4/3] rounded border overflow-hidden bg-muted flex items-center justify-center">
                           <img src={currentInvitation.customStyles.greetingImage} className="max-w-full max-h-full object-contain" alt="인사말 이미지" />
                           <Button 
                             variant="destructive" 
                             size="icon" 
                             className="absolute right-1 top-1 h-6 w-6 animate-fade-in" 
-                            onClick={() => updateCustomStyle('greetingImage', null)}
+                            onClick={() => {
+                              updateCustomStyle('greetingImage', null)
+                              updateCustomStyle('greetingImageFullWidth', false)
+                            }}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t pt-4">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="greeting-img-fullwidth" className="text-xs font-semibold block">좌우 여백 없이 꽉 찬 비율로 넣기</Label>
+                            <p className="text-[10px] text-muted-foreground">인사말 이미지를 모바일 화면 좌우 여백 없이 꽉 채웁니다.</p>
+                          </div>
+                          <Switch
+                            id="greeting-img-fullwidth"
+                            checked={currentInvitation.customStyles?.greetingImageFullWidth || false}
+                            onCheckedChange={(checked) => updateCustomStyle('greetingImageFullWidth', checked)}
+                          />
                         </div>
                       </div>
                     ) : (

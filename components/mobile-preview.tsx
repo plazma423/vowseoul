@@ -1154,8 +1154,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           </div>
                         )}
                         {currentInvitation?.customStyles?.greetingImage && (
-                          <div className="px-6 max-w-[340px] mx-auto mb-4 flex justify-center">
-                            <img src={currentInvitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                          <div className={cn(currentInvitation?.customStyles?.greetingImageFullWidth ? "w-full mb-4 flex justify-center animate-fade-in" : "px-6 max-w-[340px] mx-auto mb-4 flex justify-center")}>
+                            <img src={currentInvitation.customStyles.greetingImage} className={cn("h-auto object-contain", currentInvitation?.customStyles?.greetingImageFullWidth ? "w-full" : "max-w-full rounded-sm shadow-sm")} alt="초대장 인사말 이미지" />
                           </div>
                         )}
 
@@ -1309,8 +1309,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           </div>
                         )}
                         {currentInvitation?.customStyles?.greetingImage && (
-                          <div className="mt-6 flex justify-center">
-                            <img src={currentInvitation.customStyles.greetingImage} className="max-w-full h-auto object-contain rounded-sm shadow-sm" alt="초대장 인사말 이미지" />
+                          <div className={cn("flex justify-center", currentInvitation?.customStyles?.greetingImageFullWidth ? "-mx-6 mt-6" : "mt-6")}>
+                            <img src={currentInvitation.customStyles.greetingImage} className={cn("h-auto object-contain", currentInvitation?.customStyles?.greetingImageFullWidth ? "w-full" : "max-w-full rounded-sm shadow-sm")} alt="초대장 인사말 이미지" />
                           </div>
                         )}
                       </section>
@@ -1361,11 +1361,11 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         </p>
                       )}
                       {currentInvitation?.customStyles?.greetingImage && (
-                        <div className="w-full mt-4 flex justify-center">
+                        <div className={cn("flex justify-center", currentInvitation?.customStyles?.greetingImageFullWidth ? "-mx-6 mt-4 animate-fade-in" : "w-full mt-4")}>
                           <img 
                             src={currentInvitation.customStyles.greetingImage} 
-                            className={cn("max-w-full h-auto object-contain", shadowClass)} 
-                            style={borderStyle}
+                            className={cn("h-auto object-contain", currentInvitation?.customStyles?.greetingImageFullWidth ? "w-full" : cn("max-w-full", shadowClass))} 
+                            style={currentInvitation?.customStyles?.greetingImageFullWidth ? {} : borderStyle}
                             alt="초대 인사말 이미지" 
                           />
                         </div>
