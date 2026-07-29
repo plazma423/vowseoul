@@ -2441,7 +2441,7 @@ export default function InvitationClient({
                              contact.relation}
                           </p>
                           <p className="font-semibold mb-3 text-sm truncate">{contact.name}</p>
-                          <Button variant="outline" size="sm" className="w-full text-sm h-9" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
+                          <Button variant="outline" size="sm" className="w-full text-sm h-9" style={isDuotone ? { borderColor: `${sectColors.textColorVal}33`, color: sectColors.textColorVal, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle} asChild>
                             <a href={`tel:${contact.phone}`}>
                               <Phone className="w-4 h-4 mr-2" />
                               전화
@@ -2683,7 +2683,7 @@ export default function InvitationClient({
                   
                   <Dialog open={showRsvp} onOpenChange={setShowRsvp}>
                     <DialogTrigger asChild>
-                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
+                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? sectColors.bgColorVal : '#ffffff', ...borderStyle }}>
                         <CalendarIcon className="w-4 h-4 mr-2" />
                         참석 의사 전달하기
                       </Button>
@@ -2902,7 +2902,7 @@ export default function InvitationClient({
                           </div>
                         )}
                       </div>
-                      <Button className="w-full text-white" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }} onClick={handleRsvpSubmit} disabled={isSubmittingRsvp}>
+                      <Button className="w-full text-white" style={{ backgroundColor: sectColors.accent, color: isDuotone ? sectColors.bgColorVal : '#ffffff', ...borderStyle }} onClick={handleRsvpSubmit} disabled={isSubmittingRsvp}>
                         {isSubmittingRsvp ? "전송 중..." : "전송하기"}
                       </Button>
                     </DialogContent>
@@ -2969,7 +2969,7 @@ export default function InvitationClient({
                   
                   <Dialog open={showCommentModal} onOpenChange={setShowCommentModal}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full mt-4 border-current/30" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                      <Button variant="outline" className="w-full mt-4 border-current/30" style={isDuotone ? { borderColor: `${sectColors.textColorVal}33`, color: sectColors.textColorVal, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                         축하 메시지 남기기
                       </Button>
                     </DialogTrigger>
@@ -2988,7 +2988,7 @@ export default function InvitationClient({
                           <Textarea id="guestbook-msg" placeholder="축하 메시지를 작성해주세요" rows={4} value={newCommentMessage} onChange={(e) => setNewCommentMessage(e.target.value)} />
                         </div>
                       </div>
-                      <Button className="w-full text-white" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }} onClick={handleAddComment} disabled={isSubmittingComment}>
+                      <Button className="w-full text-white" style={{ backgroundColor: sectColors.accent, color: isDuotone ? sectColors.bgColorVal : '#ffffff', ...borderStyle }} onClick={handleAddComment} disabled={isSubmittingComment}>
                         {isSubmittingComment ? "등록 중..." : "등록하기"}
                       </Button>
                     </DialogContent>

@@ -2086,7 +2086,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                  contact.relation}
                               </p>
                               <p className="font-semibold text-sm mb-2 truncate">{contact.name}</p>
-                              <Button variant="outline" size="sm" className="w-full text-xs h-7 px-0" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                              <Button variant="outline" size="sm" className="w-full text-xs h-7 px-0" style={isDuotone ? { borderColor: `${sectColors.textColorVal}33`, color: sectColors.textColorVal, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                                 <Phone className="w-3 h-3 mr-1" />
                                 전화
                               </Button>
@@ -2325,7 +2325,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                     <section key="rsvp" id="preview-section-rsvp" className={cn(spacingClass, "px-6", sectionBg, sectionBorderClass)} style={{ ...sectColors.bgStyle, ...sectColors.textStyle, ...(isGrid ? borderStyle : undefined) }}>
                       {showDivider && renderDivider()}
                       {renderSectionHeader('rsvp', 'RSVP', '참석 여부 알리기', 'mb-6')}
-                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? color2 : '#ffffff', ...borderStyle }}>
+                      <Button className="w-full text-sm text-white animate-pulse" style={{ backgroundColor: sectColors.accent, color: isDuotone ? sectColors.bgColorVal : '#ffffff', ...borderStyle }}>
                         <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
                         참석 의사 전달하기
                       </Button>
@@ -2349,7 +2349,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           </CardContent>
                         </Card>
                       </div>
-                      <Button variant="outline" className="w-full mt-3 text-xs h-8 border-current/30" style={isDuotone ? { borderColor: `${color1}33`, color: color1, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
+                      <Button variant="outline" className="w-full mt-3 text-xs h-8 border-current/30" style={isDuotone ? { borderColor: `${sectColors.textColorVal}33`, color: sectColors.textColorVal, backgroundColor: 'transparent', borderRadius: borderStyle.borderRadius } : borderStyle}>
                         축하 메시지 남기기
                       </Button>
                     </section>
