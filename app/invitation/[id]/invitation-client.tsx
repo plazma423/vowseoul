@@ -2467,6 +2467,10 @@ export default function InvitationClient({
                              contact.relation === 'bride' ? '신부' :
                              contact.relation === 'groomParent' ? '신랑 혼주' :
                              contact.relation === 'brideParent' ? '신부 혼주' :
+                             (contact.relation === 'groom_father' || contact.relation === '신랑 아버지' || contact.relation === '아버지') ? '신랑 아버님' :
+                             (contact.relation === 'groom_mother' || contact.relation === '신랑 어머니' || contact.relation === '어머니') ? '신랑 어머님' :
+                             (contact.relation === 'bride_father' || contact.relation === '신부 아버지' || contact.relation === '아버님') ? '신부 아버님' :
+                             (contact.relation === 'bride_mother' || contact.relation === '신부 어머니' || contact.relation === '어머님') ? '신부 어머님' :
                              contact.relation}
                           </p>
                           <p className="font-semibold mb-3 text-sm truncate">{contact.name}</p>

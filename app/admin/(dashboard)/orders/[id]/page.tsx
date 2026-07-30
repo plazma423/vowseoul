@@ -2970,7 +2970,17 @@ export default function OrderDetailPage() {
                     {(currentInvitation.contacts || []).map((con) => (
                       <div key={con.id} className="flex justify-between items-center border border-border rounded-lg p-3">
                         <div>
-                          <p className="text-sm font-semibold">{con.name} ({con.relation})</p>
+                          <p className="text-sm font-semibold">{con.name} ({
+                            con.relation === 'groom' ? '신랑' :
+                            con.relation === 'bride' ? '신부' :
+                            con.relation === 'groomParent' ? '신랑 혼주' :
+                            con.relation === 'brideParent' ? '신부 혼주' :
+                            (con.relation === 'groom_father' || con.relation === '신랑 아버지' || con.relation === '아버지') ? '신랑 아버님' :
+                            (con.relation === 'groom_mother' || con.relation === '신랑 어머니' || con.relation === '어머니') ? '신랑 어머님' :
+                            (con.relation === 'bride_father' || con.relation === '신부 아버지' || con.relation === '아버님') ? '신부 아버님' :
+                            (con.relation === 'bride_mother' || con.relation === '신부 어머니' || con.relation === '어머님') ? '신부 어머님' :
+                            con.relation
+                          })</p>
                           <p className="text-xs text-muted-foreground">{con.phone}</p>
                         </div>
                         <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteContact(con.id)}>
@@ -3006,8 +3016,8 @@ export default function OrderDetailPage() {
                             <SelectContent>
                               <SelectItem value="신랑">신랑</SelectItem>
                               <SelectItem value="신부">신부</SelectItem>
-                              <SelectItem value="신랑 아버지">신랑 아버님</SelectItem>
-                              <SelectItem value="신랑 어머니">신랑 어머님</SelectItem>
+                              <SelectItem value="신랑 아버님">신랑 아버님</SelectItem>
+                              <SelectItem value="신랑 어머님">신랑 어머님</SelectItem>
                               <SelectItem value="신부 아버님">신부 아버님</SelectItem>
                               <SelectItem value="신부 어머님">신부 어머님</SelectItem>
                             </SelectContent>
