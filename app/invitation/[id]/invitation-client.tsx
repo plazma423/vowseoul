@@ -710,6 +710,23 @@ export default function InvitationClient({
     return { year, month, day: targetDay, days }
   }
 
+  const formatGuestbookDate = (dateStr: string) => {
+    if (!dateStr) return ''
+    if (/^\d{4}\.\d{2}\.\d{2}$/.test(dateStr)) {
+      return dateStr
+    }
+    try {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return dateStr
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      return `${yyyy}.${mm}.${dd}`
+    } catch (e) {
+      return dateStr
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center">
@@ -2942,7 +2959,7 @@ export default function InvitationClient({
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-semibold text-sm">{comment.name}</span>
-                              <span className="text-xs opacity-40">{comment.createdAt}</span>
+                              <span className="text-xs opacity-40">{formatGuestbookDate(comment.createdAt)}</span>
                             </div>
                             <p className="text-sm opacity-80 leading-relaxed whitespace-pre-line">{comment.message}</p>
                           </CardContent>
