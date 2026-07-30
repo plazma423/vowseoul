@@ -1935,6 +1935,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               copyToClipboard(currentInvitation.venueAddress, 'address')
                             }
                           }}
+                          style={{ color: themeStyles.primaryColor || sereneAccentColor }}
                         >
                           <h3 className="font-semibold text-base tracking-wide">{currentInvitation?.venueName || 'VOW SEOUL GRAND HALL'}</h3>
                           {currentInvitation?.venueHall && (
@@ -2174,7 +2175,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {groomAccounts.length > 0 && (
                             <div className="space-y-3">
                               <span className="text-xs font-semibold tracking-wider block text-left" style={{ color: sereneAccentColor }}>Groom Side</span>
-                              <div className="border-t border-black divide-y divide-black/10">
+                              <div className="border-t border-current divide-y divide-current/10">
                                 {groomAccounts.map((account: any) => (
                                   <div 
                                     key={account.id} 
@@ -2183,12 +2184,12 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   >
                                     <div className="text-left space-y-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-black">{account.accountHolder}</span>
+                                        <span className="font-semibold">{account.accountHolder}</span>
                                         <span className="text-xs opacity-60">
                                           {account.relation === 'groom' ? '신랑' : '신랑 혼주'}
                                         </span>
                                       </div>
-                                      <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
+                                      <div className="font-mono opacity-70 text-sm">{account.accountNumber}</div>
                                     </div>
                                     <div className="text-right">
                                       <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
@@ -2205,7 +2206,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           {brideAccounts.length > 0 && (
                             <div className="space-y-3">
                               <span className="text-xs font-semibold tracking-wider block text-left" style={{ color: sereneAccentColor }}>Bride Side</span>
-                              <div className="border-t border-black divide-y divide-black/10">
+                              <div className="border-t border-current divide-y divide-current/10">
                                 {brideAccounts.map((account: any) => (
                                   <div 
                                     key={account.id} 
@@ -2214,12 +2215,12 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   >
                                     <div className="text-left space-y-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-black">{account.accountHolder}</span>
+                                        <span className="font-semibold">{account.accountHolder}</span>
                                         <span className="text-xs opacity-60">
                                           {account.relation === 'bride' ? '신부' : '신부 혼주'}
                                         </span>
                                       </div>
-                                      <div className="font-mono text-black/70 text-sm">{account.accountNumber}</div>
+                                      <div className="font-mono opacity-70 text-sm">{account.accountNumber}</div>
                                     </div>
                                     <div className="text-right">
                                       <span className="text-xs text-[#838383] border border-[#838383] px-1.5 py-0.5 rounded-sm">
