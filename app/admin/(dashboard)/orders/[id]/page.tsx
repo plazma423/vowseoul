@@ -1504,8 +1504,13 @@ export default function OrderDetailPage() {
                             size="icon" 
                             className="absolute right-1 top-1 h-6 w-6 animate-fade-in" 
                             onClick={() => {
-                              updateCustomStyle('greetingImage', null)
-                              updateCustomStyle('greetingImageFullWidth', false)
+                              if (!currentInvitation) return
+                              const customStyles = {
+                                ...(currentInvitation.customStyles || {}),
+                                greetingImage: null,
+                                greetingImageFullWidth: false
+                              }
+                              updateCurrentInvitation({ customStyles })
                             }}
                           >
                             <Trash2 className="h-3 w-3" />
