@@ -24,6 +24,7 @@ import { uploadFile } from '@/lib/storage'
 import { ChevronLeft, Save, Upload, Loader2, Plus, Trash2, Play, Pause, FileText, ArrowUp, ArrowDown, ExternalLink, Pencil, Image, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Slider } from '@/components/ui/slider'
 
 const parseIndividualParents = (fullRelation: string) => {
   const result = { fatherName: '', motherName: '', relationText: '' }
@@ -2149,12 +2150,12 @@ export default function OrderDetailPage() {
                 <CardContent className="space-y-4">
                   {(() => {
                     const sectionLabelsForImages: Record<string, string> = {
-                      hero: '메인 (Hero)', sequence: '식순 안내', gallery: '사진첩',
+                      hero: '메인 (Hero)', greeting: '초대 인사말', sequence: '식순 안내', gallery: '사진첩',
                       calendar: '소중한 날 (달력)', location: '식장 위치', contact: '연락처',
                       account: '마음 전하실 곳', rsvp: '참석 의사 알리기', guestbook: '방명록'
                     }
                     const sectionImages: Record<string, { url: string; caption?: string }[]> = currentInvitation?.customStyles?.sectionImages || {}
-                    const allSections = Array.from(new Set(['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]))
+                    const allSections = Array.from(new Set(['hero', ...(currentInvitation?.customStyles?.sectionOrder || ['greeting', 'sequence', 'gallery', 'calendar', 'location', 'contact', 'account', 'rsvp', 'guestbook'])]))
 
                     const updateSectionImages = (sectionId: string, images: { url: string; caption?: string }[]) => {
                       updateCurrentInvitation({
@@ -2599,6 +2600,26 @@ export default function OrderDetailPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Highlight Date Shape Size Slider */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">강조 표시 크기 조절</p>
+                        <p className="text-xs text-muted-foreground">달력 강조 표시의 크기를 설정합니다.</p>
+                      </div>
+                      <span className="text-xs font-mono font-semibold">{currentInvitation.customStyles?.calendarDayShapeSize || 32}px</span>
+                    </div>
+                    <div className="pt-2">
+                      <Slider
+                        value={[currentInvitation.customStyles?.calendarDayShapeSize || 32]}
+                        onValueChange={(val) => updateCustomStyle('calendarDayShapeSize', val[0])}
+                        min={20}
+                        max={48}
+                        step={1}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
                 )}
               </Card>
@@ -2712,6 +2733,26 @@ export default function OrderDetailPage() {
                       >
                         기본 포인트색상 복원
                       </Button>
+                    </div>
+                  </div>
+
+                  {/* Greeting Icon Size Slider */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">아이콘 크기 조절</p>
+                        <p className="text-xs text-muted-foreground">초대 인사말 위의 아이콘 크기를 설정합니다.</p>
+                      </div>
+                      <span className="text-xs font-mono font-semibold">{currentInvitation.customStyles?.greetingIconSize || 24}px</span>
+                    </div>
+                    <div className="pt-2">
+                      <Slider
+                        value={[currentInvitation.customStyles?.greetingIconSize || 24]}
+                        onValueChange={(val) => updateCustomStyle('greetingIconSize', val[0])}
+                        min={12}
+                        max={64}
+                        step={1}
+                      />
                     </div>
                   </div>
                 </CardContent>

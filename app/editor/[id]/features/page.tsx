@@ -15,6 +15,7 @@ import { ArrowLeft, ArrowRight, Play, Pause, Upload, Star, Loader2, Image } from
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { uploadFile } from '@/lib/storage'
+import { Slider } from '@/components/ui/slider'
 
 export default function FeaturesPage() {
   const router = useRouter()
@@ -423,8 +424,36 @@ export default function FeaturesPage() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+                  {/* Highlight Date Shape Size Slider */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">강조 표시 크기 조절</p>
+                        <p className="text-xs text-muted-foreground">달력 강조 표시의 크기를 설정합니다.</p>
+                      </div>
+                      <span className="text-xs font-mono font-semibold">{currentInvitation?.customStyles?.calendarDayShapeSize || 32}px</span>
+                    </div>
+                    <div className="pt-2">
+                      <Slider
+                        value={[currentInvitation?.customStyles?.calendarDayShapeSize || 32]}
+                        onValueChange={(val) => {
+                          const prevStyles = currentInvitation?.customStyles || {}
+                          updateCurrentInvitation({
+                            customStyles: {
+                              ...prevStyles,
+                              calendarDayShapeSize: val[0]
+                            }
+                          })
+                          setActiveSection('calendar')
+                        }}
+                        min={20}
+                        max={48}
+                        step={1}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
       {/* Greeting Icon Settings */}
       <Card>
@@ -576,6 +605,34 @@ export default function FeaturesPage() {
               </Button>
             </div>
           </div>
+            {/* Greeting Icon Size Slider */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">아이콘 크기 조절</p>
+                  <p className="text-xs text-muted-foreground">초대 인사말 위의 아이콘 크기를 설정합니다.</p>
+                </div>
+                <span className="text-xs font-mono font-semibold">{currentInvitation?.customStyles?.greetingIconSize || 24}px</span>
+              </div>
+              <div className="pt-2">
+                <Slider
+                  value={[currentInvitation?.customStyles?.greetingIconSize || 24]}
+                  onValueChange={(val) => {
+                    const prevStyles = currentInvitation?.customStyles || {}
+                    updateCurrentInvitation({
+                      customStyles: {
+                        ...prevStyles,
+                        greetingIconSize: val[0]
+                      }
+                    })
+                    setActiveSection('greeting')
+                  }}
+                  min={12}
+                  max={64}
+                  step={1}
+                />
+              </div>
+            </div>
         </CardContent>
       </Card>
 

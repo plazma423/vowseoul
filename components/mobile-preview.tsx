@@ -875,7 +875,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       if (!currentInvitation?.weddingDate) return 'MAY 7, 2026 11 AM'
                       try {
                         const d = new Date(currentInvitation.weddingDate + 'T00:00:00')
-                        const timeInfo = parseWeddingTime(currentInvitation.weddingTime)
+                        const timeInfo = parseWeddingTime(currentInvitation.weddingTime || '')
                         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                         const month = months[d.getMonth()]
                         const day = d.getDate()
@@ -1320,6 +1320,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   const greetingIconShape = currentInvitation?.customStyles?.greetingIconShape || 'heart'
                   const greetingIconColor = currentInvitation?.customStyles?.greetingIconColor || sectColors.accent
                   const greetingIconCustomUrl = currentInvitation?.customStyles?.greetingIconCustomUrl
+                  const greetingIconSize = currentInvitation?.customStyles?.greetingIconSize || 20
                   const isGreetingCustomSvg = greetingIconCustomUrl?.toLowerCase().split('?')[0].endsWith('.svg') ?? false
 
                   const renderGreetingIcon = () => {
@@ -1327,8 +1328,12 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       if (isGreetingCustomSvg) {
                         return (
                           <div 
-                            className="w-5 h-5 mx-auto mb-4 opacity-60 pointer-events-none"
-                            style={getSvgMaskStyle(greetingIconCustomUrl, greetingIconColor)}
+                            className="mx-auto mb-4 opacity-60 pointer-events-none"
+                            style={{
+                              ...getSvgMaskStyle(greetingIconCustomUrl, greetingIconColor),
+                              width: `${greetingIconSize}px`,
+                              height: `${greetingIconSize}px`
+                            }}
                           />
                         )
                       } else {
@@ -1336,19 +1341,23 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                           <img 
                             src={greetingIconCustomUrl} 
                             alt="custom greeting icon" 
-                            className="w-5 h-5 mx-auto mb-4 object-contain opacity-80"
+                            className="mx-auto mb-4 object-contain opacity-80"
+                            style={{
+                              width: `${greetingIconSize}px`,
+                              height: `${greetingIconSize}px`
+                            }}
                           />
                         )
                       }
                     }
 
                     if (greetingIconShape === 'circle') {
-                      return <Circle className="w-5 h-5 mx-auto mb-4 opacity-60" style={{ color: greetingIconColor }} />
+                      return <Circle className="mx-auto mb-4 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
                     }
                     if (greetingIconShape === 'star') {
-                      return <Star className="w-5 h-5 mx-auto mb-4 opacity-60" style={{ color: greetingIconColor }} />
+                      return <Star className="mx-auto mb-4 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
                     }
-                    return <Heart className="w-5 h-5 mx-auto mb-4 opacity-60" style={{ color: greetingIconColor }} />
+                    return <Heart className="mx-auto mb-4 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
                   }
 
                   return (
@@ -1524,7 +1533,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'calendar':
-                  if (currentInvitation.customStyles?.calendarEnabled === false) return null
+                  if (currentInvitation?.customStyles?.calendarEnabled === false) return null
                   if (!currentInvitation?.weddingDate) return null
                   const ddayEnabled = currentInvitation.customStyles?.ddayEnabled ?? false
 
@@ -1636,14 +1645,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   const shapeType = currentInvitation.customStyles?.calendarDayShape || 'circle'
                                   const customShapeUrl = currentInvitation.customStyles?.calendarDayCustomShapeUrl
                                   const highlightTextColor = currentInvitation.customStyles?.calendarDayTextColor || '#ffffff'
+                                  const highlightSize = Math.round((currentInvitation.customStyles?.calendarDayShapeSize || 28) * 0.75)
                                   
                                   if (shapeType === 'custom' && customShapeUrl) {
                                     const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
                                     return (
                                       <div
                                         key={i}
-                                        className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
-                                        style={{ color: highlightTextColor }}
+                                        className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                        style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                       >
                                         {isSvg ? (
                                           <div 
@@ -1666,8 +1676,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                     return (
                                       <div
                                         key={i}
-                                        className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
-                                        style={{ color: highlightTextColor }}
+                                        className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                        style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                       >
                                         <Heart className="absolute inset-0 w-full h-full opacity-90 z-0 scale-110" style={{ color: sereneAccentColor, fill: sereneAccentColor }} />
                                         <span className="relative z-10 text-[10px] -mt-0.5">{day}</span>
@@ -1679,8 +1689,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   return (
                                     <div
                                       key={i}
-                                      className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10"
-                                      style={{ backgroundColor: sereneAccentColor }}
+                                      className="relative py-1 text-xs flex items-center justify-center mx-auto rounded-full font-bold text-white z-10"
+                                      style={{ backgroundColor: sereneAccentColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                     >
                                       {day}
                                     </div>
@@ -1754,14 +1764,15 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 const shapeType = currentInvitation.customStyles?.calendarDayShape || 'circle'
                                 const customShapeUrl = currentInvitation.customStyles?.calendarDayCustomShapeUrl
                                 const highlightTextColor = currentInvitation.customStyles?.calendarDayTextColor || '#ffffff'
+                                const highlightSize = Math.round((currentInvitation.customStyles?.calendarDayShapeSize || 32) * 0.75)
                                 
                                 if (shapeType === 'custom' && customShapeUrl) {
                                   const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
                                   return (
                                     <div
                                       key={i}
-                                      className="relative py-1 text-[10px] flex items-center justify-center w-6 h-6 mx-auto font-bold"
-                                      style={{ color: highlightTextColor }}
+                                      className="relative py-1 text-[10px] flex items-center justify-center mx-auto font-bold"
+                                      style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                     >
                                       {isSvg ? (
                                         <div 
@@ -1784,8 +1795,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                   return (
                                     <div
                                       key={i}
-                                      className="relative py-1 text-[10px] flex items-center justify-center w-6 h-6 mx-auto font-bold"
-                                      style={{ color: highlightTextColor }}
+                                      className="relative py-1 text-[10px] flex items-center justify-center mx-auto font-bold"
+                                      style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                     >
                                       <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none fill-current" viewBox="0 0 24 24" style={{ color: sectColors.accent }}>
                                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -1798,8 +1809,8 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                                 return (
                                   <div
                                     key={i}
-                                    className="relative py-1 text-[10px] flex items-center justify-center w-6 h-6 mx-auto rounded-full font-bold"
-                                    style={{ backgroundColor: sectColors.accent, color: highlightTextColor }}
+                                    className="relative py-1 text-[10px] flex items-center justify-center mx-auto rounded-full font-bold"
+                                    style={{ backgroundColor: sectColors.accent, color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                   >
                                     <span className="relative z-10">{day}</span>
                                   </div>
@@ -1850,7 +1861,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                   )
 
                 case 'location':
-                  if (currentInvitation.customStyles?.locationEnabled === false) return null
+                  if (currentInvitation?.customStyles?.locationEnabled === false) return null
                   if (isPinkEnvelope) {
                     return (
                       <section 

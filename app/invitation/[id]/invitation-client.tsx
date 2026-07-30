@@ -1677,13 +1677,19 @@ export default function InvitationClient({
               const greetingIconCustomUrl = invitation.customStyles?.greetingIconCustomUrl
               const isGreetingCustomSvg = greetingIconCustomUrl?.toLowerCase().split('?')[0].endsWith('.svg') ?? false
 
+              const greetingIconSize = invitation.customStyles?.greetingIconSize || 24
+
               const renderGreetingIcon = () => {
                 if (greetingIconShape === 'custom' && greetingIconCustomUrl) {
                   if (isGreetingCustomSvg) {
                     return (
                       <div 
-                        className="w-6 h-6 mx-auto mb-6 opacity-60 pointer-events-none"
-                        style={getSvgMaskStyle(greetingIconCustomUrl, greetingIconColor)}
+                        className="mx-auto mb-6 opacity-60 pointer-events-none"
+                        style={{
+                          ...getSvgMaskStyle(greetingIconCustomUrl, greetingIconColor),
+                          width: `${greetingIconSize}px`,
+                          height: `${greetingIconSize}px`
+                        }}
                       />
                     )
                   } else {
@@ -1691,19 +1697,23 @@ export default function InvitationClient({
                       <img 
                         src={greetingIconCustomUrl} 
                         alt="custom greeting icon" 
-                        className="w-6 h-6 mx-auto mb-6 object-contain opacity-80"
+                        className="mx-auto mb-6 object-contain opacity-80"
+                        style={{
+                          width: `${greetingIconSize}px`,
+                          height: `${greetingIconSize}px`
+                        }}
                       />
                     )
                   }
                 }
 
                 if (greetingIconShape === 'circle') {
-                  return <Circle className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+                  return <Circle className="mx-auto mb-6 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
                 }
                 if (greetingIconShape === 'star') {
-                  return <Star className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+                  return <Star className="mx-auto mb-6 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
                 }
-                return <Heart className="w-6 h-6 mx-auto mb-6 opacity-60" style={{ color: greetingIconColor }} />
+                return <Heart className="mx-auto mb-6 opacity-60" style={{ color: greetingIconColor, width: `${greetingIconSize}px`, height: `${greetingIconSize}px` }} />
               }
 
               return (
@@ -1984,14 +1994,15 @@ export default function InvitationClient({
                               const shapeType = invitation.customStyles?.calendarDayShape || 'circle'
                               const customShapeUrl = invitation.customStyles?.calendarDayCustomShapeUrl
                               const highlightTextColor = invitation.customStyles?.calendarDayTextColor || '#ffffff'
+                              const highlightSize = invitation.customStyles?.calendarDayShapeSize || 28
                               
                               if (shapeType === 'custom' && customShapeUrl) {
                                 const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
                                 return (
                                   <div
                                     key={i}
-                                    className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
-                                    style={{ color: highlightTextColor }}
+                                    className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                    style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                   >
                                     {isSvg ? (
                                       <div 
@@ -2014,8 +2025,8 @@ export default function InvitationClient({
                                 return (
                                   <div
                                     key={i}
-                                    className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto font-bold"
-                                    style={{ color: highlightTextColor }}
+                                    className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                    style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                   >
                                     <Heart className="absolute inset-0 w-full h-full opacity-90 z-0 scale-110" style={{ color: sereneAccentColor, fill: sereneAccentColor }} />
                                     <span className="relative z-10 text-[10px] -mt-0.5">{day}</span>
@@ -2027,8 +2038,8 @@ export default function InvitationClient({
                               return (
                                 <div
                                   key={i}
-                                  className="relative py-1 text-xs flex items-center justify-center w-7 h-7 mx-auto rounded-full font-bold text-white z-10"
-                                  style={{ backgroundColor: sereneAccentColor }}
+                                  className="relative py-1 text-xs flex items-center justify-center mx-auto rounded-full font-bold text-white z-10"
+                                  style={{ backgroundColor: sereneAccentColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                 >
                                   {day}
                                 </div>
@@ -2102,14 +2113,15 @@ export default function InvitationClient({
                             const shapeType = invitation.customStyles?.calendarDayShape || 'circle'
                             const customShapeUrl = invitation.customStyles?.calendarDayCustomShapeUrl
                             const highlightTextColor = invitation.customStyles?.calendarDayTextColor || '#ffffff'
+                            const highlightSize = invitation.customStyles?.calendarDayShapeSize || 32
                             
                             if (shapeType === 'custom' && customShapeUrl) {
                               const isSvg = customShapeUrl.toLowerCase().split('?')[0].endsWith('.svg')
                               return (
                                 <div
                                   key={i}
-                                  className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto font-bold"
-                                  style={{ color: highlightTextColor }}
+                                  className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                  style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                 >
                                   {isSvg ? (
                                     <div 
@@ -2132,8 +2144,8 @@ export default function InvitationClient({
                               return (
                                 <div
                                   key={i}
-                                  className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto font-bold"
-                                  style={{ color: highlightTextColor }}
+                                  className="relative py-1 text-xs flex items-center justify-center mx-auto font-bold"
+                                  style={{ color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                                 >
                                   <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none fill-current" viewBox="0 0 24 24" style={{ color: sectColors.accent }}>
                                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -2146,8 +2158,8 @@ export default function InvitationClient({
                             return (
                               <div
                                 key={i}
-                                className="relative py-1 text-xs flex items-center justify-center w-8 h-8 mx-auto rounded-full font-bold"
-                                style={{ backgroundColor: sectColors.accent, color: highlightTextColor }}
+                                className="relative py-1 text-xs flex items-center justify-center mx-auto rounded-full font-bold"
+                                style={{ backgroundColor: sectColors.accent, color: highlightTextColor, width: `${highlightSize}px`, height: `${highlightSize}px` }}
                               >
                                 <span className="relative z-10">{day}</span>
                               </div>
