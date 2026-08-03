@@ -319,6 +319,10 @@ export default function InvitationClient({
 
   // Prevent mobile browser user zoom (pinch-to-zoom & double-tap to zoom)
   useEffect(() => {
+    if (invitation?.customStyles?.preventZoom === false) {
+      return;
+    }
+
     // 1. Prevent Pinch-to-zoom
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length > 1) {
@@ -350,7 +354,7 @@ export default function InvitationClient({
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
     };
-  }, []);
+  }, [invitation?.customStyles?.preventZoom]);
 
   useEffect(() => {
     if (!invitation?.weddingDate) return
@@ -1871,7 +1875,19 @@ export default function InvitationClient({
                           key={idx} 
                           className="w-[164px] h-[218px] flex-shrink-0 snap-center overflow-hidden bg-white/20 border border-white/10 shadow-[5px_5px_15px_rgba(0,0,0,0.1)] rounded-sm"
                         >
-                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                          <img 
+                            src={img} 
+                            alt={`Gallery ${idx + 1}`} 
+                            className={cn(
+                              "w-full h-full object-cover",
+                              invitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                            )}
+                            onClick={() => {
+                              if (invitation?.customStyles?.preventZoom === false) {
+                                setActiveImageModal(img)
+                              }
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -1890,7 +1906,19 @@ export default function InvitationClient({
                     <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 px-8">
                       {invitation.galleryImages.map((img: string, idx: number) => (
                         <div key={idx} className={cn("w-[280px] h-[350px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
-                          <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" />
+                          <img 
+                            src={img} 
+                            alt={`Gallery ${idx + 1}`} 
+                            className={cn(
+                              "max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300",
+                              invitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                            )}
+                            onClick={() => {
+                              if (invitation?.customStyles?.preventZoom === false) {
+                                setActiveImageModal(img)
+                              }
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -1898,7 +1926,19 @@ export default function InvitationClient({
                     <div className={cn("grid gap-2", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
                       {invitation.galleryImages.map((img: string, idx: number) => (
                         <div key={idx} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                          <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                          <img 
+                            src={img} 
+                            alt={`Gallery ${idx + 1}`} 
+                            className={cn(
+                              "w-full h-full object-cover hover:scale-105 transition-transform duration-300",
+                              invitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                            )}
+                            onClick={() => {
+                              if (invitation?.customStyles?.preventZoom === false) {
+                                setActiveImageModal(img)
+                              }
+                            }}
+                          />
                         </div>
                       ))}
                     </div>

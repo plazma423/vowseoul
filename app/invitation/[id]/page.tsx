@@ -2,12 +2,34 @@ import { supabase } from "@/lib/supabase"
 import InvitationClient from "./invitation-client"
 import { Metadata, Viewport } from "next"
 
-export const viewport: Viewport = {
-  themeColor: '#ffffff',
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+export async function generateViewport({ params }: PageProps): Promise<Viewport> {
+  const { id } = await params
+  let preventZoom = true
+
+  try {
+    const { data: inviteData } = await supabase
+      .from('invitations')
+      .select('customStyles')
+      .eq('id', id)
+      .single()
+
+    if (inviteData?.customStyles) {
+      const customStyles = inviteData.customStyles as any
+      if (customStyles.preventZoom === false) {
+        preventZoom = false
+      }
+    }
+  } catch (e) {
+    console.error('Error in generateViewport:', e)
+  }
+
+  return {
+    themeColor: '#ffffff',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: preventZoom ? 1 : undefined,
+    userScalable: !preventZoom,
+  }
 }
 
 export const dynamic = 'force-dynamic'

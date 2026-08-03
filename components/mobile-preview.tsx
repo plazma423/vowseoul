@@ -1504,7 +1504,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                               key={idx} 
                               className="w-[164px] h-[218px] flex-shrink-0 snap-center overflow-hidden bg-white/20 border border-white/10 shadow-[5px_5px_15px_rgba(0,0,0,0.1)] rounded-sm"
                             >
-                              <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                              <img 
+                                src={img} 
+                                alt={`Gallery ${idx + 1}`} 
+                                className={cn(
+                                  "w-full h-full object-cover",
+                                  currentInvitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                                )}
+                                onClick={() => {
+                                  if (currentInvitation?.customStyles?.preventZoom === false) {
+                                    setActiveImageModal(img)
+                                  }
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
@@ -1522,7 +1534,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <div className="w-full overflow-x-auto flex gap-2 snap-x scrollbar-hide pb-2 px-6">
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
                             <div key={idx} className={cn("w-[240px] h-[300px] flex-shrink-0 snap-center overflow-hidden bg-black/5 flex justify-center", galleryAlign === 'bottom' ? 'items-end' : 'items-center', shadowClass)} style={borderStyle}>
-                              <img src={img} alt={`Gallery ${idx + 1}`} className="max-w-full max-h-full object-contain" />
+                              <img 
+                                src={img} 
+                                alt={`Gallery ${idx + 1}`} 
+                                className={cn(
+                                  "max-w-full max-h-full object-contain",
+                                  currentInvitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                                )}
+                                onClick={() => {
+                                  if (currentInvitation?.customStyles?.preventZoom === false) {
+                                    setActiveImageModal(img)
+                                  }
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
@@ -1530,7 +1554,19 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         <div className={cn("grid gap-1.5", isTwoColumn ? "grid-cols-3" : "grid-cols-2")}>
                           {currentInvitation.galleryImages.map((img: string, idx: number) => (
                             <div key={idx} className={cn("aspect-square overflow-hidden bg-black/10", shadowClass)} style={borderStyle}>
-                              <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                              <img 
+                                src={img} 
+                                alt={`Gallery ${idx + 1}`} 
+                                className={cn(
+                                  "w-full h-full object-cover",
+                                  currentInvitation?.customStyles?.preventZoom === false && "cursor-pointer"
+                                )}
+                                onClick={() => {
+                                  if (currentInvitation?.customStyles?.preventZoom === false) {
+                                    setActiveImageModal(img)
+                                  }
+                                }}
+                              />
                             </div>
                           ))}
                         </div>

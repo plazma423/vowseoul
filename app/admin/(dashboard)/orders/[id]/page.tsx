@@ -2307,6 +2307,20 @@ export default function OrderDetailPage() {
 
                   <Separator />
 
+                  {/* Zoom Prevention Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">모바일 화면 확대 방지</p>
+                      <p className="text-xs text-muted-foreground">모바일 기기에서 사용자가 두 손가락 줌인(Pinch-to-zoom) 및 더블 탭으로 화면을 확대하는 것을 제한합니다.</p>
+                    </div>
+                    <Switch
+                      checked={currentInvitation.customStyles?.preventZoom !== false}
+                      onCheckedChange={(checked) => updateCustomStyle('preventZoom', checked)}
+                    />
+                  </div>
+
+                  <Separator />
+
                   {/* RSVP Option Toggles */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
