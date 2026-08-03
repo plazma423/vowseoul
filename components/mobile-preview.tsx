@@ -875,12 +875,18 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                       if (!currentInvitation?.weddingDate) return 'MAY 7, 2026 11 AM'
                       try {
                         const d = new Date(currentInvitation.weddingDate + 'T00:00:00')
-                        const timeInfo = parseWeddingTime(currentInvitation.weddingTime || '')
                         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                         const month = months[d.getMonth()]
                         const day = d.getDate()
                         const year = d.getFullYear()
                         
+                        const datePart = `${month} ${day}, ${year}`
+                        
+                        if (!currentInvitation?.weddingTime || !currentInvitation.weddingTime.trim()) {
+                          return datePart
+                        }
+                        
+                        const timeInfo = parseWeddingTime(currentInvitation.weddingTime)
                         let hours = timeInfo.hours
                         const minutes = timeInfo.minutes
                         const ampm = hours >= 12 ? 'PM' : 'AM'
@@ -888,7 +894,7 @@ export function MobilePreview({ className, isSticky = true }: { className?: stri
                         hours = hours ? hours : 12
                         
                         const minStr = minutes > 0 ? `:${String(minutes).padStart(2, '0')}` : ''
-                        return `${month} ${day}, ${year} ${hours}${minStr} ${ampm}`
+                        return `${datePart} ${hours}${minStr} ${ampm}`
                       } catch (e) {
                         return currentInvitation.weddingDate
                       }

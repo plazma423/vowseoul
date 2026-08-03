@@ -1252,12 +1252,18 @@ export default function InvitationClient({
                   if (!invitation?.weddingDate) return 'MAY 7, 2026 11 AM'
                   try {
                     const d = new Date(invitation.weddingDate + 'T00:00:00')
-                    const timeInfo = parseWeddingTime(invitation.weddingTime)
                     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
                     const month = months[d.getMonth()]
                     const day = d.getDate()
                     const year = d.getFullYear()
                     
+                    const datePart = `${month} ${day}, ${year}`
+                    
+                    if (!invitation?.weddingTime || !invitation.weddingTime.trim()) {
+                      return datePart
+                    }
+                    
+                    const timeInfo = parseWeddingTime(invitation.weddingTime)
                     let hours = timeInfo.hours
                     const minutes = timeInfo.minutes
                     const ampm = hours >= 12 ? 'PM' : 'AM'
