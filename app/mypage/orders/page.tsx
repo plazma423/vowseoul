@@ -34,8 +34,39 @@ export default function OrdersPage() {
         if (error) throw error
 
         if (data) {
+          // Process auto-expiration of orders:
+          const now = new Date()
+          now.setHours(0, 0, 0, 0)
+          
+          const processedData = data.map((order: any) => {
+            if (order.status !== 'expired' && order.status !== 'sample' && order.status !== 'refunded' && order.weddingDate) {
+              try {
+                const weddingDateTime = new Date(order.weddingDate + 'T00:00:00')
+                const expirationTime = new Date(weddingDateTime.getTime() + 7 * 24 * 60 * 60 * 1000)
+                
+                if (expirationTime < now) {
+                  // Expired! Update in database asynchronously
+                  supabase.from('orders').update({ status: 'expired' }).eq('id', order.id).then(({ error }) => {
+                    if (error) console.error(`Error auto-expiring order ${order.id}:`, error)
+                  })
+                  
+                  if (order.invitationId) {
+                    supabase.from('invitations').update({ status: 'expired' }).eq('id', order.invitationId).then(({ error }) => {
+                      if (error) console.error(`Error auto-expiring invitation ${order.invitationId}:`, error)
+                    })
+                  }
+                  
+                  return { ...order, status: 'expired' }
+                }
+              } catch (e) {
+                console.error(`Error parsing date for order ${order.id}:`, e)
+              }
+            }
+            return order
+          })
+
           // Filter orders belonging to current user by checking ID prefix
-          const userOrders = data.filter((order: any) => order.id.startsWith(`${userId}__`))
+          const userOrders = processedData.filter((order: any) => order.id.startsWith(`${userId}__`))
           // Sort by date descending
           userOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           setOrders(userOrders)
@@ -61,6 +92,10 @@ export default function OrdersPage() {
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">결제 대기</Badge>
       case 'refunded':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">환불됨</Badge>
+      case 'expired':
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">만료됨</Badge>
+      case 'sample':
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">샘플</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }

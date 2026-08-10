@@ -770,6 +770,7 @@ export default function OrderDetailPage() {
                             <SelectItem value="deployed">배포중</SelectItem>
                             <SelectItem value="expired">만료됨</SelectItem>
                             <SelectItem value="refunded">환불</SelectItem>
+                            <SelectItem value="sample">샘플</SelectItem>
                           </SelectContent>
                         </Select>
                       </Field>

@@ -99,7 +99,7 @@ export interface Order {
   weddingDate: string
   theme: string
   amount: number
-  status: 'pending' | 'paid' | 'deployed' | 'expired' | 'refunded'
+  status: 'pending' | 'paid' | 'deployed' | 'expired' | 'refunded' | 'sample'
   createdAt: string
   notes: string
 }
@@ -216,11 +216,44 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       }
 
+      // Process auto-expiration of orders:
+      // "샘플" (sample) 상태가 아니고, 이미 만료(expired)나 환불(refunded)이 아닌 주문들 중
+      // 예식일 기준 일주일(+7일)이 지난 주문은 자동으로 "만료됨" (expired) 상태로 전환.
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+      
+      const processedOrders = (orders || []).map(order => {
+        if (order.status !== 'expired' && order.status !== 'sample' && order.status !== 'refunded' && order.weddingDate) {
+          try {
+            const weddingDateTime = new Date(order.weddingDate + 'T00:00:00')
+            const expirationTime = new Date(weddingDateTime.getTime() + 7 * 24 * 60 * 60 * 1000)
+            
+            if (expirationTime < now) {
+              // Expired! Update in database asynchronously
+              supabase.from('orders').update({ status: 'expired' }).eq('id', order.id).then(({ error }) => {
+                if (error) console.error(`Error auto-expiring order ${order.id}:`, error)
+              })
+              
+              if (order.invitationId) {
+                supabase.from('invitations').update({ status: 'expired' }).eq('id', order.invitationId).then(({ error }) => {
+                  if (error) console.error(`Error auto-expiring invitation ${order.invitationId}:`, error)
+                })
+              }
+              
+              return { ...order, status: 'expired' as const }
+            }
+          } catch (e) {
+            console.error(`Error parsing date for order ${order.id}:`, e)
+          }
+        }
+        return order
+      })
+
       set({
         faqs: faqs || [],
         themes: themes || [],
         bgmList: bgms || [],
-        orders: orders || [],
+        orders: processedOrders,
         notices: noticesList
       })
     } catch (e) {

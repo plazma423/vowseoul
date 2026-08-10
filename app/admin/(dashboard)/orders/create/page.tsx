@@ -21,7 +21,7 @@ export default function CreateOrderPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [customerName, setCustomerName] = useState('')
   const [amount, setAmount] = useState('50000')
-  const [status, setStatus] = useState<'pending' | 'paid' | 'deployed'>('paid')
+  const [status, setStatus] = useState<'pending' | 'paid' | 'deployed' | 'sample'>('paid')
   const [notes, setNotes] = useState('')
   const [selectedThemeId, setSelectedThemeId] = useState('')
 
@@ -207,6 +207,7 @@ export default function CreateOrderPage() {
                       <SelectItem value="pending">결제대기 (Pending)</SelectItem>
                       <SelectItem value="paid">결제완료 (Paid)</SelectItem>
                       <SelectItem value="deployed">배포중 (Deployed)</SelectItem>
+                      <SelectItem value="sample">샘플 (Sample)</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>

@@ -75,6 +75,11 @@ export default function OrdersPage() {
   })
 
   const [invitationThemes, setInvitationThemes] = useState<Record<string, string>>({})
+  
+  // Bulk management states
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   useEffect(() => {
     const fetchInvitationThemes = async () => {
@@ -335,6 +340,92 @@ export default function OrdersPage() {
     }
   }
 
+  const handleBulkDeleteExpired = async () => {
+    const expiredOrders = orders.filter(o => o.status === 'expired')
+    if (expiredOrders.length === 0) {
+      toast.error('만료된 청첩장이 존재하지 않습니다.')
+      return
+    }
+
+    if (!confirm(`정말로 만료된 청첩장 및 주문 정보 총 ${expiredOrders.length}건을 일괄 삭제하시겠습니까? 이 작업은 복구할 수 없습니다.`)) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+    try {
+      const orderIds = expiredOrders.map(o => o.id)
+      const invitationIds = expiredOrders.map(o => o.invitationId).filter(Boolean)
+
+      // Delete orders
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', orderIds)
+      if (orderError) throw orderError
+
+      // Delete invitations
+      if (invitationIds.length > 0) {
+        const { error: inviteError } = await supabase
+          .from('invitations')
+          .delete()
+          .in('id', invitationIds)
+        if (inviteError) throw inviteError
+      }
+
+      // Update local store
+      setOrders(orders.filter(o => !orderIds.includes(o.id)))
+      toast.success(`만료된 청첩장 ${orderIds.length}건이 성공적으로 삭제되었습니다.`)
+    } catch (err: any) {
+      console.error('Error during bulk expired deletion:', err)
+      toast.error('일괄 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
+  const handleBulkDeleteSelected = async () => {
+    if (selectedOrderIds.length === 0) {
+      toast.error('선택된 청첩장이 없습니다.')
+      return
+    }
+
+    if (!confirm(`정말로 선택한 청첩장 및 주문 정보 총 ${selectedOrderIds.length}건을 삭제하시겠습니까? 이 작업은 복구할 수 없습니다.`)) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+    try {
+      const selectedOrders = orders.filter(o => selectedOrderIds.includes(o.id))
+      const invitationIds = selectedOrders.map(o => o.invitationId).filter(Boolean)
+
+      // Delete orders
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', selectedOrderIds)
+      if (orderError) throw orderError
+
+      // Delete invitations
+      if (invitationIds.length > 0) {
+        const { error: inviteError } = await supabase
+          .from('invitations')
+          .delete()
+          .in('id', invitationIds)
+        if (inviteError) throw inviteError
+      }
+
+      // Update local store
+      setOrders(orders.filter(o => !selectedOrderIds.includes(o.id)))
+      setSelectedOrderIds([])
+      toast.success(`선택된 청첩장 ${selectedOrderIds.length}건이 성공적으로 삭제되었습니다.`)
+    } catch (err: any) {
+      console.error('Error during bulk selected deletion:', err)
+      toast.error('선택 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
   const handleResetVisitorLogs = async (orderId: string, invitationId: string) => {
     if (!invitationId) {
       toast.error('청첩장 ID가 유효하지 않습니다.')
@@ -422,12 +513,18 @@ export default function OrdersPage() {
           <h1 className="text-2xl font-semibold tracking-tight">주문 관리</h1>
           <p className="text-muted-foreground">청첩장 주문 내역을 조회하고 관리합니다.</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/orders/create">
-            <Plus className="mr-2 h-4 w-4" />
-            청첩장 추가하기
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsManageDialogOpen(true)}>
+            <Settings className="mr-2 h-4 w-4" />
+            청첩장 관리하기
+          </Button>
+          <Button asChild>
+            <Link href="/admin/orders/create">
+              <Plus className="mr-2 h-4 w-4" />
+              청첩장 추가하기
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -457,6 +554,7 @@ export default function OrdersPage() {
                 <SelectItem value="deployed">배포중</SelectItem>
                 <SelectItem value="expired">만료됨</SelectItem>
                 <SelectItem value="refunded">환불</SelectItem>
+                <SelectItem value="sample">샘플</SelectItem>
               </SelectContent>
             </Select>
 
@@ -631,6 +729,7 @@ export default function OrdersPage() {
                           <SelectItem value="deployed">배포중</SelectItem>
                           <SelectItem value="expired">만료됨</SelectItem>
                           <SelectItem value="refunded">환불</SelectItem>
+                          <SelectItem value="sample">샘플</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -822,6 +921,7 @@ export default function OrdersPage() {
                       <SelectItem value="deployed">배포중</SelectItem>
                       <SelectItem value="expired">만료됨</SelectItem>
                       <SelectItem value="refunded">환불</SelectItem>
+                      <SelectItem value="sample">샘플</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -837,6 +937,117 @@ export default function OrdersPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Invitations Dialog */}
+      <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6">
+          <DialogHeader>
+            <DialogTitle>청첩장 일괄 관리</DialogTitle>
+            <DialogDescription>
+              만료된 청첩장을 일괄 삭제하거나 여러 청첩장을 선택하여 삭제할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between py-4 border-b border-border">
+            <div className="text-sm font-medium text-muted-foreground">
+              선택됨: {selectedOrderIds.length}개 / 만료됨 상태: {orders.filter(o => o.status === 'expired').length}개
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDeleteExpired}
+                disabled={isBulkDeleting || orders.filter(o => o.status === 'expired').length === 0}
+              >
+                만료된 청첩장 일괄 삭제
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                onClick={handleBulkDeleteSelected}
+                disabled={isBulkDeleting || selectedOrderIds.length === 0}
+              >
+                선택한 청첩장 삭제
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <th className="pb-3 w-10">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-foreground focus:ring-foreground"
+                      checked={orders.length > 0 && selectedOrderIds.length === orders.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedOrderIds(orders.map(o => o.id))
+                        } else {
+                          setSelectedOrderIds([])
+                        }
+                      }}
+                    />
+                  </th>
+                  <th className="pb-3 pr-4">주문번호</th>
+                  <th className="pb-3 pr-4">신랑 & 신부</th>
+                  <th className="pb-3 pr-4">예식일</th>
+                  <th className="pb-3 pr-4">금액</th>
+                  <th className="pb-3">상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-b border-border last:border-0 text-sm">
+                    <td className="py-3 pr-4">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-foreground focus:ring-foreground"
+                        checked={selectedOrderIds.includes(order.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedOrderIds([...selectedOrderIds, order.id])
+                          } else {
+                            setSelectedOrderIds(selectedOrderIds.filter(id => id !== order.id))
+                          }
+                        }}
+                      />
+                    </td>
+                    <td className="py-3 pr-4 font-medium">{order.id}</td>
+                    <td className="py-3 pr-4">{order.groomName} & {order.brideName}</td>
+                    <td className="py-3 pr-4">{order.weddingDate}</td>
+                    <td className="py-3 pr-4">{order.amount.toLocaleString()}원</td>
+                    <td className="py-3">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        order.status === 'deployed' ? 'bg-green-100 text-green-700' :
+                        order.status === 'paid' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                        order.status === 'sample' ? 'bg-purple-100 text-purple-700' :
+                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {order.status === 'deployed' ? '배포중' :
+                         order.status === 'paid' ? '결제완료' :
+                         order.status === 'expired' ? '만료됨' :
+                         order.status === 'sample' ? '샘플' :
+                         order.status === 'pending' ? '대기중' : '환불'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-border mt-auto">
+            <Button type="button" variant="outline" onClick={() => setIsManageDialogOpen(false)}>
+              닫기
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
